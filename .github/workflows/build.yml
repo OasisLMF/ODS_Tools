@@ -23,9 +23,9 @@ jobs:
     outputs:
       src_filename: ${{ steps.build_package.outputs.source }}
       whl_filename: ${{ steps.build_package.outputs.wheel }}
-    env:
-      SPEC_PATH_IN: './OpenExposureData/Docs/OpenExposureData_Spec.xlsx'
-      SPEC_PATH_OUT: './ods_tools/data/OpenExposureData_Spec.json'
+    #env:
+    #  SPEC_PATH_IN: './OpenExposureData/Docs/OpenExposureData_Spec.xlsx'
+    #  SPEC_PATH_OUT: './ods_tools/data/OpenExposureData_Spec.json'
 
     steps:
     - name: Github context
@@ -53,11 +53,11 @@ jobs:
         python-version: 3.9
     - run: pip install pip-tools pandas pyarrow openpyxl==3.0.10 click tox
 
-    - name: Extract Spec
-      run: |
-        ./docker/extract_spec.py json\
-            --source-excel-path ${{ env.SPEC_PATH_IN }} \
-            --output-json-path ${{ env.SPEC_PATH_OUT }}
+    #- name: Extract Spec
+    #  run: |
+    #    ./docker/extract_spec.py json\
+    #        --source-excel-path ${{ env.SPEC_PATH_IN }} \
+    #        --output-json-path ${{ env.SPEC_PATH_OUT }}
 
     - name: Build package
       id: build_package

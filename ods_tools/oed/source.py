@@ -6,7 +6,7 @@ from chardet.universaldetector import UniversalDetector
 
 from .common import OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative
 from .forex import convert_currency
-from .schema import OedSchema
+from .oed_schema import OedSchema
 
 try:
     from functools import cached_property
