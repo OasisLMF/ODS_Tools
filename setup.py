@@ -4,16 +4,20 @@ import re
 import setuptools
 
 
+import setuptools.command.install as orig
+
+import urllib.request
+import json
+
+
 SCRIPT_DIR = os.path.abspath(os.path.dirname(__file__))
 
+OED_VERSION = '3.0.3'
+#ORD_VERSION =
 
 def get_readme():
-    try:
-        with io.open(os.path.join(SCRIPT_DIR, 'ods_tools', 'README.md'), encoding='utf-8') as readme:
-            return readme.read()
-    except FileNotFoundError:
-        with io.open(os.path.join(SCRIPT_DIR, 'README.md'), encoding='utf-8') as readme:
-            return readme.read()
+    with io.open(os.path.join(SCRIPT_DIR, 'README.md'), encoding='utf-8') as readme:
+        return readme.read()
 
 
 def get_version():
@@ -23,10 +27,29 @@ def get_version():
     with io.open(os.path.join(SCRIPT_DIR, 'ods_tools', '__init__.py'), encoding='utf-8') as init_py:
         return re.search('__version__ = [\'"]([^\'"]+)[\'"]', init_py.read()).group(1)
 
-
 def get_install_requirements():
     with io.open(os.path.join(SCRIPT_DIR, 'requirements.in'), encoding='utf-8') as reqs:
         return reqs.readlines()
+
+
+class DownloadSpecODS(orig.install):
+    """A custom command to download a JSON ODS spec during installation."""
+    description = 'Download a ODS JSON spec file from a release URL.'
+
+    def __init__(self, *args, **kwargs):
+        self.filename = 'OpenExposureData_Spec.json'
+        self.ods_repo = 'OasisLMF/ODS_OpenExposureData'
+        self.download_path = os.path.join(SCRIPT_DIR, 'ods_tools', 'data', self.filename)
+        self.oed_version = OED_VERSION
+        self.url  = f'https://github.com/{self.ods_repo}/releases/download/{self.oed_version}/{self.filename}'
+        orig.install.__init__(self, *args, **kwargs)
+
+    def run(self):
+        response = urllib.request.urlopen(self.url)
+        data = json.loads(response.read())
+        with open(self.download_path, 'w+') as f:
+            json.dump(data, f)
+        orig.install.run(self)
 
 
 version = get_version()
@@ -56,4 +79,7 @@ setuptools.setup(
     long_description=readme,
     long_description_content_type='text/markdown',
     url='https://github.com/OasisLMF/OpenDataStandards',
+    cmdclass={
+        'install': DownloadSpecODS,
+    },
 )
