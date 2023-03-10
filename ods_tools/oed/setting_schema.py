@@ -7,6 +7,8 @@ from .common import OdsException
 import jsonschema
 
 DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
+
+
 class SettingSchema:
     """
     A class for managing and validating JSON settings.
@@ -119,8 +121,6 @@ class SettingSchema:
                 logger.warning('   These keys have been automatically updated, but should be fixed in the original file.\n')
         return settings_data
 
-
-
     def load(self, settings_fp):
         """
         Loads the JSON data from a file path.
@@ -143,7 +143,6 @@ class SettingSchema:
         except (IOError, TypeError, ValueError):
             raise OdsException(f'Invalid {self.settings_type} file or file path: {settings_fp}')
         return settings_data
-
 
     def validate(self, setting_data, raise_error=True):
         """
@@ -182,7 +181,6 @@ class SettingSchema:
                 json.dumps(exception_msgs, indent=4)
             ))
         return is_valid, exception_msgs
-
 
     def get(self, settings_fp, key=None, validate=True):
         """

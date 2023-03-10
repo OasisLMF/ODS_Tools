@@ -13,7 +13,8 @@ import json
 SCRIPT_DIR = os.path.abspath(os.path.dirname(__file__))
 
 OED_VERSION = '3.0.3'
-#ORD_VERSION =
+# ORD_VERSION =
+
 
 def get_readme():
     with io.open(os.path.join(SCRIPT_DIR, 'README.md'), encoding='utf-8') as readme:
@@ -27,10 +28,10 @@ def get_version():
     with io.open(os.path.join(SCRIPT_DIR, 'ods_tools', '__init__.py'), encoding='utf-8') as init_py:
         return re.search('__version__ = [\'"]([^\'"]+)[\'"]', init_py.read()).group(1)
 
+
 def get_install_requirements():
     with io.open(os.path.join(SCRIPT_DIR, 'requirements.in'), encoding='utf-8') as reqs:
         return reqs.readlines()
-
 
 
 class DownloadSpecODS(orig.install):
@@ -46,7 +47,7 @@ class DownloadSpecODS(orig.install):
         self.ods_repo = 'OasisLMF/ODS_OpenExposureData'
         self.download_path = os.path.join(SCRIPT_DIR, 'ods_tools', 'data', self.filename)
         self.oed_version = OED_VERSION
-        self.url  = f'https://github.com/{self.ods_repo}/releases/download/{self.oed_version}/{self.filename}'
+        self.url = f'https://github.com/{self.ods_repo}/releases/download/{self.oed_version}/{self.filename}'
         orig.install.__init__(self, *args, **kwargs)
 
     def initialize_options(self):
@@ -59,7 +60,6 @@ class DownloadSpecODS(orig.install):
             if not os.path.isfile(self.local_oed_spec):
                 raise ValueError(f"Local OED Spec '{self.local_oed_spec}' not found")
         orig.install.finalize_options(self)
-
 
     def run(self):
         if self.local_oed_spec:

@@ -315,12 +315,11 @@ class OdsPackageTests(TestCase):
             oed = OedExposure(**{'location': loc_path})
             assert oed.location.dataframe['CountryCode'][0] == 'NA'
 
-
     def test_setting_schema_analysis__is_valid(self):
         file_name = 'analysis_settings.json'
         file_url = f'https://raw.githubusercontent.com/OasisLMF/OasisPiWind/{piwind_branch}/{file_name}'
         ods_analysis_setting = AnalysisSettingSchema()
-        assert(ods_analysis_setting.schema is not None)
+        assert (ods_analysis_setting.schema is not None)
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             abs_dir = pathlib.Path(tmp_dir, "abs")
@@ -336,14 +335,13 @@ class OdsPackageTests(TestCase):
 
             self.assertTrue(valid)
             self.assertEqual({}, errors)
-            self.assertEqual(settings_dict,  ods_analysis_setting.get(settings_fp))
-
+            self.assertEqual(settings_dict, ods_analysis_setting.get(settings_fp))
 
     def test_setting_schema_analysis__is_invalid(self):
         file_name = 'analysis_settings.json'
         file_url = f'https://raw.githubusercontent.com/OasisLMF/OasisPiWind/{piwind_branch}/{file_name}'
         ods_analysis_setting = AnalysisSettingSchema()
-        assert(ods_analysis_setting.schema is not None)
+        assert (ods_analysis_setting.schema is not None)
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             abs_dir = pathlib.Path(tmp_dir, "abs")
@@ -359,22 +357,21 @@ class OdsPackageTests(TestCase):
             # Insert errors
             settings_dict['gul_summarie'] = settings_dict['gul_summaries']
             del settings_dict['gul_summaries']
-            settings_dict['gul_output'] = "True" # should be a bool
+            settings_dict['gul_output'] = "True"  # should be a bool
 
             valid, errors = ods_analysis_setting.validate(settings_dict, raise_error=False)
             self.assertFalse(valid)
             self.assertEqual({'gul_output': ["'True' is not of type 'boolean'"],
-                                'required': ["'gul_summaries' is a required property"]}, errors)
+                              'required': ["'gul_summaries' is a required property"]}, errors)
 
             with self.assertRaises(OdsException):
                 ods_analysis_setting.validate(settings_dict)
-
 
     def test_setting_schema_model__is_valid(self):
         file_name = 'meta-data/model_settings.json'
         file_url = f'https://raw.githubusercontent.com/OasisLMF/OasisPiWind/{piwind_branch}/{file_name}'
         ods_model_setting = ModelSettingSchema()
-        assert(ods_model_setting.schema is not None)
+        assert (ods_model_setting.schema is not None)
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             abs_dir = pathlib.Path(tmp_dir, "abs")
@@ -390,14 +387,13 @@ class OdsPackageTests(TestCase):
 
             self.assertTrue(valid)
             self.assertEqual({}, errors)
-            self.assertEqual(settings_dict,  ods_model_setting.get(settings_fp))
-
+            self.assertEqual(settings_dict, ods_model_setting.get(settings_fp))
 
     def test_setting_schema_model__is_invalid(self):
         file_name = 'meta-data/model_settings.json'
         file_url = f'https://raw.githubusercontent.com/OasisLMF/OasisPiWind/{piwind_branch}/{file_name}'
         ods_model_setting = ModelSettingSchema()
-        assert(ods_model_setting.schema is not None)
+        assert (ods_model_setting.schema is not None)
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             abs_dir = pathlib.Path(tmp_dir, "abs")
@@ -412,7 +408,7 @@ class OdsPackageTests(TestCase):
 
             # Insert errors
             settings_dict['unknown_key'] = 'foobar'
-            settings_dict['model_setting']  = settings_dict['model_settings']
+            settings_dict['model_setting'] = settings_dict['model_settings']
             del settings_dict['model_settings']
 
             valid, errors = ods_model_setting.validate(settings_dict, raise_error=False)
@@ -420,7 +416,7 @@ class OdsPackageTests(TestCase):
             self.assertEqual({
                 'additionalProperties': ["Additional properties are not allowed ('model_setting', 'unknown_key' were unexpected)"],
                 'required': ["'model_settings' is a required property"]
-                }, errors)
+            }, errors)
 
             with self.assertRaises(OdsException):
                 ods_model_setting.validate(settings_dict)
