@@ -56,23 +56,19 @@ jobs:
 
     - name: Build package (from OED release)
       if: inputs.oed_spec_json == ''
-      id: build_package
       run: |
         python setup.py sdist
         python setup.py bdist_wheel
 
-        WHL=$(find ./dist/ -name "*.whl"  -exec basename {} \;)
-        SRC=$(find ./dist/ -name "*.tar.gz"  -exec basename {} \;)
-        echo "wheel=$WHL" >> $GITHUB_OUTPUT
-        echo "source=$SRC" >> $GITHUB_OUTPUT
-
-    - name: Build package (from OED Spec json)
+    - name: Build package (from OED schema file)
       if: inputs.oed_spec_json != ''
-      id: build_package
       run: |
         python setup.py sdist install "--local-oed-spec=${{ inputs.oed_spec_json }}"
         python setup.py bdist_wheel install "--local-oed-spec=${{ inputs.oed_spec_json }}"
 
+    - name: Build package (from OED Spec json)
+      id: build_package
+      run: |
         WHL=$(find ./dist/ -name "*.whl"  -exec basename {} \;)
         SRC=$(find ./dist/ -name "*.tar.gz"  -exec basename {} \;)
         echo "wheel=$WHL" >> $GITHUB_OUTPUT
