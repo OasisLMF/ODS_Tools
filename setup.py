@@ -66,7 +66,7 @@ class DownloadSpecODS(orig.install):
             # Install with local json spec
             # pip install -v . --install-option="--local-oed-spec=<path>/OpenExposureData_Spec.json" .
 
-            print(f'OED Version: Local File')
+            print('OED Version: Local File')
             print(f'Install from path: {self.local_oed_spec}')
             with open(self.local_oed_spec, 'r') as f:
                 data = json.load(f)
