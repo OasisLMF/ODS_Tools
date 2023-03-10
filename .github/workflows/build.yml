@@ -45,7 +45,7 @@ jobs:
       uses: actions/checkout@v3
       if: inputs.ods_branch != ''
       with:
-        repository: OasisLMF/ODS_OpenExposureData
+        repository: OasisLMF/ODS_Tools
         ref: ${{ inputs.ods_branch }}
 
     - name: Set up Python
