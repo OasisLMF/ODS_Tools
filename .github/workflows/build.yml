@@ -66,7 +66,7 @@ jobs:
         python setup.py sdist install "--local-oed-spec=${{ inputs.oed_spec_json }}"
         python setup.py bdist_wheel install "--local-oed-spec=${{ inputs.oed_spec_json }}"
 
-    - name: Build package (from OED Spec json)
+    - name: Build Output
       id: build_package
       run: |
         WHL=$(find ./dist/ -name "*.whl"  -exec basename {} \;)
