@@ -26,8 +26,8 @@ class SettingSchema:
 
     Methods:
         from_json(cls, setting_json): Creates a new instance of the `SettingSchema` class by loading a JSON file.
-        _compatibility(self, settings_data): Updates the loaded JSON data to account for deprecated keys.
-        _load(self, settings_fp): Loads the JSON data from a file path.
+        compatibility(self, settings_data): Updates the loaded JSON data to account for deprecated keys.
+        load(self, settings_fp): Loads the JSON data from a file path.
         validate(self, setting_data): Validates the loaded JSON data against the schema.
         get(self, settings_fp, key=None, validate=True): Gets a value from the loaded JSON data.
 
@@ -83,12 +83,13 @@ class SettingSchema:
             SettingSchema: A new instance of the `SettingSchema` class.
 
         """
-        with open(setting_json) as f:
+        filepath = Path(setting_json)
+        with filepath.open(encoding="UTF-8") as f:
             schema = json.load(f)
             return cls(schema, setting_json)
 
-    def _compatibility(self, settings_data):
-            """
+    def compatibility(self, settings_data):
+        """
         Updates the loaded JSON data to account for deprecated keys.
 
         Args:
@@ -120,8 +121,8 @@ class SettingSchema:
 
 
 
-    def _load(self, settings_fp):
-            """
+    def load(self, settings_fp):
+        """
         Loads the JSON data from a file path.
 
         Args:
@@ -135,15 +136,16 @@ class SettingSchema:
 
         """
         try:
-            with open(settings_fp) as f:
+            filepath = Path(settings_fp)
+            with filepath.open(encoding="UTF-8") as f:
                 settings_raw = json.load(f)
-                settings_data = self._compatibility(settings_raw)
+                settings_data = self.compatibility(settings_raw)
         except (IOError, TypeError, ValueError):
             raise OdsException(f'Invalid {self.settings_type} file or file path: {settings_fp}')
         return settings_data
 
 
-    def validate(self, setting_data):
+    def validate(self, setting_data, raise_error=True):
         """
         Validates the loaded JSON data against the schema.
 
@@ -174,6 +176,11 @@ class SettingSchema:
                 else:
                     exception_msgs[field] = [err.message]
 
+        if not is_valid and raise_error:
+            raise OdsException("\nJSON Validation error in '{}.json': {}".format(
+                self.settings_type,
+                json.dumps(exception_msgs, indent=4)
+            ))
         return is_valid, exception_msgs
 
 
@@ -193,14 +200,8 @@ class SettingSchema:
         Returns:
             The entire settings data as a dictionary if key is None, otherwise the value for the given key.
         """
-        settings_data = self._load(settings_fp)
-
-        valid, error_messages = self.validate(settings_data)
-        if not valid:
-            raise OdsException("\nJSON Validation error in '{}.json': {}".format(
-                self.settings_type,
-                json.dumps(error_messages, indent=4)
-            ))
+        settings_data = self.load(settings_fp)
+        self.validate(settings_data, raise_error=True)
         return settings_data if not key else settings_data.get(key)
 
 
