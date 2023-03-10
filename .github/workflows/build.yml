@@ -57,8 +57,8 @@ jobs:
     - name: Build package (from OED release)
       if: inputs.oed_spec_json == ''
       run: |
-        python setup.py sdist
-        python setup.py bdist_wheel
+        python setup.py sdist install
+        python setup.py bdist_wheel install
 
     - name: Build package (from OED schema file)
       if: inputs.oed_spec_json != ''
