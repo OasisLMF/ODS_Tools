@@ -46,11 +46,11 @@ jobs:
 
 
     steps:
-#    - name: is branch valid for release
-#      if: ${{ !startsWith(github.ref_name , 'release/') }}
-#      run: |
-#        echo "Releases must be trigged on branch named 'release/x.x.x'"
-#        exit 1
+    - name: is branch valid for release
+      if: ${{ !startsWith(github.ref_name , 'release/') }}
+      run: |
+        echo "Releases must be trigged on branch named 'release/x.x.x'"
+        exit 1
 
     - name: Check tag is valid for release
       if: env.PRE_RELEASE == 'false'
@@ -123,7 +123,7 @@ jobs:
 
     - name: Setup Changelog builder
       run: |
-        BRANCH='feature/995-move-json-settings'
+        BRANCH='develop'
         BASE_URL="https://raw.githubusercontent.com/OasisLMF/OasisPlatform/$BRANCH/scripts"
         pip install -r $BASE_URL/requirments-changelog.txt
         wget $BASE_URL/update-changelog.py
@@ -267,15 +267,15 @@ jobs:
         echo "branch=${{ github.ref_name }}" >> $GITHUB_OUTPUT
         echo "run_status=${{ job.status }}" >> $GITHUB_OUTPUT
 
-#  slack:
-#    uses: OasisLMF/OasisLMF/.github/workflows/notify.yml@master
-#    secrets: inherit
-#    needs: release
-#    with:
-#      heading: ${{ needs.release.outputs.heading }}
-#      title: ${{ needs.release.outputs.title }}
-#      build_branch: ${{ needs.release.outputs.build_branch }}
-#      run_url: ${{ needs.release.outputs.run_url }}
-#      run_id: ${{ needs.release.outputs.run_id }}
-#      run_status: ${{ needs.release.outputs.run_status }}
-#      run_date: ${{ needs.release.outputs.run_date }}
+  slack:
+    uses: OasisLMF/OasisLMF/.github/workflows/notify.yml@master
+    secrets: inherit
+    needs: release
+    with:
+      heading: ${{ needs.release.outputs.heading }}
+      title: ${{ needs.release.outputs.title }}
+      build_branch: ${{ needs.release.outputs.build_branch }}
+      run_url: ${{ needs.release.outputs.run_url }}
+      run_id: ${{ needs.release.outputs.run_id }}
+      run_status: ${{ needs.release.outputs.run_status }}
+      run_date: ${{ needs.release.outputs.run_date }}
