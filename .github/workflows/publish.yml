@@ -125,7 +125,7 @@ jobs:
       run: |
         BRANCH='feature/995-move-json-settings'
         BASE_URL="https://raw.githubusercontent.com/OasisLMF/OasisPlatform/$BRANCH/scripts"
-        pip install -r $BASE_URL/requirments_changelog.txt
+        pip install -r $BASE_URL/requirments-changelog.txt
         wget $BASE_URL/update-changelog.py
         chmod +x update-changelog.py
 
