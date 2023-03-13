@@ -39,6 +39,7 @@ jobs:
       uses: actions/checkout@v3
       if: inputs.ods_branch == ''
       with:
+        repository: OasisLMF/ODS_Tools
         ref: ${{ github.ref_name }}
 
     - name: Clone (workflow_call)
@@ -65,7 +66,7 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: extracted_spec
-        path: ${{ github.workspace }}/ 
+        path: ${{ github.workspace }}/
 
     - name: Build package (from OED schema file)
       if: inputs.oed_spec_json != ''
