@@ -1,4 +1,4 @@
-name: OpenData Build
+name: ODS-tools Build
 
 on:
   workflow_dispatch:

@@ -1,4 +1,4 @@
-name: OpenData Release
+name: ODS-tools Release
 
 on:
   workflow_dispatch:
