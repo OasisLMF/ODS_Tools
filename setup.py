@@ -35,8 +35,12 @@ def get_install_requirements():
 
 
 class DownloadSpecODS(orig.install):
-    """A custom command to download a JSON ODS spec during installation."""
+    """A custom command to download a JSON ODS spec during installation.
 
+        Example Install:
+            pip install -v . --install-option="--local-oed-spec=<path>" .
+
+    """
     description = 'Download a ODS JSON spec file from a release URL.'
     user_options = orig.install.user_options + [
         ('local-oed-spec=', None, 'Override to build package with extracted spec (filepath)'),
@@ -64,18 +68,18 @@ class DownloadSpecODS(orig.install):
     def run(self):
         if self.local_oed_spec:
             # Install with local json spec
-            # pip install -v . --install-option="--local-oed-spec=<path>/OpenExposureData_Spec.json" .
-
             print('OED Version: Local File')
             print(f'Install from path: {self.local_oed_spec}')
             with open(self.local_oed_spec, 'r') as f:
                 data = json.load(f)
+                data['version'] = f'Local-file-install: {self.local_oed_spec}'
         else:
             # Install from relalse URL
             print(f'OED Version: {OED_VERSION}')
             print(f'Install from url: {self.url}')
             response = urllib.request.urlopen(self.url)
             data = json.loads(response.read())
+            data['version'] = OED_VERSION
 
         with open(self.download_path, 'w+') as f:
             json.dump(data, f)
