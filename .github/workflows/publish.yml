@@ -4,7 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: 'Release tag: "{n}.{n}.{n}" e.g. 3.0.0,  for Pre-Release  "{n}.{n}.{n}rc{n}"'
+        description: 'Release tag to publish as [semvar]'
+        required: true
+      prev_release_tag:
+        description: 'The previous release version [semvar]'
         required: true
       pre_release:
         description: 'Mark GitHub release as pre-release: [true, false]'
@@ -13,6 +16,7 @@ on:
 
 env:
   RELEASE_TAG: ${{ inputs.release_tag }}
+  PREV_RELEASE_TAG: ${{ inputs.prev_release_tag }}
   PRE_RELEASE: ${{ inputs.pre_release }}
 
 
@@ -111,6 +115,45 @@ jobs:
         git checkout ${{ github.ref_name }}
         git tag ${{ env.RELEASE_TAG }}
 
+    # --- Create Changelog --- #
+    - name: Setup python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+
+    - name: Setup Changelog builder
+      run: |
+        BRANCH='feature/995-move-json-settings'
+        BASE_URL="https://raw.githubusercontent.com/OasisLMF/OasisPlatform/$BRANCH/scripts"
+        pip install -r $BASE_URL/requirments_changelog.txt
+        wget $BASE_URL/update-changelog.py
+        chmod +x update-changelog.py
+
+    - name: Create changelog
+      env:
+        GITHUB_TOKEN: ${{ secrets.BUILD_GIT_TOKEN }}
+      run: |
+        ${{ github.workspace }}/update-changelog.py build-changelog \
+          --repo ${{ github.event.repository.name }} \
+          --from-tag ${{ env.PREV_RELEASE_TAG }} \
+          --to-tag ${{ env.RELEASE_TAG }} \
+          --github-token ${{ secrets.BUILD_GIT_TOKEN }} \
+          --local-repo-path ./ \
+          --output-path ./CHANGELOG.rst \
+          --apply-milestone
+        git add ./CHANGELOG.rst
+        git commit -m 'Update changelog'
+
+    - name: Create Release notes
+      working-directory: ${{ env.WORKSPACE }}
+      run: |
+        ${{ github.workspace }}/update-changelog.py build-release \
+          --repo ${{ github.event.repository.name }} \
+          --from-tag ${{ env.PREV_RELEASE_TAG }} \
+          --to-tag ${{ env.RELEASE_TAG }} \
+          --github-token ${{ secrets.BUILD_GIT_TOKEN }} \
+          --local-repo-path ./ \
+          --output-path ./RELEASE.md
 
     # --- Sign packages --- #
     - name: Download Source package
@@ -157,7 +200,7 @@ jobs:
       with:
         tag_name: ${{ env.RELEASE_TAG }}
         release_name: Release ${{ env.RELEASE_TAG }}
-        body_path: ""
+        body_path: ${{ env.WORKSPACE }}/RELEASE.md
         draft: false
         prerelease: ${{ env.PRE_RELEASE }}
 
