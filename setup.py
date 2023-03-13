@@ -49,7 +49,6 @@ class DownloadSpecODS(orig.install):
     def __init__(self, *args, **kwargs):
         self.filename = 'OpenExposureData_Spec.json'
         self.ods_repo = 'OasisLMF/ODS_OpenExposureData'
-        self.download_path = os.path.join(SCRIPT_DIR, 'ods_tools', 'data', self.filename)
         self.oed_version = OED_VERSION
         self.url = f'https://github.com/{self.ods_repo}/releases/download/{self.oed_version}/{self.filename}'
         orig.install.__init__(self, *args, **kwargs)
@@ -66,6 +65,10 @@ class DownloadSpecODS(orig.install):
         orig.install.finalize_options(self)
 
     def run(self):
+        #print(f' {dir(self)}')
+        #print(f'install_scripts - {self.install_data}')
+        #print(f'install_lib - {self.install_lib}')
+        #print(f'build_lib - {self.build_lib}')
         if self.local_oed_spec:
             # Install with local json spec
             print('OED Version: Local File')
@@ -81,7 +84,8 @@ class DownloadSpecODS(orig.install):
             data = json.loads(response.read())
             data['version'] = OED_VERSION
 
-        with open(self.download_path, 'w+') as f:
+        download_path = os.path.join(self.build_lib, 'ods_tools', 'data', self.filename)
+        with open(download_path, 'w+') as f:
             json.dump(data, f)
         orig.install.run(self)
 
