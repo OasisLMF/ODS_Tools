@@ -10,7 +10,7 @@ from pathlib import Path
 
 from .common import (PANDAS_COMPRESSION_MAP,
                      USUAL_FILE_NAME, OED_TYPE_TO_NAME)
-from .schema import OedSchema
+from .oed_schema import OedSchema
 from .source import OedSource
 from .validator import Validator
 from .forex import create_currency_rates
