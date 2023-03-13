@@ -251,6 +251,12 @@
     },
 
     "properties": {
+        "version": {
+            "type": "number",
+            "title": "Analysis settings schema version",
+            "description": "The schema version for analysis settings validation (optional)",
+            "minimum": 3
+        },
         "source_tag": {
             "type": ["integer","string"],
             "minLength": 1,
@@ -347,12 +353,12 @@
                     "description": "Identifier for the event set file that is used for output calculations.",
                     "default": 1
                 },
-		"event_rates_set": {
-		    "type": "string",
-		    "title": "Event rates set file ID.",
-		    "description": "Identifier for the event rates set file that is used for output calculations.",
-		    "default": 1
-		},
+        "event_rates_set": {
+            "type": "string",
+            "title": "Event rates set file ID.",
+            "description": "Identifier for the event rates set file that is used for output calculations.",
+            "default": 1
+        },
                 "event_occurrence_id": {
                     "type": "string",
                     "title": "Event occurrence file ID.",

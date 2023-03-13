@@ -4,6 +4,12 @@
    "description":"Specifies the model resource schema",
    "additionalProperties":false,
    "properties":{
+      "version": {
+          "type": "number",
+          "title": "Model settings schema version",
+          "description": "The schema version for model settings validation (optional)",
+          "minimum": 3
+      },
       "name": {
          "type":"string",
          "title":"Model Name",

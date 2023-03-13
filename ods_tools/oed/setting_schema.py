@@ -6,7 +6,14 @@ from .common import OdsException
 
 import jsonschema
 
+import functools
+import logging
+
+
+from collections import namedtuple
+
 DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
+CompatibilityMap = namedtuple("CompatibilityMap", "keys updated ver ")
 
 
 class SettingSchema:
@@ -60,6 +67,7 @@ class SettingSchema:
             self.json_path = json_path
             self.schema = schema
         self.settings_type = settings_type
+        self.logger = logging.getLogger(__name__)
 
     @property
     def info(self):
@@ -90,6 +98,23 @@ class SettingSchema:
             schema = json.load(f)
             return cls(schema, setting_json)
 
+    def _remap_key(self, obj, key_new, key_old):
+        """
+        Replaces the dictionary value of key with replace_value in the obj dictionary.
+        """
+        if not isinstance(obj, (dict, list)):
+            return None  # base case exit
+
+        if key_old in obj:
+            obj[key_new] = obj.pop(key_old)
+
+        if isinstance(obj, dict):
+            for k, v in obj.items():
+                self._remap_key(v, key_new, key_old)
+        else:
+            for v in obj:
+                self._remap_key(v, key_new, key_old)
+
     def compatibility(self, settings_data):
         """
         Updates the loaded JSON data to account for deprecated keys.
@@ -101,24 +126,15 @@ class SettingSchema:
             dict: The updated JSON data.
 
         """
-        if getattr(self, 'compatibility_profile', None):
-            obsolete_keys = set(self.compatibility_profile) & set(settings_data)
-            if obsolete_keys:
-                logger = logging.getLogger(__name__)
-                logger.warning(f'WARNING: Deprecated key(s) in {self.settings_type} JSON')
-                for key in obsolete_keys:
-                    # warn user
-                    logger.warning('   {} : {}'.format(
-                        key,
-                        self.compatibility_profile[key],
-                    ))
-                    # Update settings, if newer key not found
-                    updated_key = self.compatibility_profile[key]['updated_to']
-                    if updated_key not in settings_data:
-                        settings_data[updated_key] = settings_data[key]
-                    del settings_data[key]
+        if settings_data.get('version', 0) >= 3:
+            return settings_data
 
-                logger.warning('   These keys have been automatically updated, but should be fixed in the original file.\n')
+        for compat_map in self.compatibility_profile:
+            old_key = compat_map.keys.split('.')[-1]
+            new_key = compat_map.updated.split('.')[-1]
+            self._remap_key(settings_data, new_key, old_key)
+            self.logger.warning(f'Deprecated key in {self.settings_type}.json, "{old_key}" updated to "{new_key}"')
+
         return settings_data
 
     def load(self, settings_fp):
@@ -150,6 +166,7 @@ class SettingSchema:
 
         Args:
             setting_data (dict): The loaded JSON data.
+            raise_error (bool): raise execption on validation failuer
 
         Returns:
             tuple: A tuple containing a boolean indicating whether the JSON data is valid
@@ -182,6 +199,21 @@ class SettingSchema:
             ))
         return is_valid, exception_msgs
 
+    def validate_file(self, settings_fp, raise_error=True):
+        """
+        Validates the loaded JSON file against the schema.
+
+        Args:
+            settings_fp (str): The file path to the settings file.
+            raise_error (bool): raise execption on validation failuer
+
+        Returns:
+            tuple: A tuple containing a boolean indicating whether the JSON data is valid
+            and a dictionary containing any validation errors.
+        """
+        settings_data = self.load(settings_fp)
+        return self.validate(settings_data, raise_error=raise_error)
+
     def get(self, settings_fp, key=None, validate=True):
         """
         Returns the settings data for a given settings file path, and optionally a specific key.
@@ -207,6 +239,10 @@ class ModelSettingSchema(SettingSchema):
 
     def __init__(self, schema=None, json_path=None):
         self.SCHEMA_FILE = 'model_settings_schema.json'
+        self.compatibility_profile = [
+            CompatibilityMap(keys='data_settings.group_fields', updated='damage_group_fields', ver='1.27.1'),
+        ]
+
         super(ModelSettingSchema, self).__init__(schema, json_path, 'model_settings')
 
 
@@ -214,14 +250,8 @@ class AnalysisSettingSchema(SettingSchema):
 
     def __init__(self, schema=None, json_path=None):
         self.SCHEMA_FILE = 'analysis_settings_schema.json'
-        self.compatibility_profile = {
-            "module_supplier_id": {
-                "from_ver": "1.23.0",
-                "updated_to": "model_supplier_id"
-            },
-            "model_version_id": {
-                "from_ver": "1.23.0",
-                "updated_to": "model_name_id"
-            },
-        }
+        self.compatibility_profile = [
+            CompatibilityMap(keys='module_supplier_id', updated='model_supplier_id', ver='1.23.0'),
+            CompatibilityMap(keys='model_version_id', updated='model_name_id', ver='1.23.0'),
+        ]
         super(AnalysisSettingSchema, self).__init__(schema, json_path, 'analysis_settings')
