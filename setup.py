@@ -65,10 +65,6 @@ class DownloadSpecODS(orig.install):
         orig.install.finalize_options(self)
 
     def run(self):
-        # print(f' {dir(self)}')
-        # print(f'install_scripts - {self.install_data}')
-        # print(f'install_lib - {self.install_lib}')
-        # print(f'build_lib - {self.build_lib}')
         if self.local_oed_spec:
             # Install with local json spec
             print('OED Version: Local File')
