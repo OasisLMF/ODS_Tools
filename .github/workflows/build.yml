@@ -53,13 +53,13 @@ jobs:
       uses: actions/setup-python@v4
       with:
         python-version: 3.9
-    - run: pip install pip-tools pandas pyarrow openpyxl==3.0.10 click tox
+    - run: pip install pip-tools pandas pyarrow openpyxl==3.0.10 click tox wheel
 
     - name: Build package (from OED release)
       if: inputs.oed_spec_json == ''
       run: |
         python setup.py sdist
-        python setup.py bdist
+        python setup.py bdist_wheel
 
     - name: Download OED spec
       if: inputs.oed_spec_json != ''
@@ -72,7 +72,7 @@ jobs:
       if: inputs.oed_spec_json != ''
       run: |
         python setup.py sdist install "--local-oed-spec=${{ github.workspace }}/${{ inputs.oed_spec_json }}"
-        python setup.py bdist install "--local-oed-spec=${{ github.workspace }}/${{ inputs.oed_spec_json }}"
+        python setup.py bdist_wheel install "--local-oed-spec=${{ github.workspace }}/${{ inputs.oed_spec_json }}"
 
     - name: Build Output
       id: build_package
