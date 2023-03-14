@@ -1,16 +1,13 @@
 import json
+import jsonschema
+import logging
 import os
+
+from collections import namedtuple
 from pathlib import Path
 
 from .common import OdsException
 
-import jsonschema
-
-import functools
-import logging
-
-
-from collections import namedtuple
 
 DATA_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
 CompatibilityMap = namedtuple("CompatibilityMap", "keys updated ver ")
