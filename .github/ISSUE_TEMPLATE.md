@@ -1,26 +1,20 @@
-<!--- IMPORTANT: Please apply the relevant labels ---> 
+<!--- IMPORTANT: Please apply the relevant labels -->
 
-## Description
-<!--- Describe the OED specification change, or bug for the (ods-tools package) -->
+## Issue Description
+<!--- Describe the feature, enhancement or bug -->
 
-## Reasons for change
-<!--- A brief explanation, or example --> 
+## Steps to Reproduce (Bugs only)
+<!--- reproduce this bug. Include code to reproduce, if relevant -->
+1.
+2.
+3.
 
-## Scope of change 
-<!--- Which OED files do the changes apply to --> 
-- [ ] Location File 
-- [ ] Accounts File 
-- [ ] Reinsurance Scope 
-- [ ] Reinsurance Info 
+## Version / Environment information
+<!--- OS / platform / environment used -->
+<!--- affected Oasis versions -->
+<!--- last working configuration -->
 
-## Impact of change
-<!--- Are these breaking changes, or an extension to existing functionally? --> 
-<!--- How might this change Impact software/tools using OED? --> 
+## Example data / logs
+<!--- zipped input files or code snippets -->
+<!--- screenshots, error traces or logs -->
 
-## Data type, default values, are blanks allowed, list valid values
-<!--- Example markdown table, (optional formatting guide) ---> 
-
-| **Field Name** | **Data type** | **Default values** | **Blanks allowed** | **Valid values** |
-|----------------|---------------|--------------------|--------------------|------------------|
-|                |               |                    |                    |                  |
-|                |               |                    |                    |                  |
