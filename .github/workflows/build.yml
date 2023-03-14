@@ -58,8 +58,8 @@ jobs:
     - name: Build package (from OED release)
       if: inputs.oed_spec_json == ''
       run: |
-        python setup.py sdist install
-        python setup.py bdist_wheel install
+        python setup.py sdist
+        python setup.py bdist
 
     - name: Download OED spec
       if: inputs.oed_spec_json != ''
@@ -72,7 +72,7 @@ jobs:
       if: inputs.oed_spec_json != ''
       run: |
         python setup.py sdist install "--local-oed-spec=${{ github.workspace }}/${{ inputs.oed_spec_json }}"
-        python setup.py bdist_wheel install "--local-oed-spec=${{ github.workspace }}/${{ inputs.oed_spec_json }}"
+        python setup.py bdist install "--local-oed-spec=${{ github.workspace }}/${{ inputs.oed_spec_json }}"
 
     - name: Build Output
       id: build_package
