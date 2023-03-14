@@ -126,11 +126,12 @@ class SettingSchema:
         if settings_data.get('version', 0) >= 3:
             return settings_data
 
-        for compat_map in self.compatibility_profile:
-            old_key = compat_map.keys.split('.')[-1]
-            new_key = compat_map.updated.split('.')[-1]
-            self._remap_key(settings_data, new_key, old_key)
-            self.logger.warning(f'Deprecated key in {self.settings_type}.json, "{old_key}" updated to "{new_key}"')
+        if getattr(self, 'compatibility_profile', None):
+            for compat_map in self.compatibility_profile:
+                old_key = compat_map.keys.split('.')[-1]
+                new_key = compat_map.updated.split('.')[-1]
+                self._remap_key(settings_data, new_key, old_key)
+                self.logger.warning(f'Deprecated key in {self.settings_type}.json, "{old_key}" updated to "{new_key}"')
 
         return settings_data
 
@@ -236,10 +237,6 @@ class ModelSettingSchema(SettingSchema):
 
     def __init__(self, schema=None, json_path=None):
         self.SCHEMA_FILE = 'model_settings_schema.json'
-        self.compatibility_profile = [
-            CompatibilityMap(keys='data_settings.group_fields', updated='damage_group_fields', ver='1.27.1'),
-        ]
-
         super(ModelSettingSchema, self).__init__(schema, json_path, 'model_settings')
 
 
