@@ -6,6 +6,7 @@ import os
 
 from collections import namedtuple
 from pathlib import Path
+from packaging import version as ver
 
 from .common import OdsException
 
@@ -124,7 +125,7 @@ class SettingSchema:
             dict: The updated JSON data.
 
         """
-        if settings_data.get('version', 0) >= 3:
+        if ver.parse(settings_data.get('version', '0') >= ver.parse('3'):
             return settings_data
 
         if getattr(self, 'compatibility_profile', None):
