@@ -1,5 +1,6 @@
 import json
 import jsonschema
+import jsonref
 import logging
 import os
 
@@ -92,7 +93,7 @@ class SettingSchema:
         """
         filepath = Path(setting_json)
         with filepath.open(encoding="UTF-8") as f:
-            schema = json.load(f)
+            schema = jsonref.load(f)
             return cls(schema, setting_json)
 
     def _remap_key(self, obj, key_new, key_old):
