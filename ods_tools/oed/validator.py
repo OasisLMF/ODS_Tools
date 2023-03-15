@@ -13,6 +13,8 @@ from .oed_schema import OedSchema
 
 logger = logging.getLogger(__name__)
 
+BLANK_VALUES = {np.nan, '', None}
+
 
 class Validator:
     def __init__(self, exposure):
@@ -136,7 +138,7 @@ class Validator:
                     columns = [columns]
                 for column in columns:
                     if field_info.get("Allow blanks?").upper() == 'NO':
-                        missing_value_df = oed_source.dataframe[oed_source.dataframe[column].isin({np.nan, ''})]
+                        missing_value_df = oed_source.dataframe[oed_source.dataframe[column].isin(BLANK_VALUES)]
                         if not missing_value_df.empty:
                             invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                                  'msg': f"column '{column}' has missing values in \n"
@@ -256,8 +258,8 @@ class Validator:
             identifier_field = self.identifier_field_maps[oed_source]
             area_code_column = self.field_to_column_maps[oed_source].get('AreaCode')
             if area_code_column is not None:
-                country_only_df = oed_source.dataframe[oed_source.dataframe[area_code_column].isin([np.nan, ''])]
-                country_area_df = oed_source.dataframe[~oed_source.dataframe[area_code_column].isin([np.nan, ''])]
+                country_only_df = oed_source.dataframe[oed_source.dataframe[area_code_column].isin(BLANK_VALUES)]
+                country_area_df = oed_source.dataframe[~oed_source.dataframe[area_code_column].isin(BLANK_VALUES)]
                 invalid_country_area = (country_area_df[
                     ~(country_area_df[[country_code_column, area_code_column]]
                       .apply(tuple, axis=1)
@@ -271,7 +273,7 @@ class Validator:
             else:
                 country_only_df = oed_source.dataframe
             invalid_country = (country_only_df[~country_only_df[country_code_column]
-                                               .isin(set(self.exposure.oed_schema.schema['country']) | {np.nan, ''})])
+                                               .isin(set(self.exposure.oed_schema.schema['country']) | BLANK_VALUES)])
             if not invalid_country.empty:
                 invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                      'msg': f"invalid CountryCode.\n"
