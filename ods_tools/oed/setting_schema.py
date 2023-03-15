@@ -1,10 +1,12 @@
 import json
 import jsonschema
+import jsonref
 import logging
 import os
 
 from collections import namedtuple
 from pathlib import Path
+from packaging import version as ver
 
 from .common import OdsException
 
@@ -92,7 +94,7 @@ class SettingSchema:
         """
         filepath = Path(setting_json)
         with filepath.open(encoding="UTF-8") as f:
-            schema = json.load(f)
+            schema = jsonref.load(f)
             return cls(schema, setting_json)
 
     def _remap_key(self, obj, key_new, key_old):
@@ -123,7 +125,7 @@ class SettingSchema:
             dict: The updated JSON data.
 
         """
-        if settings_data.get('version', 0) >= 3:
+        if ver.parse(settings_data.get('version', '0')) >= ver.parse('3'):
             return settings_data
 
         if getattr(self, 'compatibility_profile', None):
