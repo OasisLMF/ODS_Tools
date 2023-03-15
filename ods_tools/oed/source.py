@@ -6,7 +6,7 @@ from chardet.universaldetector import UniversalDetector
 
 from .common import OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative
 from .forex import convert_currency
-from .schema import OedSchema
+from .oed_schema import OedSchema
 
 try:
     from functools import cached_property
@@ -287,7 +287,7 @@ class OedSource:
                 oed_df = pd.read_parquet(filepath, **source.get('read_param', {}))
             else:  # default we assume it is csv like
                 read_params = {'keep_default_na': False,
-                               'na_values': PANDAS_DEFAULT_NULL_VALUES.difference('NA')}
+                               'na_values': PANDAS_DEFAULT_NULL_VALUES.difference({'NA'})}
                 read_params.update(source.get('read_param', {}))
                 oed_df = self.read_csv(filepath, self.exposure.get_input_fields(self.oed_type), **read_params)
         else:

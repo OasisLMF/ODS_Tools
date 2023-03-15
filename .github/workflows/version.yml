@@ -1,4 +1,4 @@
-name: OpenData Version
+name: ODS-tools Version
 
 on:
   workflow_dispatch:
