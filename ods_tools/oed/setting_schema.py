@@ -125,7 +125,7 @@ class SettingSchema:
             dict: The updated JSON data.
 
         """
-        if ver.parse(settings_data.get('version', '0') >= ver.parse('3'):
+        if ver.parse(settings_data.get('version', '0')) >= ver.parse('3'):
             return settings_data
 
         if getattr(self, 'compatibility_profile', None):
