@@ -5,7 +5,7 @@
    "additionalProperties":false,
    "properties":{
       "version": {
-          "type": "number",
+          "type": "string",
           "title": "Model settings schema version",
           "description": "The schema version for model settings validation (optional)",
           "minimum": 3

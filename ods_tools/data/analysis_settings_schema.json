@@ -252,7 +252,7 @@
 
     "properties": {
         "version": {
-            "type": "number",
+            "type": "string",
             "title": "Analysis settings schema version",
             "description": "The schema version for analysis settings validation (optional)",
             "minimum": 3
