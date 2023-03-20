@@ -8,12 +8,10 @@ from pathlib import Path
 from collections.abc import Iterable
 
 from .common import (OdsException, OED_PERIL_COLUMNS, OED_IDENTIFIER_FIELDS, DEFAULT_VALIDATION_CONFIG,
-                     VALIDATOR_ON_ERROR_ACTION)
+                     VALIDATOR_ON_ERROR_ACTION, BLANK_VALUES)
 from .oed_schema import OedSchema
 
 logger = logging.getLogger(__name__)
-
-BLANK_VALUES = {np.nan, '', None}
 
 
 class Validator:

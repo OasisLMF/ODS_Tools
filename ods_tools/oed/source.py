@@ -4,7 +4,7 @@ import pandas as pd
 import numpy as np
 from chardet.universaldetector import UniversalDetector
 
-from .common import OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative
+from .common import OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, BLANK_VALUES
 from .forex import convert_currency
 from .oed_schema import OedSchema
 
@@ -219,6 +219,7 @@ class OedSource:
                 pd_dtype[column] = 'category'
             if pd_dtype[column] == 'category':  # we need to convert to str first
                 to_tmp_dtype[column] = 'str'
+                oed_df.loc[oed_df[column].isin(BLANK_VALUES), column] = ''
             elif pd_dtype[column].startswith('Int'):
                 to_tmp_dtype[column] = 'float'
 

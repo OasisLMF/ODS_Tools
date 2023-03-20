@@ -104,7 +104,9 @@ class OdsPackageTests(TestCase):
     def test_load_oed_from_df(self):
         location_df = pd.DataFrame({
             'PortNumber': [1, 1],
+            'PortName': ['1', None],
             'AccNumber': [1, 2],
+            'AccName': [1, np.nan],
             'LocNumber': [1, 2],
             'CountryCode': ['GB', 'FR'],
             'LocPerilsCovered': 'WTC',
@@ -116,6 +118,10 @@ class OdsPackageTests(TestCase):
         exposure = OedExposure(**{'location': location_df, 'use_field': True})
         # check PortNumber are converted to str
         self.assertTrue((exposure.location.dataframe['PortNumber'] == '1').all())
+
+        # check None convert to ''
+        self.assertTrue(exposure.location.dataframe['PortName'][1] == '')
+        self.assertTrue(exposure.location.dataframe['AccName'][1] == '')
 
         # check BuildingTIV converted to float and use field case
         self.assertTrue(pd.api.types.is_numeric_dtype(exposure.location.dataframe['BuildingTIV']))
