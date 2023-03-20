@@ -219,6 +219,8 @@ class OedSource:
                 pd_dtype[column] = 'category'
             if pd_dtype[column] == 'category':  # we need to convert to str first
                 to_tmp_dtype[column] = 'str'
+                if oed_df[column].dtype.name == 'category':
+                    oed_df[column] = oed_df[column].cat.add_categories('')
                 oed_df.loc[oed_df[column].isin(BLANK_VALUES), column] = ''
             elif pd_dtype[column].startswith('Int'):
                 to_tmp_dtype[column] = 'float'

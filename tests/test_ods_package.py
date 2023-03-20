@@ -114,6 +114,8 @@ class OdsPackageTests(TestCase):
             'ContentsTIV': [0, 0],
             'BITIV': [0, 0],
             'LocCurrency': ['GBP', 'EUR']})
+        # check categorical column
+        location_df['PortName'] = location_df['PortName'].astype('category')
 
         exposure = OedExposure(**{'location': location_df, 'use_field': True})
         # check PortNumber are converted to str
