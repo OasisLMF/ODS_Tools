@@ -137,7 +137,7 @@ class OdsPackageTests(TestCase):
             config = {'location': urllib.request.urlopen(base_url + '/SourceLocOEDPiWind.csv'),
                       'account': {'oed_info': open(os.path.join(tmp_run_dir, 'SourceAccOEDPiWind.parquet'), 'rb'), 'format': 'parquet'},
                       'use_field': True
-                     }
+                      }
             exposure = OedExposure(**config)
             # check csv stream is read
             location = exposure.location.dataframe
