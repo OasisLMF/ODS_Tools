@@ -128,6 +128,21 @@ class OdsPackageTests(TestCase):
         # check BuildingTIV converted to float and use field case
         self.assertTrue(pd.api.types.is_numeric_dtype(exposure.location.dataframe['BuildingTIV']))
 
+    def test_load_oed_from_stream(self):
+        with tempfile.TemporaryDirectory() as tmp_run_dir:
+            # read_parquet needs stream with seek method which urllib.request.urlopen doesn't have
+            with open(os.path.join(tmp_run_dir, 'SourceAccOEDPiWind.parquet'), 'wb') as acc_parquet:
+                acc_parquet.write(urllib.request.urlopen(base_url + '/SourceAccOEDPiWind.parquet').read())
+
+            config = {'location': urllib.request.urlopen(base_url + '/SourceLocOEDPiWind.csv'),
+                      'account': {'oed_info': open(os.path.join(tmp_run_dir, 'SourceAccOEDPiWind.parquet'), 'rb'), 'format': 'parquet'},
+                      'use_field': True
+                     }
+            exposure = OedExposure(**config)
+            # check csv stream is read
+            location = exposure.location.dataframe
+            self.assertTrue(isinstance(location, pd.DataFrame))
+
     def test_reporting_currency(self):
         config = {
             'location': base_url + '/SourceLocOEDPiWind10Currency.csv',
