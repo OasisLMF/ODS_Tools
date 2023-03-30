@@ -284,7 +284,7 @@ class OedSource:
             else:
                 raise OdsException(f'Unsupported stream format {format}')
         except Exception as e:
-            raise OdsException(f'Failed to read stream data') from e
+            raise OdsException('Failed to read stream data') from e
 
         oed_source.dataframe = oed_df
         oed_source.loaded = True
