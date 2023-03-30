@@ -4,7 +4,6 @@ import mimetypes
 import pandas as pd
 import numpy as np
 from chardet.universaldetector import UniversalDetector
-from pandas.errors import ParserError
 
 from .common import OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, BLANK_VALUES
 from .forex import convert_currency
@@ -284,8 +283,8 @@ class OedSource:
                 oed_df = pd.read_parquet(stream_obj, **read_param)
             else:
                 raise OdsException(f'Unsupported stream format {format}')
-        except ParserError as e:
-            raise OdsException(f'Failed to read stream data, either unsupported type or data error') from e
+        except Exception as e:
+            raise OdsException(f'Failed to read stream data') from e
 
         oed_source.dataframe = oed_df
         oed_source.loaded = True
