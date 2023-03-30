@@ -75,6 +75,7 @@ def detect_encoding(filepath):
     detector.close()
     return detector.result
 
+
 def detect_stream_type(stream_obj):
     """
     Given a file object try to inferr if its holding 
@@ -89,7 +90,7 @@ def detect_stream_type(stream_obj):
         stream_obj: object with a read() method
 
     Returns:
-        stream_type (str): 'csv', 'parquet' or ''
+        stream_type (str): 'csv', 'parquet' or 'unknown'
     """
     type_map = {
         'csv': [
@@ -104,7 +105,7 @@ def detect_stream_type(stream_obj):
             '.parquet',
             'application/octet-stream',
         ]
-    }    
+    }
     filename = getattr(stream_obj, 'name', None)
     content_type = getattr(stream_obj, 'content_type', None)
 
@@ -113,22 +114,22 @@ def detect_stream_type(stream_obj):
         extention = Path(filename).suffix.lower()
         mimetype = mimetypes.MimeTypes().guess_type(filename)[0]
         for filetype in type_map:
-            # check by extention exact match 
+            # check by extention exact match
             if extention in type_map[filetype]:
                 return filetype
-            # check by mimetype match 
+            # check by mimetype match
             if mimetype in type_map[filetype]:
                 return filetype
 
-    # detect by content_type 
+    # detect by content_type
     if isinstance(content_type, str):
         for filetype in type_map:
             if content_type in type_map[filetype]:
                 return filetype
 
-    # Format unknown 
+    # Format unknown
     return 'unknown'
-    
+
 
 def is_readable(obj):
     return hasattr(obj, 'read') and callable(getattr(obj, 'read'))
