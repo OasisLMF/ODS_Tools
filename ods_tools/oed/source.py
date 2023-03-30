@@ -94,6 +94,7 @@ def detect_stream_type(stream_obj):
     """
     type_map = {
         'csv': [
+            'csv',
             '.csv',
             'text/csv',
             'application/gzip',
@@ -102,6 +103,7 @@ def detect_stream_type(stream_obj):
             'application/x-bzip2',
         ],
         'parquet': [
+            'parquet',
             '.parquet',
             'application/octet-stream',
         ]
@@ -124,7 +126,7 @@ def detect_stream_type(stream_obj):
     # detect by content_type
     if isinstance(content_type, str):
         for filetype in type_map:
-            if content_type in type_map[filetype]:
+            if content_type.lower() in type_map[filetype]:
                 return filetype
 
     # Format unknown
