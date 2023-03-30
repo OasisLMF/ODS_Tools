@@ -4,6 +4,7 @@ import mimetypes
 import pandas as pd
 import numpy as np
 from chardet.universaldetector import UniversalDetector
+from pandas.errors import ParserError
 
 from .common import OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, BLANK_VALUES
 from .forex import convert_currency
@@ -78,11 +79,11 @@ def detect_encoding(filepath):
 
 def detect_stream_type(stream_obj):
     """
-    Given a file object try to inferr if its holding 
-    `csv` or `parquet` data from its attributes 
+    Given a file object try to inferr if its holding
+    `csv` or `parquet` data from its attributes
     If unknown return ""
 
-    Note: content types matching compressed formats 
+    Note: content types matching compressed formats
      'gzip', 'x-bzip2', 'zip' and 'x-bzip2'
      are assumed to be compressed csv
 
@@ -90,7 +91,7 @@ def detect_stream_type(stream_obj):
         stream_obj: object with a read() method
 
     Returns:
-        stream_type (str): 'csv', 'parquet' or 'unknown'
+        stream_type (str): 'csv' or 'parquet'
     """
     type_map = {
         'csv': [
@@ -129,8 +130,8 @@ def detect_stream_type(stream_obj):
             if content_type.lower() in type_map[filetype]:
                 return filetype
 
-    # Format unknown
-    return 'unknown'
+    # Format unknown, default to csv
+    return 'csv'
 
 
 def is_readable(obj):
@@ -269,19 +270,22 @@ class OedSource:
         if not format:
             format = detect_stream_type(stream_obj)
 
-        if format == 'csv':
-            oed_df = pd.read_csv(stream_obj, **read_param)
-            ods_fields = exposure.get_input_fields(oed_type)
-            column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
-            oed_df = cls.as_oed_type(oed_df, column_to_field)
-            oed_df = cls.prepare_df(oed_df, column_to_field, ods_fields)
+        try:
+            if format == 'csv':
+                oed_df = pd.read_csv(stream_obj, **read_param)
+                ods_fields = exposure.get_input_fields(oed_type)
+                column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
+                oed_df = cls.as_oed_type(oed_df, column_to_field)
+                oed_df = cls.prepare_df(oed_df, column_to_field, ods_fields)
 
-            if exposure.use_field:
-                oed_df = OedSchema.use_field(oed_df, ods_fields)
-        elif format == 'parquet':
-            oed_df = pd.read_parquet(stream_obj, **read_param)
-        else:
-            raise OdsException(f'Unsupported stream format {format}')
+                if exposure.use_field:
+                    oed_df = OedSchema.use_field(oed_df, ods_fields)
+            elif format == 'parquet':
+                oed_df = pd.read_parquet(stream_obj, **read_param)
+            else:
+                raise OdsException(f'Unsupported stream format {format}')
+        except ParserError as e:
+            raise OdsException(f'Failed to read stream data, either unsupported type or data error') from e
 
         oed_source.dataframe = oed_df
         oed_source.loaded = True
