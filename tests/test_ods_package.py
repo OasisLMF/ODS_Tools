@@ -154,7 +154,6 @@ class OdsPackageTests(TestCase):
             with open(os.path.join(tmp_run_dir, 'SourceAccOEDPiWind.parquet'), 'wb') as acc_parquet:
                 acc_parquet.write(urllib.request.urlopen(base_url + '/SourceAccOEDPiWind.parquet').read())
 
-
             csv_loc_obj = open(os.path.join(tmp_run_dir, 'SourceLocOEDPiWind.csv'))
             parquet_acc_obj = open(os.path.join(tmp_run_dir, 'SourceAccOEDPiWind.parquet'), 'rb')
 
@@ -173,7 +172,7 @@ class OdsPackageTests(TestCase):
             account = exposure.account.dataframe
             self.assertTrue(isinstance(location, pd.DataFrame))
             self.assertTrue(isinstance(account, pd.DataFrame))
-    
+
     def test_load_oed_from_stream__invalid_types(self):
         with tempfile.TemporaryDirectory() as tmp_run_dir:
 
@@ -190,7 +189,6 @@ class OdsPackageTests(TestCase):
                 exposure = OedExposure(**{'location': csv_as_parquet})
             with self.assertRaises(OdsException) as ex:
                 exposure = OedExposure(**{'account': parquet_as_csv})
-
 
     def test_reporting_currency(self):
         config = {
