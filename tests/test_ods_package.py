@@ -17,7 +17,6 @@ sys.path.append(sys.path.pop(0))
 
 from ods_tools.main import convert
 from ods_tools.oed import OedExposure, OedSchema, OdsException, ModelSettingSchema, AnalysisSettingSchema
-from ods_tools.oed.source import detect_stream_type
 from ods_tools.oed.common import OdsException
 
 base_test_path = pathlib.Path(__file__).parent
@@ -156,9 +155,6 @@ class OdsPackageTests(TestCase):
 
             csv_loc_obj = open(os.path.join(tmp_run_dir, 'SourceLocOEDPiWind.csv'))
             parquet_acc_obj = open(os.path.join(tmp_run_dir, 'SourceAccOEDPiWind.parquet'), 'rb')
-
-            self.assertEqual(detect_stream_type(csv_loc_obj), 'csv')
-            self.assertEqual(detect_stream_type(parquet_acc_obj), 'parquet')
 
             config = {
                 'location': csv_loc_obj,
