@@ -1,4 +1,5 @@
 from pathlib import Path
+import mimetypes
 
 import pandas as pd
 import numpy as np
@@ -75,6 +76,67 @@ def detect_encoding(filepath):
     return detector.result
 
 
+def detect_stream_type(stream_obj):
+    """
+    Given a file object try to inferr if its holding
+    `csv` or `parquet` data from its attributes
+    If unknown return ""
+
+    Note: content types matching compressed formats
+     'gzip', 'x-bzip2', 'zip' and 'x-bzip2'
+     are assumed to be compressed csv
+
+    Args:
+        stream_obj: object with a read() method
+
+    Returns:
+        stream_type (str): 'csv' or 'parquet'
+    """
+    type_map = {
+        'csv': [
+            'csv',
+            '.csv',
+            'text/csv',
+            'application/gzip',
+            'application/x-bzip2',
+            'application/zip',
+            'application/x-bzip2',
+        ],
+        'parquet': [
+            'parquet',
+            '.parquet',
+            'application/octet-stream',
+        ]
+    }
+    filename = getattr(stream_obj, 'name', None)
+    content_type = getattr(stream_obj, 'content_type', None)
+
+    # detect by filename
+    if isinstance(filename, str):
+        extention = Path(filename).suffix.lower()
+        mimetype = mimetypes.MimeTypes().guess_type(filename)[0]
+        for filetype in type_map:
+            # check by extention exact match
+            if extention in type_map[filetype]:
+                return filetype
+            # check by mimetype match
+            if mimetype in type_map[filetype]:
+                return filetype
+
+    # detect by content_type
+    if isinstance(content_type, str):
+        for filetype in type_map:
+            if content_type.lower() in type_map[filetype]:
+                return filetype
+
+    # Format unknown, default to csv
+    return 'csv'
+
+
+def is_readable(obj):
+    return hasattr(obj, 'read') and callable(getattr(obj, 'read'))
+
+
 class OedSource:
     """
     Class to represent and manage oed source (location, account, ...)
@@ -113,7 +175,7 @@ class OedSource:
         return {'cur_version_name': self.cur_version_name, 'sources': self.sources}
 
     @classmethod
-    def from_oed_info(cls, exposure, oed_type: str, oed_info):
+    def from_oed_info(cls, exposure, oed_type: str, oed_info, **kwargs):
         """
         Convert data in oed_info to an OedSource
 
@@ -130,31 +192,122 @@ class OedSource:
             OedSource (or None if  oed_info is None)
         """
         if isinstance(oed_info, (str, Path)):
-            return OedSource.from_filepath(exposure, oed_type, filepath=oed_info)
+            return cls.from_filepath(exposure, oed_type, filepath=oed_info, **kwargs)
         elif isinstance(oed_info, dict):
-            return OedSource(exposure, oed_type, **oed_info)
+            if oed_info.get('sources'):
+                return cls(exposure, oed_type, **oed_info)
+            else:
+                return cls.from_oed_info(exposure, oed_type, **oed_info)
         elif isinstance(oed_info, OedSource):
             return oed_info
         elif isinstance(oed_info, pd.DataFrame):
-            return OedSource.from_dataframe(exposure, oed_type, oed_info)
+            return cls.from_dataframe(exposure, oed_type, oed_info)
         elif oed_info is None:
             return None
+        elif is_readable(oed_info):
+            return cls.from_stream_obj(exposure, oed_type, stream_obj=oed_info, **kwargs)
         else:
             raise OdsException(f'{oed_info} is not a supported format to convert to OedSource')
 
     @classmethod
-    def from_filepath(cls, exposure, oed_type, filepath):
+    def from_dataframe(cls, exposure, oed_type, oed_df: pd.DataFrame):
+        """
+        OedSource Constructor from a filepath
+        Args:
+            exposure (OedExposure): Exposure the oed source is part of
+            oed_type (str): type of file (Loc, Acc, ..)
+            oed_df (pd.DataFrame): DataFrame that represent the Oed Source
+
+        Returns:
+            OedSource
+        """
+        oed_source = cls(exposure, oed_type, 'orig', {'orig': {'source_type': 'DataFrame'}})
+
+        ods_fields = exposure.get_input_fields(oed_type)
+        column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
+        oed_df = cls.as_oed_type(oed_df, column_to_field)
+        oed_df = cls.prepare_df(oed_df, column_to_field, ods_fields)
+        if exposure.use_field:
+            oed_df = OedSchema.use_field(oed_df, ods_fields)
+        oed_source.dataframe = oed_df
+        oed_source.loaded = True
+        return oed_source
+
+    @classmethod
+    def from_filepath(cls, exposure, oed_type, filepath, read_param=None):
         """
         OedSource Constructor from a filepath
         Args:
             exposure (OedExposure): Exposure the oed source is part of
             oed_type (str): type of file (Loc, Acc, ..)
             filepath (str): path to the oed source file
+            read_param (dict): extra parameters to use when reading the file
 
         Returns:
             OedSource
         """
-        return cls(exposure, oed_type, 'orig', {'orig': {'source_type': 'filepath', 'filepath': filepath}})
+        if read_param is None:
+            read_param = {}
+        return cls(exposure, oed_type, 'orig', {'orig': {'source_type': 'filepath', 'filepath': filepath, 'read_param': read_param}})
+
+    @classmethod
+    def from_stream_obj(cls, exposure, oed_type, stream_obj, format=None, read_param=None):
+        """
+        OedSource Constructor from a filepath
+        Args:
+            exposure (OedExposure): Exposure the oed source is part of
+            oed_type (str): type of file (Loc, Acc, ..)
+            stream_obj: object with a read() method
+
+        Returns:
+            OedSource
+        """
+        if read_param is None:
+            read_param = {}
+        oed_source = cls(exposure, oed_type, 'orig', {'orig': {'source_type': 'stream', 'format': format}})
+
+        if not format:
+            format = detect_stream_type(stream_obj)
+
+        try:
+            if format == 'csv':
+                oed_df = pd.read_csv(stream_obj, **read_param)
+                ods_fields = exposure.get_input_fields(oed_type)
+                column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
+                oed_df = cls.as_oed_type(oed_df, column_to_field)
+                oed_df = cls.prepare_df(oed_df, column_to_field, ods_fields)
+
+                if exposure.use_field:
+                    oed_df = OedSchema.use_field(oed_df, ods_fields)
+            elif format == 'parquet':
+                oed_df = pd.read_parquet(stream_obj, **read_param)
+            else:
+                raise OdsException(f'Unsupported stream format {format}')
+        except Exception as e:
+            raise OdsException('Failed to read stream data') from e
+
+        oed_source.dataframe = oed_df
+        oed_source.loaded = True
+        return oed_source
+
+    @classmethod
+    def as_oed_type(cls, oed_df, column_to_field):
+        pd_dtype = {}
+        to_tmp_dtype = {}
+        for column in oed_df.columns:
+            if column in column_to_field:
+                pd_dtype[column] = column_to_field[column]['pd_dtype']
+            else:
+                pd_dtype[column] = 'category'
+            if pd_dtype[column] == 'category':  # we need to convert to str first
+                to_tmp_dtype[column] = 'str'
+                if oed_df[column].dtype.name == 'category':
+                    oed_df[column] = oed_df[column].cat.add_categories('')
+                oed_df.loc[oed_df[column].isin(BLANK_VALUES), column] = ''
+            elif pd_dtype[column].startswith('Int'):
+                to_tmp_dtype[column] = 'float'
+
+        return oed_df.astype(to_tmp_dtype).astype(pd_dtype)
 
     @classmethod
     def prepare_df(cls, df, column_to_field, ods_fields):
@@ -194,44 +347,6 @@ class OedSource:
                         if field_info['Default'] != 'n/a':
                             df[col] = df[col].fillna(df[col].dtype.type(field_info['Default'])).astype(field_info['pd_dtype'])
         return df
-
-    @classmethod
-    def from_dataframe(cls, exposure, oed_type, oed_df: pd.DataFrame):
-        """
-        OedSource Constructor from a filepath
-        Args:
-            exposure (OedExposure): Exposure the oed source is part of
-            oed_type (str): type of file (Loc, Acc, ..)
-            oed_df (pd.DataFrame): DataFrame that represent the Oed Source
-
-        Returns:
-            OedSource
-        """
-        oed_source = cls(exposure, oed_type, 'orig', {'orig': {'source_type': 'DataFrame'}})
-        ods_fields = exposure.get_input_fields(oed_type)
-        pd_dtype = {}
-        to_tmp_dtype = {}
-        column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
-        for column in oed_df.columns:
-            if column in column_to_field:
-                pd_dtype[column] = column_to_field[column]['pd_dtype']
-            else:
-                pd_dtype[column] = 'category'
-            if pd_dtype[column] == 'category':  # we need to convert to str first
-                to_tmp_dtype[column] = 'str'
-                if oed_df[column].dtype.name == 'category':
-                    oed_df[column] = oed_df[column].cat.add_categories('')
-                oed_df.loc[oed_df[column].isin(BLANK_VALUES), column] = ''
-            elif pd_dtype[column].startswith('Int'):
-                to_tmp_dtype[column] = 'float'
-
-        oed_df = oed_df.astype(to_tmp_dtype).astype(pd_dtype)
-        oed_df = cls.prepare_df(oed_df, column_to_field, ods_fields)
-        if exposure.use_field:
-            oed_df = OedSchema.use_field(oed_df, ods_fields)
-        oed_source.dataframe = oed_df
-        oed_source.loaded = True
-        return oed_source
 
     @cached_property
     def dataframe(self):
@@ -354,20 +469,15 @@ class OedSource:
         the function read_csv will load a csv file as a DataFrame
         with all the columns converted to the correct dtype and having the correct default.
         it will also try to save space by converting string dtype into categories
-
         By default, it uses pandas to create the DataFrame. In that case you will need to have pandas installed.
         You can use other options such as Dask or modin using the parameter df_engine.
-
         Args:
             filepath (str): path to the csv file
             df_engine: engine that will convert csv to a dataframe object (default to pandas if installed)
             kwargs: extra argument that will be passed to the df_engine
         Returns:
             df_engine dataframe of the file with correct dtype and default
-
         Raises:
-
-
         """
 
         def read_or_try_encoding_read(df_engine, filepath, **read_kwargs):
