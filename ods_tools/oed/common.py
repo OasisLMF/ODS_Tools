@@ -3,6 +3,7 @@ common static variable and ods_tools exceptions
 """
 from urllib.parse import urlparse
 from pathlib import Path
+import numpy as np
 
 
 class OdsException(Exception):
@@ -90,3 +91,5 @@ DEFAULT_VALIDATION_CONFIG = [
 
 OED_PERIL_COLUMNS = ['AccPeril', 'PolPerilsCovered', 'PolPeril', 'CondPeril', 'LocPerilsCovered', 'LocPeril',
                      'ReinsPeril']
+
+BLANK_VALUES = {np.nan, '', None}

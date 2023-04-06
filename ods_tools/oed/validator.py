@@ -2,18 +2,15 @@ import functools
 import json
 import logging
 
-import numpy as np
 import pandas as pd
 from pathlib import Path
 from collections.abc import Iterable
 
 from .common import (OdsException, OED_PERIL_COLUMNS, OED_IDENTIFIER_FIELDS, DEFAULT_VALIDATION_CONFIG,
-                     VALIDATOR_ON_ERROR_ACTION)
+                     VALIDATOR_ON_ERROR_ACTION, BLANK_VALUES)
 from .oed_schema import OedSchema
 
 logger = logging.getLogger(__name__)
-
-BLANK_VALUES = {np.nan, '', None}
 
 
 class Validator:
@@ -196,7 +193,9 @@ class Validator:
             for column in oed_source.dataframe.columns.intersection(set(OED_PERIL_COLUMNS)):
                 peril_values = oed_source.dataframe[column].str.split(';').apply(pd.Series, 1).stack()
                 invalid_perils = oed_source.dataframe.iloc[
-                    peril_values[~peril_values.isin(self.exposure.oed_schema.schema['perils']['info'])].index.droplevel(-1)]
+                    peril_values[~peril_values.isin(
+                        set(self.exposure.oed_schema.schema['perils']['info']) | BLANK_VALUES
+                    )].index.droplevel(-1)]
                 if not invalid_perils.empty:
                     invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                          'msg': f"{column} has invalid perils.\n"
@@ -215,8 +214,8 @@ class Validator:
             if occupancy_code_column is None:
                 continue
             identifier_field = self.identifier_field_maps[oed_source]
-            invalid_occupancy_code = oed_source.dataframe[
-                ~oed_source.dataframe[occupancy_code_column].astype(str).isin(self.exposure.oed_schema.schema['occupancy'])]
+            invalid_occupancy_code = oed_source.dataframe[~oed_source.dataframe[occupancy_code_column].astype(str).isin(
+                set(self.exposure.oed_schema.schema['occupancy']) | BLANK_VALUES)]
             if not invalid_occupancy_code.empty:
                 invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                      'msg': f"invalid OccupancyCode.\n"
@@ -235,8 +234,8 @@ class Validator:
             if construction_code_column is None:
                 continue
             identifier_field = self.identifier_field_maps[oed_source]
-            invalid_construction_code = oed_source.dataframe[
-                ~oed_source.dataframe[construction_code_column].astype(str).isin(self.exposure.oed_schema.schema['construction'])]
+            invalid_construction_code = oed_source.dataframe[~oed_source.dataframe[construction_code_column].astype(str).isin(
+                set(self.exposure.oed_schema.schema['construction']) | BLANK_VALUES)]
             if not invalid_construction_code.empty:
                 invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                      'msg': f"invalid ConstructionCode.\n"

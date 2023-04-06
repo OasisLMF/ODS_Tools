@@ -17,6 +17,7 @@ sys.path.append(sys.path.pop(0))
 
 from ods_tools.main import convert
 from ods_tools.oed import OedExposure, OedSchema, OdsException, ModelSettingSchema, AnalysisSettingSchema
+from ods_tools.oed.common import OdsException
 
 base_test_path = pathlib.Path(__file__).parent
 
@@ -104,7 +105,9 @@ class OdsPackageTests(TestCase):
     def test_load_oed_from_df(self):
         location_df = pd.DataFrame({
             'PortNumber': [1, 1],
+            'PortName': ['1', None],
             'AccNumber': [1, 2],
+            'AccName': [1, np.nan],
             'LocNumber': [1, 2],
             'CountryCode': ['GB', 'FR'],
             'LocPerilsCovered': 'WTC',
@@ -112,13 +115,76 @@ class OdsPackageTests(TestCase):
             'ContentsTIV': [0, 0],
             'BITIV': [0, 0],
             'LocCurrency': ['GBP', 'EUR']})
+        # check categorical column
+        location_df['PortName'] = location_df['PortName'].astype('category')
 
         exposure = OedExposure(**{'location': location_df, 'use_field': True})
         # check PortNumber are converted to str
         self.assertTrue((exposure.location.dataframe['PortNumber'] == '1').all())
 
+        # check None convert to ''
+        self.assertTrue(exposure.location.dataframe['PortName'][1] == '')
+        self.assertTrue(exposure.location.dataframe['AccName'][1] == '')
+
         # check BuildingTIV converted to float and use field case
         self.assertTrue(pd.api.types.is_numeric_dtype(exposure.location.dataframe['BuildingTIV']))
+
+    def test_load_oed_from_stream(self):
+        with tempfile.TemporaryDirectory() as tmp_run_dir:
+            # read_parquet needs stream with seek method which urllib.request.urlopen doesn't have
+            with open(os.path.join(tmp_run_dir, 'SourceAccOEDPiWind.parquet'), 'wb') as acc_parquet:
+                acc_parquet.write(urllib.request.urlopen(base_url + '/SourceAccOEDPiWind.parquet').read())
+
+            config = {'location': urllib.request.urlopen(base_url + '/SourceLocOEDPiWind.csv'),
+                      'account': {'oed_info': open(os.path.join(tmp_run_dir, 'SourceAccOEDPiWind.parquet'), 'rb'), 'format': 'parquet'},
+                      'use_field': True
+                      }
+            exposure = OedExposure(**config)
+            # check csv stream is read
+            location = exposure.location.dataframe
+            self.assertTrue(isinstance(location, pd.DataFrame))
+
+    def test_load_oed_from_stream__detect_type(self):
+        with tempfile.TemporaryDirectory() as tmp_run_dir:
+
+            # read_parquet needs stream with seek method which urllib.request.urlopen doesn't have
+            with open(os.path.join(tmp_run_dir, 'SourceLocOEDPiWind.csv'), 'wb') as loc_csv:
+                loc_csv.write(urllib.request.urlopen(base_url + '/SourceLocOEDPiWind.csv').read())
+            with open(os.path.join(tmp_run_dir, 'SourceAccOEDPiWind.parquet'), 'wb') as acc_parquet:
+                acc_parquet.write(urllib.request.urlopen(base_url + '/SourceAccOEDPiWind.parquet').read())
+
+            csv_loc_obj = open(os.path.join(tmp_run_dir, 'SourceLocOEDPiWind.csv'))
+            parquet_acc_obj = open(os.path.join(tmp_run_dir, 'SourceAccOEDPiWind.parquet'), 'rb')
+
+            config = {
+                'location': csv_loc_obj,
+                'account': parquet_acc_obj,
+                'use_field': True
+            }
+
+            exposure = OedExposure(**config)
+            # check csv stream is read
+            location = exposure.location.dataframe
+            account = exposure.account.dataframe
+            self.assertTrue(isinstance(location, pd.DataFrame))
+            self.assertTrue(isinstance(account, pd.DataFrame))
+
+    def test_load_oed_from_stream__invalid_types(self):
+        with tempfile.TemporaryDirectory() as tmp_run_dir:
+
+            # read_parquet needs stream with seek method which urllib.request.urlopen doesn't have
+            with open(os.path.join(tmp_run_dir, 'SourceLocOEDPiWind.parquet'), 'wb') as loc_csv:
+                loc_csv.write(urllib.request.urlopen(base_url + '/SourceLocOEDPiWind.csv').read())
+            with open(os.path.join(tmp_run_dir, 'SourceAccOEDPiWind.csv'), 'wb') as acc_parquet:
+                acc_parquet.write(urllib.request.urlopen(base_url + '/SourceAccOEDPiWind.parquet').read())
+
+            csv_as_parquet = open(os.path.join(tmp_run_dir, 'SourceLocOEDPiWind.parquet'), 'rb')
+            parquet_as_csv = open(os.path.join(tmp_run_dir, 'SourceAccOEDPiWind.csv'))
+
+            with self.assertRaises(OdsException) as ex:
+                exposure = OedExposure(**{'location': csv_as_parquet})
+            with self.assertRaises(OdsException) as ex:
+                exposure = OedExposure(**{'account': parquet_as_csv})
 
     def test_reporting_currency(self):
         config = {
