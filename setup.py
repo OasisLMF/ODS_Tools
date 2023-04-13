@@ -80,12 +80,7 @@ class DownloadSpecODS(orig.install):
             data = json.loads(response.read())
             data['version'] = OED_VERSION
 
-        download_dir = os.path.join(self.build_lib, 'ods_tools', 'data')
-        download_path = os.path.join(download_dir, self.filename)
-        
-        if not os.path.isdir(download_dir):
-            os.makedirs(download_dir)
-
+        download_path = os.path.join(self.build_lib, 'ods_tools', 'data', self.filename)
         with open(download_path, 'w+') as f:
             json.dump(data, f)
         orig.install.run(self)
