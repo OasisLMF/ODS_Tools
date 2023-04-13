@@ -68,10 +68,10 @@ jobs:
         name: extracted_spec
         path: ${{ github.workspace }}/
 
+    # Testing only - not for release
     - name: Build package (from OED schema file)
       if: inputs.oed_spec_json != ''
       run: |
-        python setup.py sdist install "--local-oed-spec=${{ github.workspace }}/${{ inputs.oed_spec_json }}"
         python setup.py bdist_wheel install "--local-oed-spec=${{ github.workspace }}/${{ inputs.oed_spec_json }}"
 
     - name: Build Output
