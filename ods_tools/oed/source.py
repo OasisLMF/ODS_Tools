@@ -55,7 +55,7 @@ except ImportError:  # support for python < 3.8
             return value
 
 
-def detect_encoding(filepath):
+def detect_encoding(fileobj):
     """
     Given a path to a CSV of unknown encoding
     read lines to detect its encoding type
@@ -67,11 +67,10 @@ def detect_encoding(filepath):
     :rtype: dict
     """
     detector = UniversalDetector()
-    with open(filepath, 'rb') as f:
-        for line in f:
-            detector.feed(line)
-            if detector.done:
-                break
+    for line in fileobj:
+        detector.feed(line)
+        if detector.done:
+            break
     detector.close()
     return detector.result
 
@@ -271,10 +270,14 @@ class OedSource:
 
         try:
             if format == 'csv':
-                oed_df = pd.read_csv(stream_obj, **read_param)
                 ods_fields = exposure.get_input_fields(oed_type)
-                column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
-                oed_df = cls.as_oed_type(oed_df, column_to_field)
+                if stream_obj.seekable(): # stream can be reread we can use our usual method to read the header first to detect column dtype
+                    oed_df = cls.read_csv(stream_obj, ods_fields, **read_param)
+                    column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
+                else:
+                    oed_df = pd.read_csv(stream_obj, **read_param)
+                    column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
+                    oed_df = cls.as_oed_type(oed_df, column_to_field)
                 oed_df = cls.prepare_df(oed_df, column_to_field, ods_fields)
 
                 if exposure.use_field:
@@ -464,7 +467,7 @@ class OedSource:
         self.sources[version_name] = source
 
     @classmethod
-    def read_csv(cls, filepath, ods_fields, df_engine=pd, **kwargs):
+    def read_csv(cls, filepath_or_buffer, ods_fields, df_engine=pd, **kwargs):
         """
         the function read_csv will load a csv file as a DataFrame
         with all the columns converted to the correct dtype and having the correct default.
@@ -472,40 +475,54 @@ class OedSource:
         By default, it uses pandas to create the DataFrame. In that case you will need to have pandas installed.
         You can use other options such as Dask or modin using the parameter df_engine.
         Args:
-            filepath (str): path to the csv file
+            filepath_or_buffer (str, stream): str, path object or file-like object with seek method
+            ods_fields (dict): OED schema input field definition
             df_engine: engine that will convert csv to a dataframe object (default to pandas if installed)
             kwargs: extra argument that will be passed to the df_engine
         Returns:
             df_engine dataframe of the file with correct dtype and default
         Raises:
         """
+        if is_readable(filepath_or_buffer):
+            stream_start = filepath_or_buffer.tell()
+        else:
+            stream_start = None
 
-        def read_or_try_encoding_read(df_engine, filepath, **read_kwargs):
-            #  try to read, if fail try to detect the encoding and update the top function kwargs for future read
+        def read_or_try_encoding_read(df_engine, filepath_or_buffer, **read_kwargs):
+            #  try to read, if it fails, try to detect the encoding and update the top function kwargs for future read
             try:
-                return df_engine.read_csv(filepath, **kwargs)
+                return df_engine.read_csv(filepath_or_buffer, **read_kwargs)
             except UnicodeDecodeError as e:
-                detected_encoding = detect_encoding(filepath)['encoding']
+                if stream_start is None:
+                    with open(filepath_or_buffer, 'rb') as buffer:
+                        detected_encoding = detect_encoding(buffer)['encoding']
+                else:
+                    detected_encoding = detect_encoding(filepath_or_buffer)['encoding']
+                    filepath_or_buffer.seek(stream_start)
                 if not read_kwargs.get('encoding') and detected_encoding:
                     kwargs['encoding'] = detected_encoding
-                    read_kwargs.pop('encoding')
-                    return df_engine.read_csv(filepath, encoding=detected_encoding, **read_kwargs)
+                    read_kwargs.pop('encoding', None)
+                    return df_engine.read_csv(filepath_or_buffer, encoding=detected_encoding, **read_kwargs)
                 else:
                     raise
+            finally:
+                if stream_start is not None:
+                    filepath_or_buffer.seek(stream_start)
 
         if df_engine is None:
             raise Exception("df_engine parameter not specified, you must install pandas"
                             " or pass your DataFrame engine (modin, dask,...)")
 
-        if Path(filepath).suffix == '.gzip' or kwargs.get('compression') == 'gzip':
-            # support for gzip  https://stackoverflow.com/questions/60460814/pandas-read-csv-failing-on-gzipped-file-with-unicodedecodeerror-utf-8-codec-c
-            with open(filepath, 'rb') as f:
-                header = df_engine.read(f, compression='gzip', nrows=0, index_col=False,
-                                        encoding=kwargs.get('encoding')).columns
-            kwargs['compression'] = 'gzip'
+        header_read_arg = {**kwargs, 'nrows': 0, 'index_col': False}
+        if (stream_start is None
+                and Path(filepath_or_buffer).suffix == '.gzip' or header_read_arg.get('compression') == 'gzip'):
+            # support for gzip https://stackoverflow.com/questions/60460814/pandas-read-csv-failing-on-gzipped-file-with-unicodedecodeerror-utf-8-codec-c
+            with open(filepath_or_buffer, 'rb') as f:
+                header_read_arg['compression'] = kwargs['compression'] = 'gzip'
+                header = df_engine.read(f, **header_read_arg).columns
+
         else:
-            header = read_or_try_encoding_read(df_engine, filepath, nrows=0, index_col=False,
-                                               encoding=kwargs.get('encoding')).columns
+            header = read_or_try_encoding_read(df_engine, filepath_or_buffer, **header_read_arg).columns
 
         # match header column name to oed field name and prepare pd_dtype used to read the data
         pd_dtype = {}
@@ -519,9 +536,9 @@ class OedSource:
 
         # read the oed file
         if kwargs.get('compression') == 'gzip':
-            with open(filepath, 'rb') as f:
+            with open(filepath_or_buffer, 'rb') as f:
                 df = df_engine.read_csv(f, dtype=pd_dtype, **kwargs)
         else:
-            df = df_engine.read_csv(filepath, dtype=pd_dtype, **kwargs)
+            df = df_engine.read_csv(filepath_or_buffer, dtype=pd_dtype, **kwargs)
 
         return cls.prepare_df(df, column_to_field, ods_fields)

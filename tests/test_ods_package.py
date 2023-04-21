@@ -1,6 +1,7 @@
 import json
 import os
 import pathlib
+import pytest
 import shutil
 import urllib
 
@@ -267,11 +268,15 @@ class OdsPackageTests(TestCase):
         exposure = OedExposure(**config)
 
         # create invalid data
-        exposure.location.dataframe['BuildingTIV'][0:5] = -1
-        exposure.account.dataframe['LayerParticipation'][1:2] = 2
+        exposure.location.dataframe.loc[0:5, ('BuildingTIV',)] = -1
+        exposure.account.dataframe.loc[1:2, ('LayerParticipation',)] = 2
         exposure.ri_info.dataframe['ReinsPeril'] = 'FOOBAR'
+        with pytest.raises(OdsException) as e:
+            exposure.check()
+            self.assertTrue("column 'BuildingTIV' has values outside range." in e.msg)
+            self.assertTrue("column 'LayerParticipation' has values outside range." in e.msg)
+            self.assertTrue("ReinsPeril has invalid perils." in e.msg)
 
-        self.assertRaises(OdsException, exposure.check)
 
     # load non utf-8 file
     def test_load_non_utf8(self):
