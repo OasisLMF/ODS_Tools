@@ -271,7 +271,7 @@ class OedSource:
         try:
             if format == 'csv':
                 ods_fields = exposure.get_input_fields(oed_type)
-                if stream_obj.seekable(): # stream can be reread we can use our usual method to read the header first to detect column dtype
+                if stream_obj.seekable():  # stream can be reread we can use our usual method to read the header first to detect column dtype
                     oed_df = cls.read_csv(stream_obj, ods_fields, **read_param)
                     column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
                 else:

@@ -277,7 +277,6 @@ class OdsPackageTests(TestCase):
             self.assertTrue("column 'LayerParticipation' has values outside range." in e.msg)
             self.assertTrue("ReinsPeril has invalid perils." in e.msg)
 
-
     # load non utf-8 file
     def test_load_non_utf8(self):
         config = {'location': str(pathlib.Path(base_test_path, 'non_utf8_loc.csv'))
