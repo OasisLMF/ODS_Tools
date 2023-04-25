@@ -109,7 +109,7 @@ class Validator:
         return invalid_data
 
     def check_required_fields(self):
-        """
+        """Input Fie
         using Oed input_field definition, check all require field
         error is raised if
          - required column is missing
@@ -128,7 +128,7 @@ class Validator:
                 if field_info['Input Field Name'] not in field_to_columns:
                     if field_info.get('Required Field') == 'R':
                         invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
-                                             'msg': f"missing required column {field_info['Input Field Name']}"})
+                                             'msg': f"missing required column {field_info['ld Name']}"})
                     continue
                 columns = field_to_columns[field_info['Input Field Name']]
                 if isinstance(columns, str):
