@@ -1,4 +1,7 @@
+import pandas
+
 from ods_tools.oed.required_fields.field_reference import FileFieldReference
+from unittest.mock import patch
 from pandas import DataFrame
 from unittest import TestCase, main
 
@@ -13,12 +16,47 @@ class TestFileFieldReference(TestCase):
     def tearDown(self) -> None:
         pass
 
-    def test_init(self) -> None:
-        if not self.df.equals(self.df):
+    @patch("ods_tools.oed.required_fields.field_reference.FileFieldReference.populate")
+    def test_init(self, mock_populate) -> None:
+        test = FileFieldReference(schema_data=self.df, name=self.name)
+        if not test.schema_data.equals(self.df):
             raise AssertionError("DataFrames are not equal")
-        self.assertEqual(self.name, self.test.name)
+
+        self.assertEqual(self.name, test.name)
+        self.assertEqual({}, test.name_refs)
+        self.assertEqual({}, test.code_refs)
+        mock_populate.assert_called_once_with()
+
+    def test_populate(self) -> None:
+        self.test.populate()
+
+        self.assertEqual(self.test.name_refs["AccDedType1Building"].required_field, "CR1-01-1")
+
+        # assert that the id of the field object is the same as the id of the field object in the code_refs dict
+        self.assertEqual(id(self.test.name_refs["AccDedType1Building"]), id(self.test.code_refs["CR1-01-1"][0]))
+        self.assertEqual(id(self.test.name_refs["AccDed1Building"]), id(self.test.code_refs["CR1-01-1"][1]))
+
+    def test_get_field_by_name(self) -> None:
+        field = self.test.get_field_by_name("AccDedType1Building")
+        self.assertEqual(field.required_field, "CR1-01-1")
+
+    def test_get_fields_by_code(self) -> None:
+        fields = self.test.get_fields_by_code("CR1-01-1")
+        self.assertEqual(len(fields), 2)
+        self.assertEqual(fields[0].input_field_name, "AccDedType1Building")
+        self.assertEqual(fields[1].input_field_name, "AccDed1Building")
+
+    def test_check_value(self):
+        self.assertEqual(self.test.check_value(field_name="AccDedType1Building", data=1), True)
+        self.assertEqual(self.test.check_value(field_name="AccDedType1Building", data="test"), False)
 
 
+
+    # def test_total(self):
+    #     data = pandas.read_excel("../../OpenExposureData_Spec.xlsx",
+    #                              sheet_name="OED CR Field Appendix")
+    #     test = FileFieldReference(schema_data=data, name=self.name)
+    #     test.populate()
 
 
 DATA = [
@@ -46,6 +84,7 @@ DATA = [
 ]
 
 COLUMNS = ['File Name', 'Input Field Name', 'Type & Description', 'Required Field', 'Data Type', 'Allow blanks?', 'Default']
+
 
 if __name__ == '__main__':
     main()
