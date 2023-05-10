@@ -1,4 +1,7 @@
-from typing import Dict, List, Union
+"""
+This file defines the FileFieldReference class to handle references to the OED required fields file.
+"""
+from typing import Dict, List, Union, Optional
 
 from pandas import DataFrame
 
@@ -46,7 +49,7 @@ class FileFieldReference:
 
             self.code_refs[field.required_field].append(field)
 
-    def get_field_by_name(self, name: str) -> Field:
+    def get_field_by_name(self, name: str) -> Optional[Field]:
         """
         A method to get a field from the name_refs dictionary.
 
@@ -55,7 +58,7 @@ class FileFieldReference:
 
         Returns: The field with the given name.
         """
-        return self.name_refs[name]
+        return self.name_refs.get(name)
 
     def get_fields_by_code(self, code: str) -> List[Field]:
         """
@@ -66,7 +69,7 @@ class FileFieldReference:
 
         Returns: A list of fields with the given code.
         """
-        return self.code_refs[code]
+        return self.code_refs.get(code, [])
 
     def check_value(self, field_name: str, data: Union[str, int, float]) -> bool:
         """

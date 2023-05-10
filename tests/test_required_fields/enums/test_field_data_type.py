@@ -1,6 +1,6 @@
 from unittest import TestCase, main
 
-from ods_tools.oed.required_fields.field_data_type import DataType
+from ods_tools.oed.required_fields.enums.field_data_type import DataType
 
 
 class TestDataType(TestCase):
