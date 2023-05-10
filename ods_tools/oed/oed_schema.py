@@ -101,7 +101,8 @@ class OedSchema:
             dict mapping between exact OED column name and field name in oed_schema
         """
         # support for name different from standard OED column name
-        aliases = {OedSchema.to_universal_field_name(field_info.get('alias')): field_name for field_name, field_info in oed_fields.items() if field_info.get('alias')}
+        aliases = {OedSchema.to_universal_field_name(field_info.get('alias')): field_name for field_name,
+                   field_info in oed_fields.items() if field_info.get('alias')}
         result = {}
         for column in columns:
             if OedSchema.to_universal_field_name(column) in oed_fields:
