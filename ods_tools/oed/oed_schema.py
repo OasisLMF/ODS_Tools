@@ -77,6 +77,17 @@ class OedSchema:
             return cls(schema, oed_json)
 
     @staticmethod
+    def to_universal_field_name(column: str):
+        """
+        transform column name into string that can be matched directly with the schema field name
+        Args:
+            column (str): name of the column
+        :return:
+            str
+        """
+        return column.strip().lower()
+
+    @staticmethod
     def column_to_field(columns: list, oed_fields: dict, use_generic_flexi=True):
         """
         map column to OED field
@@ -90,17 +101,17 @@ class OedSchema:
             dict mapping between exact OED column name and field name in oed_schema
         """
         # support for name different from standard OED column name
-        aliases = {field_info.get('alias').lower(): field_name for field_name, field_info in oed_fields.items() if field_info.get('alias')}
+        aliases = {OedSchema.to_universal_field_name(field_info.get('alias')): field_name for field_name, field_info in oed_fields.items() if field_info.get('alias')}
         result = {}
         for column in columns:
-            if column.lower() in oed_fields:
-                result[column] = oed_fields[column.lower()]
-            elif column.lower() in aliases:
-                result[column] = oed_fields[aliases[column.lower()]]
+            if OedSchema.to_universal_field_name(column) in oed_fields:
+                result[column] = oed_fields[OedSchema.to_universal_field_name(column)]
+            elif OedSchema.to_universal_field_name(column) in aliases:
+                result[column] = oed_fields[aliases[OedSchema.to_universal_field_name(column)]]
             else:
                 for field_suffix in ['xx', 'zzz']:
-                    for i in range(1, len(column)):
-                        field_name = column.lower()[:-i] + field_suffix
+                    for i in range(1, len(OedSchema.to_universal_field_name(column))):
+                        field_name = OedSchema.to_universal_field_name(column)[:-i] + field_suffix
                         if field_name in oed_fields:
                             if use_generic_flexi:
                                 result[column] = oed_fields[field_name]

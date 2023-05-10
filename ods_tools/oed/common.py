@@ -81,7 +81,7 @@ VALIDATOR_ON_ERROR_ACTION = {'raise', 'log', 'ignore', 'return'}
 DEFAULT_VALIDATION_CONFIG = [
     {'name': 'source_coherence', 'on_error': 'raise'},
     {'name': 'required_fields', 'on_error': 'raise'},
-    {'name': 'unknown_column', 'on_error': 'log'},
+    {'name': 'unknown_column', 'on_error': 'raise'},
     {'name': 'valid_values', 'on_error': 'raise'},
     {'name': 'perils', 'on_error': 'raise'},
     {'name': 'occupancy_code', 'on_error': 'raise'},
