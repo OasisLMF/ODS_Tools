@@ -10,9 +10,8 @@ __all__ = [
 import argparse
 import logging
 
-from .oed import OedExposure, OdsException
-
-logger = logging.getLogger(__name__)
+from ods_tools.oed import OedExposure, OdsException
+from ods_tools import logger
 
 
 def get_oed_exposure(config_json=None, oed_dir=None, **kwargs):

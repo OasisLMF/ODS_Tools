@@ -1,6 +1,15 @@
 ODS_Tools Changelog
 ===================
 
+`3.0.6`_
+ ---------
+* [#21](https://github.com/OasisLMF/ODS_Tools/pull/22) - LocPeril raise validation error when Blank but it should be allowed according to schema
+* [#23](https://github.com/OasisLMF/ODS_Tools/pull/23) - Release/3.0.5
+* [#24](https://github.com/OasisLMF/ODS_Tools/pull/24) - CI Fix - local spec install
+* [#26](https://github.com/OasisLMF/ODS_Tools/pull/25) - Log message when a column is not part of OED schema
+* [#28](https://github.com/OasisLMF/ODS_Tools/pull/29) - Strip out spaces in OED input headers
+.. _`3.0.6`:  https://github.com/OasisLMF/ODS_Tools/compare/3.0.5...3.0.6
+
 `3.0.5`_
  ---------
 * [#5](https://github.com/OasisLMF/ODS_Tools/pull/1) - Separate the ods-tools code from the data standard 
