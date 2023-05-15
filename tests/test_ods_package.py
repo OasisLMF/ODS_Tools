@@ -18,7 +18,7 @@ sys.path.append(sys.path.pop(0))
 
 from ods_tools.main import convert
 from ods_tools.oed import OedExposure, OedSchema, OdsException, ModelSettingSchema, AnalysisSettingSchema
-from ods_tools.oed.common import OdsException
+from ods_tools.oed.common import OED_TYPE_TO_NAME
 
 base_test_path = pathlib.Path(__file__).parent
 
@@ -144,6 +144,40 @@ class OdsPackageTests(TestCase):
             # check csv stream is read
             location = exposure.location.dataframe
             self.assertTrue(isinstance(location, pd.DataFrame))
+
+    def test_parquet_and_csv_return_same_df(self):
+        with tempfile.TemporaryDirectory() as tmp_run_dir:
+            # read_parquet needs stream with seek method which urllib.request.urlopen doesn't have
+            configs_from_file = {}
+            configs_from_stream = {}
+            for extension in ['csv', 'parquet']:
+                configs_from_file[extension] = {'use_field': True}
+                configs_from_stream[extension] = {'use_field': True}
+                for oed_type, oed_name in OED_TYPE_TO_NAME.items():
+                    configs_from_file[extension][oed_name] = os.path.join(tmp_run_dir, f'Source{oed_type}OEDPiWind.{extension}')
+                    with open(configs_from_file[extension][oed_name], 'wb') as acc_parquet:
+                        acc_parquet.write(urllib.request.urlopen(base_url + f'/Source{oed_type}OEDPiWind.{extension}').read())
+                    configs_from_stream[extension][oed_name] = open(os.path.join(tmp_run_dir, f'Source{oed_type}OEDPiWind.{extension}'), 'rb')
+
+            exposure_csv_file = OedExposure(**configs_from_file['csv'])
+            exposure_parquet_file = OedExposure(**configs_from_file['parquet'])
+            exposure_csv_stream = OedExposure(**configs_from_stream['csv'])
+            exposure_parquet_stream = OedExposure(**configs_from_stream['parquet'])
+
+            pd.testing.assert_frame_equal(exposure_csv_file.location.dataframe, exposure_parquet_file.location.dataframe, check_categorical=False)
+            pd.testing.assert_frame_equal(exposure_csv_file.account.dataframe, exposure_parquet_file.account.dataframe, check_categorical=False)
+            pd.testing.assert_frame_equal(exposure_csv_file.ri_info.dataframe, exposure_parquet_file.ri_info.dataframe, check_categorical=False)
+            pd.testing.assert_frame_equal(exposure_csv_file.ri_scope.dataframe, exposure_parquet_file.ri_scope.dataframe, check_categorical=False)
+
+            pd.testing.assert_frame_equal(exposure_csv_file.location.dataframe, exposure_csv_stream.location.dataframe, check_categorical=False)
+            pd.testing.assert_frame_equal(exposure_csv_file.account.dataframe, exposure_csv_stream.account.dataframe, check_categorical=False)
+            pd.testing.assert_frame_equal(exposure_csv_file.ri_info.dataframe, exposure_csv_stream.ri_info.dataframe, check_categorical=False)
+            pd.testing.assert_frame_equal(exposure_csv_file.ri_scope.dataframe, exposure_csv_stream.ri_scope.dataframe, check_categorical=False)
+
+            pd.testing.assert_frame_equal(exposure_csv_file.location.dataframe, exposure_parquet_stream.location.dataframe, check_categorical=False)
+            pd.testing.assert_frame_equal(exposure_csv_file.account.dataframe, exposure_parquet_stream.account.dataframe, check_categorical=False)
+            pd.testing.assert_frame_equal(exposure_csv_file.ri_info.dataframe, exposure_parquet_stream.ri_info.dataframe, check_categorical=False)
+            pd.testing.assert_frame_equal(exposure_csv_file.ri_scope.dataframe, exposure_parquet_stream.ri_scope.dataframe, check_categorical=False)
 
     def test_load_oed_from_stream__detect_type(self):
         with tempfile.TemporaryDirectory() as tmp_run_dir:

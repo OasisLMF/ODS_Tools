@@ -270,24 +270,21 @@ class OedSource:
 
         try:
             if format == 'csv':
-                ods_fields = exposure.get_input_fields(oed_type)
-                if stream_obj.seekable():  # stream can be reread we can use our usual method to read the header first to detect column dtype
-                    oed_df = cls.read_csv(stream_obj, ods_fields, **read_param)
-                    column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
-                else:
-                    oed_df = pd.read_csv(stream_obj, **read_param)
-                    column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
-                    oed_df = cls.as_oed_type(oed_df, column_to_field)
-                oed_df = cls.prepare_df(oed_df, column_to_field, ods_fields)
-
-                if exposure.use_field:
-                    oed_df = OedSchema.use_field(oed_df, ods_fields)
+                oed_df = pd.read_csv(stream_obj, **read_param)
             elif format == 'parquet':
                 oed_df = pd.read_parquet(stream_obj, **read_param)
             else:
                 raise OdsException(f'Unsupported stream format {format}')
         except Exception as e:
             raise OdsException('Failed to read stream data') from e
+
+        ods_fields = exposure.get_input_fields(oed_type)
+        column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
+        oed_df = cls.as_oed_type(oed_df, column_to_field)
+        oed_df = cls.prepare_df(oed_df, column_to_field, ods_fields)
+
+        if exposure.use_field:
+            oed_df = OedSchema.use_field(oed_df, ods_fields)
 
         oed_source.dataframe = oed_df
         oed_source.loaded = True
@@ -304,7 +301,7 @@ class OedSource:
                 pd_dtype[column] = 'category'
             if pd_dtype[column] == 'category':  # we need to convert to str first
                 to_tmp_dtype[column] = 'str'
-                if oed_df[column].dtype.name == 'category':
+                if oed_df[column].dtype.name == 'category' and '' not in oed_df[column].dtype.categories:
                     oed_df[column] = oed_df[column].cat.add_categories('')
                 oed_df.loc[oed_df[column].isin(BLANK_VALUES), column] = ''
             elif pd_dtype[column].startswith('Int'):
@@ -325,8 +322,10 @@ class OedSource:
             df
         """
         # set default values
-        for col, field_info in column_to_field.items():
+        for col in df.columns:
             field_info = column_to_field.get(col)
+            if df[col].dtype == object:
+                df[col] = df[col].astype('category')
             if (field_info
                     and field_info['Default'] != 'n/a'
                     and (df[col].isna().any() or (field_info['pd_dtype'] == 'category' and df[col].isnull().any()))):
@@ -334,6 +333,11 @@ class OedSource:
                     df[col] = df[col].cat.add_categories(field_info['Default']).fillna(field_info['Default'])
                 else:
                     df[col].fillna(df[col].dtype.type(field_info['Default']), inplace=True)
+            elif df[col].dtype == 'category' and (df[col].isna().any() or df[col].isnull().any()):
+                if '' not in df[col].dtype.categories:
+                    df[col] = df[col].cat.add_categories('').fillna('')
+                else:
+                    df[col] = df[col].fillna('')
 
         # add required columns that allow blank values if missing
         present_field = set(field_info['Input Field Name'] for field_info in column_to_field.values())
@@ -406,6 +410,11 @@ class OedSource:
             extension = PANDAS_COMPRESSION_MAP.get(source.get('extention')) or Path(filepath).suffix
             if extension == '.parquet':
                 oed_df = pd.read_parquet(filepath, **source.get('read_param', {}))
+                ods_fields = self.exposure.get_input_fields(self.oed_type)
+                column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
+                oed_df = self.as_oed_type(oed_df, column_to_field)
+                oed_df = self.prepare_df(oed_df, column_to_field, ods_fields)
+
             else:  # default we assume it is csv like
                 read_params = {'keep_default_na': False,
                                'na_values': PANDAS_DEFAULT_NULL_VALUES.difference({'NA'})}
