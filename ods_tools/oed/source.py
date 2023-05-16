@@ -333,11 +333,8 @@ class OedSource:
                     df[col] = df[col].cat.add_categories(field_info['Default']).fillna(field_info['Default'])
                 else:
                     df[col].fillna(df[col].dtype.type(field_info['Default']), inplace=True)
-            elif df[col].dtype == 'category' and (df[col].isna().any() or df[col].isnull().any()):
-                if '' not in df[col].dtype.categories:
-                    df[col] = df[col].cat.add_categories('').fillna('')
-                else:
-                    df[col] = df[col].fillna('')
+            elif df[col].dtype == 'category':
+                df.loc[df[col].isin(BLANK_VALUES), (col,)] = np.nan
 
         # add required columns that allow blank values if missing
         present_field = set(field_info['Input Field Name'] for field_info in column_to_field.values())

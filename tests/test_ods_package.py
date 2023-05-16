@@ -108,7 +108,7 @@ class OdsPackageTests(TestCase):
             'PortNumber': [1, 1],
             'PortName': ['1', None],
             'AccNumber': [1, 2],
-            'AccName': [1, np.nan],
+            'AccName': [1, ''],
             'LocNumber': [1, 2],
             'CountryCode': ['GB', 'FR'],
             'LocPerilsCovered': 'WTC',
@@ -124,8 +124,9 @@ class OdsPackageTests(TestCase):
         self.assertTrue((exposure.location.dataframe['PortNumber'] == '1').all())
 
         # check None convert to ''
-        self.assertTrue(exposure.location.dataframe['PortName'][1] == '')
-        self.assertTrue(exposure.location.dataframe['AccName'][1] == '')
+        print(exposure.location.dataframe['PortName'][1])
+        self.assertTrue(exposure.location.dataframe['PortName'][1] is np.nan)
+        self.assertTrue(exposure.location.dataframe['AccName'][1] is np.nan)
 
         # check BuildingTIV converted to float and use field case
         self.assertTrue(pd.api.types.is_numeric_dtype(exposure.location.dataframe['BuildingTIV']))
