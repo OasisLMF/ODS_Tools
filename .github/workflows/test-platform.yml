@@ -8,6 +8,7 @@ on:
         description: "Platform branch to test with: [git ref]"
         required: false
 
+
 jobs:
   platform_testing:
     #uses: OasisLMF/OasisPlatform/.github/workflows/test-python.yml@develop
