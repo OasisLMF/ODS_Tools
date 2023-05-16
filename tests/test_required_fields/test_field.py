@@ -1,11 +1,13 @@
 from unittest import TestCase, main
 
 from ods_tools.oed.required_fields.field import Field, DataType
+import json
 
 
 class TestField(TestCase):
 
     def setUp(self) -> None:
+        self.json_data = json.load(open('../oed.json'))
         self.data = {
             'File Name': 'Acc',
             'Input Field Name': 'AccDedType1Building',
@@ -46,6 +48,12 @@ class TestField(TestCase):
         self.assertEqual(field.data_type, DataType.TINYINT)
         self.assertEqual(field.allow_blanks, "YES")
         self.assertEqual(field.default, 0)
+
+    def test_from_schema(self):
+        for i in self.json_data["input_fields"]["null"].keys():
+            print(i)
+
+        # print(self.json_data["input_fields"]["Acc"].keys())
 
     def test_parent(self):
         self.assertEqual(self.test.parent, "CR1")
