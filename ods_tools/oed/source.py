@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from chardet.universaldetector import UniversalDetector
 
-from .common import OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, BLANK_VALUES
+from .common import OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, BLANK_VALUES, fill_empty
 from .forex import convert_currency
 from .oed_schema import OedSchema
 
@@ -329,10 +329,7 @@ class OedSource:
             if (field_info
                     and field_info['Default'] != 'n/a'
                     and (df[col].isna().any() or (field_info['pd_dtype'] == 'category' and df[col].isnull().any()))):
-                if field_info['pd_dtype'] == 'category':
-                    df[col] = df[col].cat.add_categories(field_info['Default']).fillna(field_info['Default'])
-                else:
-                    df[col].fillna(df[col].dtype.type(field_info['Default']), inplace=True)
+                    fill_empty(df, col, df[col].dtype.type(field_info['Default']))
             elif df[col].dtype == 'category':
                 df.loc[df[col].isin(BLANK_VALUES), (col,)] = np.nan
 
