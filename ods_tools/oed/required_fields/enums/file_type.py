@@ -12,7 +12,11 @@ class FileType(Enum):
         Acc: The account file.
         Loc: The location file.
         ReinsScope: The reinsurance scope file.
+        ReinsInfo: The reinsurance info file.
+        null: The null file.
     """
     Acc = "Acc"
     Loc = "Loc"
     ReinsScope = "ReinsScope"
+    ReinsInfo = "ReinsInfo"
+    null = "null"

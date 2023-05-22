@@ -6,6 +6,8 @@ from typing import Dict, List, Union, Optional
 from pandas import DataFrame
 
 from ods_tools.oed.required_fields.field import Field
+from ods_tools.oed.required_fields.json_oed import JsonOed
+from ods_tools.oed.required_fields.enums.file_type import FileType
 
 
 class FileFieldReference:
@@ -18,7 +20,7 @@ class FileFieldReference:
         name_refs (Dict[str, Field]): A dictionary of the fields in the file, keyed by their input field name.
         code_refs (Dict[str, List[Field]]): A dictionary of the fields in the file, keyed by their required field code.
     """
-    def __init__(self, schema_data: DataFrame, name: str) -> None:
+    def __init__(self, file_type: FileType) -> None:
         """
         The constructor for the FileFieldReference class.
 
@@ -26,28 +28,46 @@ class FileFieldReference:
             schema_data (DataFrame): The data from the OED required fields file.
             name (str): The name of the file the data is referring to.
         """
-        self.schema_data: DataFrame = schema_data
-        self.name: str = name
+        self.file_type: FileType = file_type
         self.name_refs: Dict[str, Field] = {}
         self.code_refs: Dict[str, List[Field]] = {}
-        self.populate()
 
-    def populate(self) -> None:
+    def _add_field_from_dict(self, field_data: dict) -> None:
+        """
+        Adds a field to the name_refs and code_refs dictionaries from field data.
+
+        :param field_data: The data for the field to add.
+        :return: None
+        """
+        field: Field = Field.from_dict(field_data)
+        if self.name_refs.get(field.input_field_name) is None:
+            self.name_refs[field.input_field_name] = field
+
+        if self.code_refs.get(field.required_field) is None:
+            self.code_refs[field.required_field] = []
+
+        self.code_refs[field.required_field].append(field)
+
+    def populate_from_json(self, json_data: JsonOed) -> None:
+        """
+        Populates the name_refs and code_refs dictionaries from a JsonOed object.
+
+        :param json_data: The JsonOed object to populate from.
+        :return: None
+        """
+        fields: Dict[str, dict] = json_data.get_file_fields(file_type=self.file_type)
+
+        for field_name in fields.keys():
+            self._add_field_from_dict(field_data=fields[field_name])
+
+    def populate_from_dataframe(self, data_frame: DataFrame) -> None:
         """
         A method to populate the name_refs and code_refs dictionaries.
 
         Returns: None
         """
-        for row in self.schema_data.to_dict('records'):
-            field: Field = Field.from_dict(row)
-
-            if self.name_refs.get(field.input_field_name) is None:
-                self.name_refs[field.input_field_name] = field
-
-            if self.code_refs.get(field.required_field) is None:
-                self.code_refs[field.required_field] = []
-
-            self.code_refs[field.required_field].append(field)
+        for row in data_frame.to_dict('records'):
+            self._add_field_from_dict(field_data=row)
 
     def get_field_by_name(self, name: str) -> Optional[Field]:
         """

@@ -48,28 +48,28 @@ class TestDataType(TestCase):
             DataType.from_string('invalid')
 
     def test_python_type(self):
-        self.assertEqual(DataType.VARCHAR_250.python_type, str)
-        self.assertEqual(DataType.TINYINT.python_type, int)
-        self.assertEqual(DataType.FLOAT.python_type, float)
-        self.assertEqual(DataType.VARCHAR_30.python_type, str)
-        self.assertEqual(DataType.VARCHAR_20.python_type, str)
-        self.assertEqual(DataType.INT.python_type, int)
-        self.assertEqual(DataType.NVARCHAR_40.python_type, str)
-        self.assertEqual(DataType.NVARCHAR_20.python_type, str)
-        self.assertEqual(DataType.VARCHAR_40.python_type, str)
-        self.assertEqual(DataType.CHAR_2.python_type, str)
+        self.assertEqual(DataType(self.varchar_250).python_type, str)
+        self.assertEqual(DataType(self.tiny_int).python_type, int)
+        self.assertEqual(DataType(self.float).python_type, float)
+        self.assertEqual(DataType(self.varchar_30).python_type, str)
+        self.assertEqual(DataType(self.varchar_20).python_type, str)
+        self.assertEqual(DataType(self.int).python_type, int)
+        self.assertEqual(DataType(self.nvarchar_40).python_type, str)
+        self.assertEqual(DataType(self.nvarchar_20).python_type, str)
+        self.assertEqual(DataType(self.varchar_40).python_type, str)
+        self.assertEqual(DataType(self.char_2).python_type, str)
 
         with self.assertRaises(ValueError):
             _ = DataType('invalid').python_type
 
     def test_check_value(self):
-        self.assertEqual(DataType.VARCHAR_40.check_value('test'), True)
-        self.assertEqual(DataType.VARCHAR_40.check_value('this is a longer string than 40 characters'), False)
+        self.assertEqual(DataType(self.nvarchar_40).check_value('test'), True)
+        self.assertEqual(DataType(self.nvarchar_40).check_value('this is a longer string than 40 characters'), False)
 
-        self.assertEqual(DataType.TINYINT.check_value(42), True)
-        self.assertEqual(DataType.TINYINT.check_value('not a number'), False)
+        self.assertEqual(DataType(self.tiny_int).check_value(42), True)
+        self.assertEqual(DataType(self.tiny_int).check_value('not a number'), False)
 
-        self.assertEqual(DataType.VARCHAR_40.check_value(42), False)
+        self.assertEqual(DataType(self.nvarchar_40).check_value(42), False)
 
 
 if __name__ == '__main__':

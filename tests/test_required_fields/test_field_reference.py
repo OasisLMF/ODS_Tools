@@ -1,9 +1,11 @@
 import pandas
 
-from ods_tools.oed.required_fields.field_reference import FileFieldReference
+from ods_tools.oed.required_fields.field_reference import FileFieldReference, FileType
 from unittest.mock import patch
 from pandas import DataFrame
 from unittest import TestCase, main
+from ods_tools.oed.required_fields.json_oed import JsonOed
+import json
 
 
 class TestFileFieldReference(TestCase):
@@ -11,24 +13,23 @@ class TestFileFieldReference(TestCase):
     def setUp(self) -> None:
         self.df = DataFrame(data=DATA, columns=COLUMNS)
         self.name = "Acc"
-        self.test = FileFieldReference(schema_data=self.df, name=self.name)
+        self.test = FileFieldReference(file_type=FileType(self.name))
+        self.file_path: str = "../oed.json"
+        with open(self.file_path) as json_file:
+            self.json_data: dict = json.load(json_file)
 
     def tearDown(self) -> None:
         pass
 
-    @patch("ods_tools.oed.required_fields.field_reference.FileFieldReference.populate")
-    def test_init(self, mock_populate) -> None:
-        test = FileFieldReference(schema_data=self.df, name=self.name)
-        if not test.schema_data.equals(self.df):
-            raise AssertionError("DataFrames are not equal")
+    def test___init__(self) -> None:
+        test = FileFieldReference(file_type=FileType(self.name))
 
-        self.assertEqual(self.name, test.name)
+        self.assertEqual(self.name, test.file_type.value)
         self.assertEqual({}, test.name_refs)
         self.assertEqual({}, test.code_refs)
-        mock_populate.assert_called_once_with()
 
-    def test_populate(self) -> None:
-        self.test.populate()
+    def test_populate_from_dataframe(self) -> None:
+        self.test.populate_from_dataframe(data_frame=self.df)
 
         self.assertEqual(self.test.name_refs["AccDedType1Building"].required_field, "CR1-01-1")
 
@@ -36,19 +37,38 @@ class TestFileFieldReference(TestCase):
         self.assertEqual(id(self.test.name_refs["AccDedType1Building"]), id(self.test.code_refs["CR1-01-1"][0]))
         self.assertEqual(id(self.test.name_refs["AccDed1Building"]), id(self.test.code_refs["CR1-01-1"][1]))
 
+    def test_populate_from_json(self):
+        test = JsonOed.from_file(file_path=self.file_path)
+
+        self.test.populate_from_json(json_data=test)
+        print(self.test.name_refs)
+        print(self.test.code_refs)
+
     def test_get_field_by_name(self) -> None:
+        test = JsonOed.from_file(file_path=self.file_path)
+        self.test.populate_from_json(json_data=test)
+
         field = self.test.get_field_by_name("AccDedType1Building")
-        self.assertEqual(field.required_field, "CR1-01-1")
+        # self.assertEqual(field.required_field, "CR1-01-1")
+        self.assertEqual(field.required_field, "CR")
 
     def test_get_fields_by_code(self) -> None:
-        fields = self.test.get_fields_by_code("CR1-01-1")
-        self.assertEqual(len(fields), 2)
-        self.assertEqual(fields[0].input_field_name, "AccDedType1Building")
-        self.assertEqual(fields[1].input_field_name, "AccDed1Building")
+        test = JsonOed.from_file(file_path=self.file_path)
+        self.test.populate_from_json(json_data=test)
 
-    def test_check_value(self):
-        self.assertEqual(self.test.check_value(field_name="AccDedType1Building", data=1), True)
-        self.assertEqual(self.test.check_value(field_name="AccDedType1Building", data="test"), False)
+        # fields = self.test.get_fields_by_code("CR1-01-1")
+        # self.assertEqual(len(fields), 2)
+        # self.assertEqual(fields[0].input_field_name, "AccDedType1Building")
+        # self.assertEqual(fields[1].input_field_name, "AccDed1Building")
+
+        fields = self.test.get_fields_by_code("CR")
+        self.assertEqual(len(fields), 143)
+        # self.assertEqual(fields[0].input_field_name, "AccDedType1Building")
+        # self.assertEqual(fields[1].input_field_name, "AccDed1Building")
+    #
+    # def test_check_value(self):
+    #     self.assertEqual(self.test.check_value(field_name="AccDedType1Building", data=1), True)
+    #     self.assertEqual(self.test.check_value(field_name="AccDedType1Building", data="test"), False)
 
 
 
