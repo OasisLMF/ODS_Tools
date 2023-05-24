@@ -18,6 +18,7 @@ from ods_tools.oed import (
     AnalysisSettingSchema,
 )
 
+
 def get_oed_exposure(config_json=None, oed_dir=None, **kwargs):
     if config_json:
         return OedExposure.from_config(config_json, **kwargs)
@@ -39,7 +40,7 @@ def extract_exposure_args(kwargs):
 def check(**kwargs):
     """run the check command on Exposure"""
     logger = logging.getLogger(__name__)
-    args_set = {k for k,v in kwargs.items() if v is not None}
+    args_set = {k for k, v in kwargs.items() if v is not None}
     args_exp = set(['location', 'account', 'ri_info', 'ri_scope'])
 
     try:
