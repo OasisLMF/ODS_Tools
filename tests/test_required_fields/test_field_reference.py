@@ -1,19 +1,20 @@
-import pandas
-
-from ods_tools.oed.required_fields.field_reference import FileFieldReference, FileType
-from unittest.mock import patch
-from pandas import DataFrame
-from unittest import TestCase, main
-from ods_tools.oed.required_fields.json_oed import JsonOed
 import json
+from unittest import TestCase, main
+
+from pandas import DataFrame, read_csv
+
+from ods_tools.oed.required_fields.field import Field
+from ods_tools.oed.required_fields.field_reference import FileFieldReference
 
 
 class TestFileFieldReference(TestCase):
 
     def setUp(self) -> None:
+        self.ReinsScope = 'ReinsScope'
+        self.locations_path = "../locations.csv"
         self.df = DataFrame(data=DATA, columns=COLUMNS)
         self.name = "Acc"
-        self.test = FileFieldReference(file_type=FileType(self.name))
+        self.test = FileFieldReference()
         self.file_path: str = "../oed.json"
         with open(self.file_path) as json_file:
             self.json_data: dict = json.load(json_file)
@@ -22,9 +23,8 @@ class TestFileFieldReference(TestCase):
         pass
 
     def test___init__(self) -> None:
-        test = FileFieldReference(file_type=FileType(self.name))
+        test = FileFieldReference()
 
-        self.assertEqual(self.name, test.file_type.value)
         self.assertEqual({}, test.name_refs)
         self.assertEqual({}, test.code_refs)
 
@@ -38,45 +38,70 @@ class TestFileFieldReference(TestCase):
         self.assertEqual(id(self.test.name_refs["AccDed1Building"]), id(self.test.code_refs["CR1-01-1"][1]))
 
     def test_populate_from_json(self):
-        test = JsonOed.from_file(file_path=self.file_path)
-
-        self.test.populate_from_json(json_data=test)
-        print(self.test.name_refs)
-        print(self.test.code_refs)
+        self.test.populate_from_json(json_data=self.json_data)
 
     def test_get_field_by_name(self) -> None:
-        test = JsonOed.from_file(file_path=self.file_path)
-        self.test.populate_from_json(json_data=test)
+        self.test.populate_from_json(json_data=self.json_data)
 
         field = self.test.get_field_by_name("AccDedType1Building")
-        # self.assertEqual(field.required_field, "CR1-01-1")
-        self.assertEqual(field.required_field, "CR")
+        self.assertEqual(field.required_field, "CR1-01-1")
 
     def test_get_fields_by_code(self) -> None:
-        test = JsonOed.from_file(file_path=self.file_path)
-        self.test.populate_from_json(json_data=test)
+        self.test.populate_from_json(json_data=self.json_data)
 
-        # fields = self.test.get_fields_by_code("CR1-01-1")
-        # self.assertEqual(len(fields), 2)
-        # self.assertEqual(fields[0].input_field_name, "AccDedType1Building")
-        # self.assertEqual(fields[1].input_field_name, "AccDed1Building")
+        fields = self.test.get_fields_by_code("CR1-01-1")
+        self.assertEqual(len(fields), 2)
+        self.assertEqual(fields[0].input_field_name, "AccDedType1Building")
+        self.assertEqual(fields[1].input_field_name, "AccDed1Building")
 
-        fields = self.test.get_fields_by_code("CR")
-        self.assertEqual(len(fields), 143)
-        # self.assertEqual(fields[0].input_field_name, "AccDedType1Building")
-        # self.assertEqual(fields[1].input_field_name, "AccDed1Building")
-    #
-    # def test_check_value(self):
-    #     self.assertEqual(self.test.check_value(field_name="AccDedType1Building", data=1), True)
-    #     self.assertEqual(self.test.check_value(field_name="AccDedType1Building", data="test"), False)
+        self.assertEqual(fields[0].input_field_name, "AccDedType1Building")
+        self.assertEqual(fields[1].input_field_name, "AccDed1Building")
 
+    def test_get_missing_fields(self):
+        self.test.populate_from_json(json_data=self.json_data)
+        locations_data: DataFrame = read_csv(self.locations_path)
+        outcome = self.test.get_missing_fields(file_data=locations_data)
 
+        self.assertEqual({}, outcome)
 
-    # def test_total(self):
-    #     data = pandas.read_excel("../../OpenExposureData_Spec.xlsx",
-    #                              sheet_name="OED CR Field Appendix")
-    #     test = FileFieldReference(schema_data=data, name=self.name)
-    #     test.populate()
+        # insert a False parent that does not exist in the data loaded
+        self.test.code_refs["CR6"] = [
+            Field(
+                file_name=self.ReinsScope,
+                input_field_name="test",
+                type_description="test",
+                required_field="test",
+                data_type="varchar(250)",
+                allow_blanks="TRUE",
+                default="test"
+            )
+        ]
+
+        # insert a False dependency for AccNumber field that does not exist in the data loaded
+        self.test.code_refs["CR6-01-1"].append(
+            Field(
+                file_name=self.ReinsScope,
+                input_field_name="test_two",
+                type_description="test",
+                required_field="test",
+                data_type="varchar(250)",
+                allow_blanks="TRUE",
+                default="test"
+            )
+        )
+        expected_outcome = {
+            "test": [
+                "PortNumber",
+                "AccNumber",
+                "LocNumber",
+                "CountryCode"
+            ],
+            "test_two": [
+                "AccNumber"
+            ]
+        }
+        outcome = self.test.get_missing_fields(file_data=locations_data)
+        self.assertEqual(expected_outcome, outcome)
 
 
 DATA = [

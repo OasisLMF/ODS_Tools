@@ -3,11 +3,7 @@ This file defines the FileFieldReference class to handle references to the OED r
 """
 from typing import Dict, List, Union, Optional
 
-from pandas import DataFrame
-
 from ods_tools.oed.required_fields.field import Field
-from ods_tools.oed.required_fields.json_oed import JsonOed
-from ods_tools.oed.required_fields.enums.file_type import FileType
 
 
 class FileFieldReference:
@@ -15,20 +11,13 @@ class FileFieldReference:
     A class to represent a reference to the required fields file.
 
     Attributes:
-        schema_data (DataFrame): The data from the OED required fields file.
-        name (str): The name of the file the data is referring to.
         name_refs (Dict[str, Field]): A dictionary of the fields in the file, keyed by their input field name.
         code_refs (Dict[str, List[Field]]): A dictionary of the fields in the file, keyed by their required field code.
     """
-    def __init__(self, file_type: FileType) -> None:
+    def __init__(self) -> None:
         """
         The constructor for the FileFieldReference class.
-
-        Args:
-            schema_data (DataFrame): The data from the OED required fields file.
-            name (str): The name of the file the data is referring to.
         """
-        self.file_type: FileType = file_type
         self.name_refs: Dict[str, Field] = {}
         self.code_refs: Dict[str, List[Field]] = {}
 
@@ -48,19 +37,19 @@ class FileFieldReference:
 
         self.code_refs[field.required_field].append(field)
 
-    def populate_from_json(self, json_data: JsonOed) -> None:
+    def populate_from_json(self, json_data: dict) -> None:
         """
         Populates the name_refs and code_refs dictionaries from a JsonOed object.
 
         :param json_data: The JsonOed object to populate from.
         :return: None
         """
-        fields: Dict[str, dict] = json_data.get_file_fields(file_type=self.file_type)
+        fields: List[dict] = json_data["cr_field"]
 
-        for field_name in fields.keys():
-            self._add_field_from_dict(field_data=fields[field_name])
+        for field in fields:
+            self._add_field_from_dict(field_data=field)
 
-    def populate_from_dataframe(self, data_frame: DataFrame) -> None:
+    def populate_from_dataframe(self, data_frame: "DataFrame") -> None:
         """
         A method to populate the name_refs and code_refs dictionaries.
 
@@ -90,6 +79,31 @@ class FileFieldReference:
         Returns: A list of fields with the given code.
         """
         return self.code_refs.get(code, [])
+
+    def get_missing_fields(self, file_data: "DataFrame") -> Dict[str, List[str]]:
+        """
+        Get a list of missing fields from a file_data DataFrame.
+
+        :param file_data: The DataFrame containing the file data
+        :return: Fields that are missing and the fields that are dependent on them
+        """
+        column_set = set(list(file_data))
+        missing_fields_cache = {}
+
+        for name in list(file_data):
+            field = self.get_field_by_name(name=name)
+
+            if field is not None:
+                columns = self.get_fields_by_code(code=field.required_field)
+                parent = self.get_fields_by_code(code=field.parent)
+
+                for column in columns + parent:
+                    if column.input_field_name not in column_set:
+                        dependent_columns = missing_fields_cache.get(column.input_field_name, [])
+                        dependent_columns.append(field.input_field_name)
+                        missing_fields_cache[column.input_field_name] = dependent_columns
+
+        return missing_fields_cache
 
     def check_value(self, field_name: str, data: Union[str, int, float]) -> bool:
         """
