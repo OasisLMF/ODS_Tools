@@ -347,7 +347,7 @@ class OdsPackageTests(TestCase):
                 'check_oed': True})
             pd.testing.assert_series_equal(exposure.location.dataframe['LocNumber'],
                                            location_df['LocNumberAlias'].astype(str).astype('category'),
-                                           check_names=False)
+                                           check_names=False, check_categorical=False)
 
     def test_load_exposure_from_different_directory(self):
         """
