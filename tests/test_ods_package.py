@@ -110,7 +110,7 @@ class OdsPackageTests(TestCase):
             'AccNumber': [1, 2],
             'AccName': [1, ''],
             'LocNumber': [1, 2],
-            'CountryCode': ['GB', 'FR'],
+            'COUNTRYCODE ': ['GB', 'FR'],
             'LocPerilsCovered': 'WTC',
             'buildingtiv': ['1000', '20000'],
             'ContentsTIV': [0, 0],
@@ -130,6 +130,9 @@ class OdsPackageTests(TestCase):
 
         # check BuildingTIV converted to float and use field case
         self.assertTrue(pd.api.types.is_numeric_dtype(exposure.location.dataframe['BuildingTIV']))
+
+        # check case and extra space are ignored
+        self.assertTrue(exposure.location.dataframe['CountryCode'][0] == 'GB')
 
     def test_load_oed_from_stream(self):
         with tempfile.TemporaryDirectory() as tmp_run_dir:

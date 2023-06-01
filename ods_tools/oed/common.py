@@ -4,6 +4,7 @@ common static variable and ods_tools exceptions
 from urllib.parse import urlparse
 from pathlib import Path
 import numpy as np
+import pandas as pd
 
 
 class OdsException(Exception):
@@ -81,7 +82,7 @@ VALIDATOR_ON_ERROR_ACTION = {'raise', 'log', 'ignore', 'return'}
 DEFAULT_VALIDATION_CONFIG = [
     {'name': 'source_coherence', 'on_error': 'raise'},
     {'name': 'required_fields', 'on_error': 'raise'},
-    {'name': 'unknown_column', 'on_error': 'log'},
+    {'name': 'unknown_column', 'on_error': 'raise'},
     {'name': 'valid_values', 'on_error': 'raise'},
     {'name': 'perils', 'on_error': 'raise'},
     {'name': 'occupancy_code', 'on_error': 'raise'},
@@ -92,4 +93,13 @@ DEFAULT_VALIDATION_CONFIG = [
 OED_PERIL_COLUMNS = ['AccPeril', 'PolPerilsCovered', 'PolPeril', 'CondPeril', 'LocPerilsCovered', 'LocPeril',
                      'ReinsPeril']
 
-BLANK_VALUES = {np.nan, '', None}
+BLANK_VALUES = {np.nan, '', None, pd.NA, pd.NaT}
+
+
+def fill_empty(df, columns, value):
+    if isinstance(columns, str):
+        columns = [columns]
+    for column in columns:
+        if df[column].dtypes.name == 'category' and value not in {None, np.nan}.union(df[column].cat.categories):
+            df[column] = df[column].cat.add_categories(value)
+        df.loc[df[column].isin(BLANK_VALUES), column] = value
