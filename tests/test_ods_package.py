@@ -124,9 +124,8 @@ class OdsPackageTests(TestCase):
         self.assertTrue((exposure.location.dataframe['PortNumber'] == '1').all())
 
         # check None convert to ''
-        print(exposure.location.dataframe['PortName'][1])
-        self.assertTrue(exposure.location.dataframe['PortName'][1] is np.nan)
-        self.assertTrue(exposure.location.dataframe['AccName'][1] is np.nan)
+        self.assertTrue(exposure.location.dataframe['PortName'][1] == '')
+        self.assertTrue(exposure.location.dataframe['AccName'][1] == '')
 
         # check BuildingTIV converted to float and use field case
         self.assertTrue(pd.api.types.is_numeric_dtype(exposure.location.dataframe['BuildingTIV']))
