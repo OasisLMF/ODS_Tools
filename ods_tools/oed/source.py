@@ -322,10 +322,7 @@ class OedSource:
             df
         """
         # set default values
-        for col in df.columns:
-            field_info = column_to_field.get(col)
-            if df[col].dtype == object:
-                df[col] = df[col].astype('category')
+        for col, field_info in column_to_field.items():
             if (field_info
                     and field_info['Default'] != 'n/a'
                     and (df[col].isna().any() or (field_info['pd_dtype'] == 'category' and df[col].isnull().any()))):
