@@ -105,7 +105,7 @@ class SettingSchema:
             return None  # base case exit
 
         if key_old in obj:
-            obj[key_new] = obj.pop(key_old)
+            obj[key_new] = obj[key_old]
 
         if isinstance(obj, dict):
             for k, v in obj.items():
