@@ -105,7 +105,7 @@ setuptools.setup(
     },
     author='Oasis LMF',
     author_email="support@oasislmf.org",
-    packages=['ods_tools', 'ods_tools.oed', 'ods_tools.data'],
+    packages=setuptools.find_packages(exclude=('tests', 'tests.*', 'tests.*.*'))
     package_dir={'ods_tools': 'ods_tools'},
     python_requires='>=3.7',
     install_requires=reqs,
