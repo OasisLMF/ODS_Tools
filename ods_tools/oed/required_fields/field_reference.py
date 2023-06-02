@@ -14,6 +14,7 @@ class FileFieldReference:
         name_refs (Dict[str, Field]): A dictionary of the fields in the file, keyed by their input field name.
         code_refs (Dict[str, List[Field]]): A dictionary of the fields in the file, keyed by their required field code.
     """
+
     def __init__(self) -> None:
         """
         The constructor for the FileFieldReference class.

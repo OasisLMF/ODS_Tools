@@ -19,6 +19,7 @@ class Field:
         allow_blanks (str): Whether or not the field allows blanks.
         default (Optional[Union[int, float, str]]): The default value of the field.
     """
+
     def __init__(self, file_name: str, input_field_name: str, type_description: str, required_field: str,
                  data_type: str, allow_blanks: str, default: Optional[Union[int, float, str]]) -> None:
         """
