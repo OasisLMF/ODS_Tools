@@ -9,6 +9,7 @@ from collections.abc import Iterable
 from .common import (OdsException, OED_PERIL_COLUMNS, OED_IDENTIFIER_FIELDS, DEFAULT_VALIDATION_CONFIG,
                      VALIDATOR_ON_ERROR_ACTION, BLANK_VALUES)
 from .oed_schema import OedSchema
+from .required_fields.field_reference import FileFieldReference
 
 logger = logging.getLogger(__name__)
 
@@ -277,4 +278,20 @@ class Validator:
                 invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                      'msg': f"invalid CountryCode.\n"
                                             f"{invalid_country[identifier_field + [country_code_column]]}"})
+        return invalid_data
+
+    def check_field_dependencies(self):
+        """
+        Checks the field dependencies for each OED source to see what fields are missing.
+
+        :return: (List[dict]) the list of missing fields with the dependencies that rely on the field.
+                              one dict per file
+        """
+        invalid_data = []
+        field_map = FileFieldReference()
+        field_map.populate_from_json(json_data=self.exposure.oed_schema.schema)
+        invalid_data.append(field_map.get_missing_fields(file_data=self.exposure.location.dataframe))
+        invalid_data.append(field_map.get_missing_fields(file_data=self.exposure.account.dataframe))
+        invalid_data.append(field_map.get_missing_fields(file_data=self.exposure.ri_info.dataframe))
+        invalid_data.append(field_map.get_missing_fields(file_data=self.exposure.ri_scope.dataframe))
         return invalid_data
