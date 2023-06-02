@@ -10,9 +10,13 @@ __all__ = [
 import argparse
 import logging
 
-from .oed import OedExposure, OdsException
-
-logger = logging.getLogger(__name__)
+from ods_tools import logger
+from ods_tools.oed import (
+    OedExposure,
+    OdsException,
+    ModelSettingSchema,
+    AnalysisSettingSchema,
+)
 
 
 def get_oed_exposure(config_json=None, oed_dir=None, **kwargs):
@@ -35,8 +39,21 @@ def extract_exposure_args(kwargs):
 
 def check(**kwargs):
     """run the check command on Exposure"""
-    oed_exposure = get_oed_exposure(**extract_exposure_args(kwargs))
-    oed_exposure.check(**kwargs)
+    logger = logging.getLogger(__name__)
+    args_set = {k for k, v in kwargs.items() if v is not None}
+    args_exp = set(['location', 'account', 'ri_info', 'ri_scope'])
+
+    try:
+        if args_exp.intersection(set(args_set)):
+            oed_exposure = get_oed_exposure(**extract_exposure_args(kwargs))
+            oed_exposure.check()
+        if 'analysis_settings_json' in args_set:
+            AnalysisSettingSchema().validate_file(kwargs['analysis_settings_json'])
+        if 'model_settings_json' in args_set:
+            ModelSettingSchema().validate_file(kwargs['model_settings_json'])
+    except OdsException as e:
+        logger.error('Validation failed:')
+        logger.error(e)
 
 
 def convert(**kwargs):
@@ -71,7 +88,7 @@ there are several options to specify the exposure data,
  - by providing  the path to each OED source using `--location`, `--account`, `--ri-info`, `--ri-scope`.
  - by providing  an OED config json file using `--config-json`.
  - by providing  the path to the directory where the exposure is stored using `--oed-dir`.
- 
+
 if multiple options are use at the same time, --config-json will have the priority over --oed-dir
 specific paths (--location, --account, --ri-info, --ri-scope) will overwrite the path found in (--config-json or --oed-dir)
  """
@@ -99,6 +116,8 @@ check exposure data.
 check_command = command_parser.add_parser('check', description=check_description + oed_exposure_creation,
                                           formatter_class=argparse.RawTextHelpFormatter)
 add_exposure_data_args(check_command)
+check_command.add_argument('--model-settings-json', help='Path to Model settings meta-data file to check', default=None)
+check_command.add_argument('--analysis-settings-json', help='Path to Analysis settings file to check', default=None)
 check_command.add_argument('-v', '--logging-level', help='logging level (debug:10, info:20, warning:30, error:40, critical:50)',
                            default=30, type=int)
 

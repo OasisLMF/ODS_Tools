@@ -86,7 +86,7 @@ class Validator:
             return f"in {_data['name']} {_data['source']}\n {_data['msg']}"
 
         for invalid_data in log_msg:
-            logger.info(invalid_data_to_str(invalid_data))
+            logger.warning(invalid_data_to_str(invalid_data))
         if raise_msg:
             raise OdsException('\n'.join(invalid_data_to_str(invalid_data) for invalid_data in raise_msg))
         return return_msg
