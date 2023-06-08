@@ -158,7 +158,7 @@ class OedSource:
         self.oed_name = OED_TYPE_TO_NAME[oed_type]
         self.cur_version_name = cur_version_name
         self.sources = sources
-        self._loaded = False
+        self.loaded = False
 
     def __str__(self):
         """
@@ -175,16 +175,6 @@ class OedSource:
             info dict
         """
         return {'cur_version_name': self.cur_version_name, 'sources': self.sources}
-
-    @property
-    def loaded(self):
-        return self._loaded
-
-    @loaded.setter
-    def loaded(self, is_loaded):
-        if is_loaded and self.dataframe.empty:
-            logger.info(f'{self.oed_name} {self} is empty')
-        self._loaded = is_loaded
 
     @classmethod
     def from_oed_info(cls, exposure, oed_type: str, oed_info, **kwargs):
@@ -242,6 +232,8 @@ class OedSource:
         if exposure.use_field:
             oed_df = OedSchema.use_field(oed_df, ods_fields)
         oed_source.dataframe = oed_df
+        if oed_df.empty:
+            logger.info(f'{oed_source.oed_name} {oed_source} is empty')
         oed_source.loaded = True
         return oed_source
 
@@ -301,6 +293,8 @@ class OedSource:
 
         oed_source.dataframe = oed_df
         oed_source.loaded = True
+        if oed_df.empty:
+            logger.info(f'{oed_source.oed_name} {oed_source} is empty')
         return oed_source
 
     @classmethod
@@ -362,10 +356,12 @@ class OedSource:
     @cached_property
     def dataframe(self):
         """Dataframe view of the OedSource, loaded once"""
-        self.loaded = True
         df = self.load_dataframe()
         if self.exposure.use_field:
             df = OedSchema.use_field(df, self.exposure.get_input_fields(self.oed_type))
+        self.loaded = True
+        if df.empty:
+            logger.info(f'{self.oed_name} {self} is empty')
         return df
 
     @property
