@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import pathlib
 import pytest
@@ -19,6 +20,8 @@ sys.path.append(sys.path.pop(0))
 from ods_tools.main import convert
 from ods_tools.oed import OedExposure, OedSchema, OdsException, ModelSettingSchema, AnalysisSettingSchema
 from ods_tools.oed.common import OED_TYPE_TO_NAME
+
+logger = logging.getLogger(__file__)
 
 base_test_path = pathlib.Path(__file__).parent
 
@@ -52,6 +55,10 @@ def _is_non_empty_file(fp):
 
 
 class OdsPackageTests(TestCase):
+    @pytest.fixture(autouse=True)
+    def logging_fixtures(self, caplog):
+        self._caplog = caplog
+
     def test_load_oed_from_config(self):
         config = {'location': base_url + '/SourceLocOEDPiWind.csv',
                   'account': base_url + '/SourceAccOEDPiWind.parquet',
@@ -527,3 +534,19 @@ class OdsPackageTests(TestCase):
 
             with self.assertRaises(OdsException):
                 ods_model_setting.validate(settings_dict)
+
+    def test_empty_dataframe_logged(self):
+        loc_df = pd.DataFrame({
+            'PortNumber': [],
+            'AccNumber': [],
+            'LocNumber': [],
+            'CountryCode': [],
+            'LocPerilsCovered': [],
+            'BuildingTIV': [],
+            'ContentsTIV': [],
+            'LocCurrency': []})
+        with self._caplog.at_level(logging.INFO):
+            oed = OedExposure(**{'location': loc_df, 'use_field': True})
+            oed.check()
+        assert 'location ' in self._caplog.text
+        assert 'is empty' in self._caplog.text

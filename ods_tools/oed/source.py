@@ -1,6 +1,7 @@
 from pathlib import Path
 import mimetypes
 
+import logging
 import pandas as pd
 import numpy as np
 from chardet.universaldetector import UniversalDetector
@@ -8,6 +9,8 @@ from chardet.universaldetector import UniversalDetector
 from .common import OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, BLANK_VALUES, fill_empty
 from .forex import convert_currency
 from .oed_schema import OedSchema
+
+logger = logging.getLogger(__file__)
 
 try:
     from functools import cached_property
@@ -155,7 +158,7 @@ class OedSource:
         self.oed_name = OED_TYPE_TO_NAME[oed_type]
         self.cur_version_name = cur_version_name
         self.sources = sources
-        self.loaded = False
+        self._loaded = False
 
     def __str__(self):
         """
@@ -172,6 +175,16 @@ class OedSource:
             info dict
         """
         return {'cur_version_name': self.cur_version_name, 'sources': self.sources}
+
+    @property
+    def loaded(self):
+        return self._loaded
+
+    @loaded.setter
+    def loaded(self, is_loaded):
+        if is_loaded and self.dataframe.empty:
+            logger.info(f'{self.oed_name} {self} is empty')
+        self._loaded = is_loaded
 
     @classmethod
     def from_oed_info(cls, exposure, oed_type: str, oed_info, **kwargs):
