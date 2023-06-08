@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import pathlib
+import pytest
 import shutil
 import urllib
 
