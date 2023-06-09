@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import pandas as pd
 
-from .common import OdsException
+from .common import OdsException, BLANK_VALUES
 
 
 class OedSchema:
@@ -164,7 +164,7 @@ class OedSchema:
             True if value is in one of the range
         """
 
-        if pd.isna(value):
+        if value in BLANK_VALUES:
             return allow_blanks
         for valid_range in valid_ranges:
             if valid_range.get('min') is not None:

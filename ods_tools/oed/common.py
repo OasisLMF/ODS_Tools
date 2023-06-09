@@ -88,6 +88,7 @@ DEFAULT_VALIDATION_CONFIG = [
     {'name': 'occupancy_code', 'on_error': 'raise'},
     {'name': 'construction_code', 'on_error': 'raise'},
     {'name': 'country_and_area_code', 'on_error': 'raise'},
+    {'name': 'conditional_requirement', 'on_error': 'raise'},
 ]
 
 OED_PERIL_COLUMNS = ['AccPeril', 'PolPerilsCovered', 'PolPeril', 'CondPeril', 'LocPerilsCovered', 'LocPeril',

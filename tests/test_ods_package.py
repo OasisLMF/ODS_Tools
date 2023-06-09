@@ -306,6 +306,8 @@ class OdsPackageTests(TestCase):
 
         # create invalid data
         exposure.location.dataframe.loc[0:5, ('BuildingTIV',)] = -1
+        exposure.location.dataframe['LocLimitType6All'] = 0
+        exposure.location.dataframe['LocLimit6All'] = 10000
         exposure.account.dataframe.loc[1:2, ('LayerParticipation',)] = 2
         exposure.ri_info.dataframe['ReinsPeril'] = 'FOOBAR'
         with pytest.raises(OdsException) as e:
@@ -313,6 +315,7 @@ class OdsPackageTests(TestCase):
             self.assertTrue("column 'BuildingTIV' has values outside range." in e.msg)
             self.assertTrue("column 'LayerParticipation' has values outside range." in e.msg)
             self.assertTrue("ReinsPeril has invalid perils." in e.msg)
+            self.assertTrue("Conditionally required column missing" in e.msg and 'missing value for LocPeril' in e.msg)
 
     # load non utf-8 file
     def test_load_non_utf8(self):
@@ -392,8 +395,8 @@ class OdsPackageTests(TestCase):
             with tempfile.TemporaryDirectory() as tmp_dir:
                 abs_dir = pathlib.Path(tmp_dir, "abs")
                 abs_dir.mkdir()
-                with urllib.request.urlopen(base_url + '/SourceLocOEDPiWind10Currency.csv') as response,\
-                        open(pathlib.Path(tmp_dir, 'SourceLocOEDPiWind10Currency.csv'), 'wb') as out_file:
+                with urllib.request.urlopen(base_url + '/SourceLocOEDPiWind10.csv') as response,\
+                        open(pathlib.Path(tmp_dir, 'SourceLocOEDPiWind10.csv'), 'wb') as out_file:
                     shutil.copyfileobj(response, out_file)
                 with urllib.request.urlopen(base_url + '/SourceAccOEDPiWind.csv') as response,\
                         open(pathlib.Path(abs_dir, 'SourceAccOEDPiWind.csv'), 'wb') as out_file:
@@ -401,7 +404,7 @@ class OdsPackageTests(TestCase):
 
                 os.chdir(tmp_dir)
                 original_exposure = OedExposure(**{
-                    'location': 'SourceLocOEDPiWind10Currency.csv',  # relative path
+                    'location': 'SourceLocOEDPiWind10.csv',  # relative path
                     'account': str(abs_dir) + '/SourceAccOEDPiWind.csv', })   # absolute path
                 original_exposure.check()
         finally:

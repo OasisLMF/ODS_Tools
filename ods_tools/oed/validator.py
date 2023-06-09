@@ -278,3 +278,32 @@ class Validator:
                                      'msg': f"invalid CountryCode.\n"
                                             f"{invalid_country[identifier_field + [country_code_column]]}"})
         return invalid_data
+
+    def check_conditional_requirement(self):
+        invalid_data = []
+        cr_field = self.exposure.oed_schema.schema['cr_field']
+        for oed_source in self.exposure.get_oed_sources():
+            column_to_field = self.column_to_field_maps[oed_source]
+            identifier_field = self.identifier_field_maps[oed_source]
+
+            def check_cr(rec):
+                cr_fields = set()
+                for col in column_to_field:
+                    if rec[col] not in BLANK_VALUES and rec[col]:
+                        cr_fields |= set(cr_field.get(column_to_field[col]['Input Field Name'], []))
+                msg = []
+                for field in cr_fields:
+                    col = self.field_to_column_maps[oed_source].get(field)
+                    if col is None or rec[col] in BLANK_VALUES:
+                        msg.append(f'missing value for {self.field_to_column_maps[oed_source].get(field) or field}')
+                return ', '.join(msg)
+
+            cr_msg = oed_source.dataframe.apply(check_cr, axis=1)
+            missing_data_df = oed_source.dataframe[cr_msg != '']
+            if not missing_data_df.empty:
+                missing_data_df['cr_msg'] = cr_msg
+                invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
+                                     'msg': f"Conditionally required column missing .\n"
+                                            f"{missing_data_df[identifier_field + ['cr_msg']]}"})
+
+        return invalid_data
