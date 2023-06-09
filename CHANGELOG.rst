@@ -1,6 +1,14 @@
 ODS_Tools Changelog
 ===================
 
+`3.0.7`_
+ ---------
+* [#42](https://github.com/OasisLMF/ODS_Tools/pull/43) - ods_tools check crashes on empty location file
+* [#35](https://github.com/OasisLMF/ODS_Tools/pull/36) - Bug in Analysis settings compatibility map 
+* [#30](https://github.com/OasisLMF/ODS_Tools/pull/30) - Release/3.0.6
+* [#31](https://github.com/OasisLMF/ODS_Tools/pull/31) - Add Platform testing to ODS-tools github actions
+.. _`3.0.7`:  https://github.com/OasisLMF/ODS_Tools/compare/3.0.6...3.0.7
+
 `3.0.6`_
  ---------
 * [#21](https://github.com/OasisLMF/ODS_Tools/pull/22) - LocPeril raise validation error when Blank but it should be allowed according to schema
