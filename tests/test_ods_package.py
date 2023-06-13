@@ -297,7 +297,7 @@ class OdsPackageTests(TestCase):
                         os.path.isfile(pathlib.Path(tmp_run_dir, folder, f'Source{oed_name}OEDPiWind.parquet')))
 
     def test_validation_raise_exception(self):
-        config = {'location': base_url + '/SourceLocOEDPiWind.csv',
+        config = {'location': base_url + '/SourceLocOEDPiWind10.csv',
                   'account': base_url + '/SourceAccOEDPiWind.csv',
                   'ri_info': base_url + '/SourceReinsInfoOEDPiWind.csv',
                   'ri_scope': base_url + '/SourceReinsScopeOEDPiWind.csv',
@@ -308,14 +308,17 @@ class OdsPackageTests(TestCase):
         exposure.location.dataframe.loc[0:5, ('BuildingTIV',)] = -1
         exposure.location.dataframe['LocLimitType6All'] = 0
         exposure.location.dataframe['LocLimit6All'] = 10000
+        exposure.location.dataframe['CondTag'] = '1'  # check CR only apply to relevant source type
         exposure.account.dataframe.loc[1:2, ('LayerParticipation',)] = 2
         exposure.ri_info.dataframe['ReinsPeril'] = 'FOOBAR'
+
         with pytest.raises(OdsException) as e:
             exposure.check()
             self.assertTrue("column 'BuildingTIV' has values outside range." in e.msg)
             self.assertTrue("column 'LayerParticipation' has values outside range." in e.msg)
             self.assertTrue("ReinsPeril has invalid perils." in e.msg)
-            self.assertTrue("Conditionally required column missing" in e.msg and 'missing value for LocPeril' in e.msg)
+            self.assertTrue("Conditionally required column missing" in e.msg and 'LocPeril' in e.msg)
+            self.assertfalse('CondPriority' in e.msg)
 
     # load non utf-8 file
     def test_load_non_utf8(self):

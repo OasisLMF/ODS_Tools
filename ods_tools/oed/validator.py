@@ -281,8 +281,10 @@ class Validator:
 
     def check_conditional_requirement(self):
         invalid_data = []
-        cr_field = self.exposure.oed_schema.schema['cr_field']
         for oed_source in self.exposure.get_oed_sources():
+            cr_field = self.exposure.oed_schema.schema['cr_field'].get(oed_source.oed_type)
+            if not cr_field:
+                continue
             column_to_field = self.column_to_field_maps[oed_source]
             identifier_field = self.identifier_field_maps[oed_source]
 
@@ -295,15 +297,16 @@ class Validator:
                 for field in cr_fields:
                     col = self.field_to_column_maps[oed_source].get(field)
                     if col is None or rec[col] in BLANK_VALUES:
-                        msg.append(f'missing value for {self.field_to_column_maps[oed_source].get(field) or field}')
+                        msg.append(f'{self.field_to_column_maps[oed_source].get(field) or field}')
+
                 return ', '.join(msg)
 
             cr_msg = oed_source.dataframe.apply(check_cr, axis=1)
             missing_data_df = oed_source.dataframe[cr_msg != '']
             if not missing_data_df.empty:
-                missing_data_df['cr_msg'] = cr_msg
+                missing_data_df['missing value'] = cr_msg
                 invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                      'msg': f"Conditionally required column missing .\n"
-                                            f"{missing_data_df[identifier_field + ['cr_msg']]}"})
+                                            f"{missing_data_df[identifier_field + ['missing value']]}"})
 
         return invalid_data
