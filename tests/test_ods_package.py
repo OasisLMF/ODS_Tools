@@ -444,8 +444,7 @@ class OdsPackageTests(TestCase):
                 'ToDelete': [3, 4],
                 'ToIgnore': [5, 6],
                 'default_rename': [7, 8],
-                }
-            )
+            })
             oed = OedExposure(**{'location': df})
             save_option = {
                 'ToRename': UnknownColumnSaveOption.RENAME,
@@ -461,7 +460,6 @@ class OdsPackageTests(TestCase):
             assert 'FlexiLocToRename' in oed_saved.location.dataframe.columns
             assert 'ToDelete' not in oed_saved.location.dataframe.columns
             assert 'FlexiLocdefault_rename' in oed_saved.location.dataframe.columns
-
 
     def test_setting_schema_analysis__is_valid(self):
         file_name = 'analysis_settings.json'
