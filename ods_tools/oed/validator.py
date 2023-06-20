@@ -291,8 +291,20 @@ class Validator:
             def check_cr(rec):
                 cr_fields = set()
                 for col in column_to_field:
-                    if rec[col] not in BLANK_VALUES and rec[col]:
-                        cr_fields |= set(cr_field.get(column_to_field[col]['Input Field Name'], []))
+                    field_info = column_to_field[col]
+                    if field_info['Input Field Name'] not in cr_field:
+                        continue
+
+                    if field_info['Default'] != 'n/a':
+                        if oed_source.dataframe[col].dtype.name == 'category':
+                            default_set = {field_info['Default']}
+                        else:
+                            default_set = {oed_source.dataframe[col].dtype.type(field_info['Default'])}
+                    else:
+                        default_set = set()
+
+                    if rec[col] not in BLANK_VALUES | default_set and rec[col]:
+                        cr_fields |= set(cr_field[field_info['Input Field Name']])
                 msg = []
                 for field in cr_fields:
                     col = self.field_to_column_maps[oed_source].get(field)
