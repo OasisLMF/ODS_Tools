@@ -9,7 +9,8 @@ import json
 from pathlib import Path
 
 from .common import (PANDAS_COMPRESSION_MAP,
-                     USUAL_FILE_NAME, OED_TYPE_TO_NAME)
+                     USUAL_FILE_NAME, OED_TYPE_TO_NAME,
+                     UnknownColumnSaveOption)
 from .oed_schema import OedSchema
 from .source import OedSource
 from .validator import Validator
@@ -165,7 +166,7 @@ class OedExposure:
         with open(filepath, 'w') as info_file:
             json.dump(self.info, info_file, indent='  ', default=str)
 
-    def save(self, path, version_name=None, compression=None, save_config=False):
+    def save(self, path, version_name=None, compression=None, save_config=False, unknown_columns=UnknownColumnSaveOption.IGNORE):
         """
         helper function to save all OED data to a location with specific compression
         Args:
@@ -205,7 +206,8 @@ class OedExposure:
             filepath = filepath.with_suffix(PANDAS_COMPRESSION_MAP[compression])
 
             oed_source.save(saved_version_name + '_' + f'{compression}',
-                            {'source_type': 'filepath', 'filepath': filepath, 'extension': compression})
+                            {'source_type': 'filepath', 'filepath': filepath, 'extension': compression},
+                            unknown_columns=unknown_columns)
         if save_config:
             self.save_config(Path(path, self.DEFAULT_EXPOSURE_CONFIG_NAME))
 
