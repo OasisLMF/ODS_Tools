@@ -18,8 +18,7 @@ import tempfile
 sys.path.append(sys.path.pop(0))
 
 from ods_tools.main import convert
-from ods_tools.oed import OedExposure, OedSchema, OdsException, ModelSettingSchema, AnalysisSettingSchema
-from ods_tools.oed.common import OED_TYPE_TO_NAME
+from ods_tools.oed import OedExposure, OedSchema, OdsException, ModelSettingSchema, AnalysisSettingSchema, OED_TYPE_TO_NAME, UnknownColumnSaveOption
 
 logger = logging.getLogger(__file__)
 
@@ -428,6 +427,39 @@ class OdsPackageTests(TestCase):
                 'LocCurrency': ['GBP', 'EUR']}).to_csv(loc_path)
             oed = OedExposure(**{'location': loc_path})
             assert oed.location.dataframe['CountryCode'][0] == 'NA'
+
+    def test_unknown_column_management(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            loc_path = pathlib.Path(tmp_dir, 'location.csv')
+            df = pd.DataFrame({
+                'PortNumber': [1, 1],
+                'AccNumber': [1, 2],
+                'LocNumber': [1, 2],
+                'CountryCode': ['NA', 'FR'],
+                'LocPerilsCovered': 'WTC',
+                'BuildingTIV': ['1000', '20000'],
+                'ContentsTIV': [0, 0],
+                'LocCurrency': ['GBP', 'EUR'],
+                'ToRename': [1, 2],
+                'ToDelete': [3, 4],
+                'ToIgnore': [5, 6],
+                'default_rename': [7, 8],
+            })
+            oed = OedExposure(**{'location': df})
+            save_option = {
+                'ToRename': UnknownColumnSaveOption.RENAME,
+                'ToDelete': UnknownColumnSaveOption.DELETE,
+                'ToIgnore': UnknownColumnSaveOption.IGNORE,
+                'default': UnknownColumnSaveOption.RENAME,
+            }
+
+            oed.save(tmp_dir, unknown_columns=save_option)
+            oed_saved = OedExposure(**{'location': loc_path})
+
+            assert 'ToIgnore' in oed_saved.location.dataframe.columns
+            assert 'FlexiLocToRename' in oed_saved.location.dataframe.columns
+            assert 'ToDelete' not in oed_saved.location.dataframe.columns
+            assert 'FlexiLocdefault_rename' in oed_saved.location.dataframe.columns
 
     def test_setting_schema_analysis__is_valid(self):
         file_name = 'analysis_settings.json'
