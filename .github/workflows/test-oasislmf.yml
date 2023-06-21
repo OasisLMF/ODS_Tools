@@ -9,7 +9,7 @@ on:
         required: false
 
 env:
-  oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' ||  inputs.oasislmf_branch }}
+  oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'feature/lot3' ||  inputs.oasislmf_branch }}
 
 jobs:
   build_ods:
@@ -51,6 +51,12 @@ jobs:
         with:
           name: bin_package
           path: ${{ github.workspace }}/
+
+      # Temp build step
+      - name: Install LOT3 package
+        run: |
+          pip install pyspark dask
+          pip install -v git+https://git@github.com/OasisLMF/OasisPlatformLot3.git@develop#egg=lot3
 
       - name: Install ods-tools package
         run: |
