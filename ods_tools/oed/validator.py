@@ -314,7 +314,7 @@ class Validator:
                 return ', '.join(msg)
 
             cr_msg = oed_source.dataframe.apply(check_cr, axis=1)
-            missing_data_df = oed_source.dataframe[cr_msg != '']
+            missing_data_df = oed_source.dataframe[cr_msg != ''].copy()
             if not missing_data_df.empty:
                 missing_data_df['missing value'] = cr_msg
                 invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
