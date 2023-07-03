@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 from pathlib import Path
 import numpy as np
 import pandas as pd
+from enum import Enum
 
 
 class OdsException(Exception):
@@ -104,3 +105,9 @@ def fill_empty(df, columns, value):
         if df[column].dtypes.name == 'category' and value not in {None, np.nan}.union(df[column].cat.categories):
             df[column] = df[column].cat.add_categories(value)
         df.loc[df[column].isin(BLANK_VALUES), column] = value
+
+
+class UnknownColumnSaveOption(Enum):
+    IGNORE = 1
+    RENAME = 2
+    DELETE = 3

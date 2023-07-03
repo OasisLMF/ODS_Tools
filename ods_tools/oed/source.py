@@ -1,13 +1,17 @@
 from pathlib import Path
 import mimetypes
 
+import logging
 import pandas as pd
 import numpy as np
 from chardet.universaldetector import UniversalDetector
 
-from .common import OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, BLANK_VALUES, fill_empty
+from .common import (OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, BLANK_VALUES, fill_empty,
+                     UnknownColumnSaveOption)
 from .forex import convert_currency
 from .oed_schema import OedSchema
+
+logger = logging.getLogger(__file__)
 
 try:
     from functools import cached_property
@@ -229,6 +233,8 @@ class OedSource:
         if exposure.use_field:
             oed_df = OedSchema.use_field(oed_df, ods_fields)
         oed_source.dataframe = oed_df
+        if oed_df.empty:
+            logger.info(f'{oed_source.oed_name} {oed_source} is empty')
         oed_source.loaded = True
         return oed_source
 
@@ -288,6 +294,8 @@ class OedSource:
 
         oed_source.dataframe = oed_df
         oed_source.loaded = True
+        if oed_df.empty:
+            logger.info(f'{oed_source.oed_name} {oed_source} is empty')
         return oed_source
 
     @classmethod
@@ -349,10 +357,12 @@ class OedSource:
     @cached_property
     def dataframe(self):
         """Dataframe view of the OedSource, loaded once"""
-        self.loaded = True
         df = self.load_dataframe()
         if self.exposure.use_field:
             df = OedSchema.use_field(df, self.exposure.get_input_fields(self.oed_type))
+        self.loaded = True
+        if df.empty:
+            logger.info(f'{self.oed_name} {self} is empty')
         return df
 
     @property
@@ -433,7 +443,29 @@ class OedSource:
                              self.exposure.currency_conversion,
                              self.exposure.oed_schema)
 
-    def save(self, version_name, source):
+    def manage_unknown_columns(self, unknown_columns):
+        if unknown_columns == UnknownColumnSaveOption.IGNORE:
+            return self.dataframe
+        if not isinstance(unknown_columns, dict):
+            option_map = {}
+            default = unknown_columns
+        else:
+            option_map = unknown_columns
+            default = unknown_columns.get('default', UnknownColumnSaveOption.IGNORE)
+        rename = {}
+        drop = set()
+        for column in set(self.dataframe.columns).difference(self.get_column_to_field()):
+            option = option_map.get(column, default)
+            if option == UnknownColumnSaveOption.IGNORE:
+                continue
+            elif option == UnknownColumnSaveOption.RENAME:
+                rename[column] = f'Flexi{self.oed_type}{column}'
+            elif option == UnknownColumnSaveOption.DELETE:
+                drop.add(column)
+
+        return self.dataframe.rename(columns=rename).drop(columns=drop)
+
+    def save(self, version_name, source, unknown_columns=UnknownColumnSaveOption.IGNORE):
         """
         save dataframe as version_name in source
         Args:
@@ -443,7 +475,7 @@ class OedSource:
                 dict : {'source_type': 'filepath' # only support for the moment
                         'extension': 'parquet' or all pandas supported extension
                         'write_param' : all args you may want to pass to the pandas writer function (to_parquet, to_csv)
-
+            unknown_columns (UnknownColumnSaveOption or Dict):  action to take for non OED column
         """
         if isinstance(source, (str, Path)):
             source = {'source_type': 'filepath',
@@ -455,12 +487,13 @@ class OedSource:
                 filepath = Path(self.exposure.working_dir, filepath)
             Path(filepath).parents[0].mkdir(parents=True, exist_ok=True)
             extension = source.get('extension') or ''.join(Path(filepath).suffixes)
+            dataframe = self.manage_unknown_columns(unknown_columns)
             if extension == 'parquet':
-                self.dataframe.to_parquet(filepath, **source.get('write_param', {}))
+                dataframe.to_parquet(filepath, **source.get('write_param', {}))
             else:
                 write_param = {'index': False}
                 write_param.update(source.get('write_param', {}))
-                self.dataframe.to_csv(filepath, **write_param)
+                dataframe.to_csv(filepath, **write_param)
         else:
             raise Exception(f"Source type {source['source_type']} is not supported")
         self.cur_version_name = version_name

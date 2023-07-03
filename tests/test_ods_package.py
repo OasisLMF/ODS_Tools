@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import pathlib
 import pytest
@@ -17,8 +18,9 @@ import tempfile
 sys.path.append(sys.path.pop(0))
 
 from ods_tools.main import convert
-from ods_tools.oed import OedExposure, OedSchema, OdsException, ModelSettingSchema, AnalysisSettingSchema
-from ods_tools.oed.common import OED_TYPE_TO_NAME
+from ods_tools.oed import OedExposure, OedSchema, OdsException, ModelSettingSchema, AnalysisSettingSchema, OED_TYPE_TO_NAME, UnknownColumnSaveOption
+
+logger = logging.getLogger(__file__)
 
 base_test_path = pathlib.Path(__file__).parent
 
@@ -52,6 +54,10 @@ def _is_non_empty_file(fp):
 
 
 class OdsPackageTests(TestCase):
+    @pytest.fixture(autouse=True)
+    def logging_fixtures(self, caplog):
+        self._caplog = caplog
+
     def test_load_oed_from_config(self):
         config = {'location': base_url + '/SourceLocOEDPiWind.csv',
                   'account': base_url + '/SourceAccOEDPiWind.parquet',
@@ -428,6 +434,39 @@ class OdsPackageTests(TestCase):
             oed = OedExposure(**{'location': loc_path})
             assert oed.location.dataframe['CountryCode'][0] == 'NA'
 
+    def test_unknown_column_management(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            loc_path = pathlib.Path(tmp_dir, 'location.csv')
+            df = pd.DataFrame({
+                'PortNumber': [1, 1],
+                'AccNumber': [1, 2],
+                'LocNumber': [1, 2],
+                'CountryCode': ['NA', 'FR'],
+                'LocPerilsCovered': 'WTC',
+                'BuildingTIV': ['1000', '20000'],
+                'ContentsTIV': [0, 0],
+                'LocCurrency': ['GBP', 'EUR'],
+                'ToRename': [1, 2],
+                'ToDelete': [3, 4],
+                'ToIgnore': [5, 6],
+                'default_rename': [7, 8],
+            })
+            oed = OedExposure(**{'location': df})
+            save_option = {
+                'ToRename': UnknownColumnSaveOption.RENAME,
+                'ToDelete': UnknownColumnSaveOption.DELETE,
+                'ToIgnore': UnknownColumnSaveOption.IGNORE,
+                'default': UnknownColumnSaveOption.RENAME,
+            }
+
+            oed.save(tmp_dir, unknown_columns=save_option)
+            oed_saved = OedExposure(**{'location': loc_path})
+
+            assert 'ToIgnore' in oed_saved.location.dataframe.columns
+            assert 'FlexiLocToRename' in oed_saved.location.dataframe.columns
+            assert 'ToDelete' not in oed_saved.location.dataframe.columns
+            assert 'FlexiLocdefault_rename' in oed_saved.location.dataframe.columns
+
     def test_setting_schema_analysis__is_valid(self):
         file_name = 'analysis_settings.json'
         file_url = f'https://raw.githubusercontent.com/OasisLMF/OasisPiWind/{piwind_branch}/{file_name}'
@@ -533,3 +572,19 @@ class OdsPackageTests(TestCase):
 
             with self.assertRaises(OdsException):
                 ods_model_setting.validate(settings_dict)
+
+    def test_empty_dataframe_logged(self):
+        loc_df = pd.DataFrame({
+            'PortNumber': [],
+            'AccNumber': [],
+            'LocNumber': [],
+            'CountryCode': [],
+            'LocPerilsCovered': [],
+            'BuildingTIV': [],
+            'ContentsTIV': [],
+            'LocCurrency': []})
+        with self._caplog.at_level(logging.INFO):
+            oed = OedExposure(**{'location': loc_df, 'use_field': True})
+            oed.check()
+        assert 'location ' in self._caplog.text
+        assert 'is empty' in self._caplog.text
