@@ -280,3 +280,47 @@ class Validator:
                                      'msg': f"invalid CountryCode.\n"
                                             f"{invalid_country[identifier_field + [country_code_column]]}"})
         return invalid_data
+
+    def check_conditional_requirement(self):
+        invalid_data = []
+        for oed_source in self.exposure.get_oed_sources():
+            cr_field = self.exposure.oed_schema.schema['cr_field'].get(oed_source.oed_type)
+            if not cr_field:
+                continue
+            column_to_field = self.column_to_field_maps[oed_source]
+            identifier_field = self.identifier_field_maps[oed_source]
+
+            def check_cr(rec):
+                cr_fields = set()
+                for col in column_to_field:
+                    field_info = column_to_field[col]
+                    if field_info['Input Field Name'] not in cr_field:
+                        continue
+
+                    if field_info['Default'] != 'n/a':
+                        if oed_source.dataframe[col].dtype.name == 'category':
+                            default_set = {field_info['Default']}
+                        else:
+                            default_set = {oed_source.dataframe[col].dtype.type(field_info['Default'])}
+                    else:
+                        default_set = set()
+
+                    if rec[col] not in BLANK_VALUES | default_set and rec[col]:
+                        cr_fields |= set(cr_field[field_info['Input Field Name']])
+                msg = []
+                for field in cr_fields:
+                    col = self.field_to_column_maps[oed_source].get(field)
+                    if col is None or rec[col] in BLANK_VALUES:
+                        msg.append(f'{self.field_to_column_maps[oed_source].get(field) or field}')
+
+                return ', '.join(msg)
+
+            cr_msg = oed_source.dataframe.apply(check_cr, axis=1)
+            missing_data_df = oed_source.dataframe[cr_msg != ''].copy()
+            if not missing_data_df.empty:
+                missing_data_df['missing value'] = cr_msg
+                invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
+                                     'msg': f"Conditionally required column missing .\n"
+                                            f"{missing_data_df[identifier_field + ['missing value']]}"})
+
+        return invalid_data
