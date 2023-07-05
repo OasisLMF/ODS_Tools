@@ -1,6 +1,8 @@
 ODS_Tools Changelog
 ===================
 
+.. _`3.1.0`:  https://github.com/OasisLMF/ODS_Tools/compare/3.0.7...3.1.0
+
 `3.0.6`_
  ---------
 * [#21](https://github.com/OasisLMF/ODS_Tools/pull/22) - LocPeril raise validation error when Blank but it should be allowed according to schema
