@@ -1,13 +1,17 @@
 from pathlib import Path
 import mimetypes
 
+import logging
 import pandas as pd
 import numpy as np
 from chardet.universaldetector import UniversalDetector
 
-from .common import OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, BLANK_VALUES
+from .common import (OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, BLANK_VALUES, fill_empty,
+                     UnknownColumnSaveOption)
 from .forex import convert_currency
 from .oed_schema import OedSchema
+
+logger = logging.getLogger(__file__)
 
 try:
     from functools import cached_property
@@ -55,7 +59,7 @@ except ImportError:  # support for python < 3.8
             return value
 
 
-def detect_encoding(filepath):
+def detect_encoding(fileobj):
     """
     Given a path to a CSV of unknown encoding
     read lines to detect its encoding type
@@ -67,11 +71,10 @@ def detect_encoding(filepath):
     :rtype: dict
     """
     detector = UniversalDetector()
-    with open(filepath, 'rb') as f:
-        for line in f:
-            detector.feed(line)
-            if detector.done:
-                break
+    for line in fileobj:
+        detector.feed(line)
+        if detector.done:
+            break
     detector.close()
     return detector.result
 
@@ -230,6 +233,8 @@ class OedSource:
         if exposure.use_field:
             oed_df = OedSchema.use_field(oed_df, ods_fields)
         oed_source.dataframe = oed_df
+        if oed_df.empty:
+            logger.info(f'{oed_source.oed_name} {oed_source} is empty')
         oed_source.loaded = True
         return oed_source
 
@@ -272,13 +277,6 @@ class OedSource:
         try:
             if format == 'csv':
                 oed_df = pd.read_csv(stream_obj, **read_param)
-                ods_fields = exposure.get_input_fields(oed_type)
-                column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
-                oed_df = cls.as_oed_type(oed_df, column_to_field)
-                oed_df = cls.prepare_df(oed_df, column_to_field, ods_fields)
-
-                if exposure.use_field:
-                    oed_df = OedSchema.use_field(oed_df, ods_fields)
             elif format == 'parquet':
                 oed_df = pd.read_parquet(stream_obj, **read_param)
             else:
@@ -286,8 +284,18 @@ class OedSource:
         except Exception as e:
             raise OdsException('Failed to read stream data') from e
 
+        ods_fields = exposure.get_input_fields(oed_type)
+        column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
+        oed_df = cls.as_oed_type(oed_df, column_to_field)
+        oed_df = cls.prepare_df(oed_df, column_to_field, ods_fields)
+
+        if exposure.use_field:
+            oed_df = OedSchema.use_field(oed_df, ods_fields)
+
         oed_source.dataframe = oed_df
         oed_source.loaded = True
+        if oed_df.empty:
+            logger.info(f'{oed_source.oed_name} {oed_source} is empty')
         return oed_source
 
     @classmethod
@@ -301,7 +309,7 @@ class OedSource:
                 pd_dtype[column] = 'category'
             if pd_dtype[column] == 'category':  # we need to convert to str first
                 to_tmp_dtype[column] = 'str'
-                if oed_df[column].dtype.name == 'category':
+                if oed_df[column].dtype.name == 'category' and '' not in oed_df[column].dtype.categories:
                     oed_df[column] = oed_df[column].cat.add_categories('')
                 oed_df.loc[oed_df[column].isin(BLANK_VALUES), column] = ''
             elif pd_dtype[column].startswith('Int'):
@@ -323,14 +331,12 @@ class OedSource:
         """
         # set default values
         for col, field_info in column_to_field.items():
-            field_info = column_to_field.get(col)
             if (field_info
                     and field_info['Default'] != 'n/a'
                     and (df[col].isna().any() or (field_info['pd_dtype'] == 'category' and df[col].isnull().any()))):
-                if field_info['pd_dtype'] == 'category':
-                    df[col] = df[col].cat.add_categories(field_info['Default']).fillna(field_info['Default'])
-                else:
-                    df[col].fillna(df[col].dtype.type(field_info['Default']), inplace=True)
+                fill_empty(df, col, df[col].dtype.type(field_info['Default']))
+            elif df[col].dtype.name == 'category':
+                fill_empty(df, col, '')
 
         # add required columns that allow blank values if missing
         present_field = set(field_info['Input Field Name'] for field_info in column_to_field.values())
@@ -351,10 +357,12 @@ class OedSource:
     @cached_property
     def dataframe(self):
         """Dataframe view of the OedSource, loaded once"""
-        self.loaded = True
         df = self.load_dataframe()
         if self.exposure.use_field:
             df = OedSchema.use_field(df, self.exposure.get_input_fields(self.oed_type))
+        self.loaded = True
+        if df.empty:
+            logger.info(f'{self.oed_name} {self} is empty')
         return df
 
     @property
@@ -403,6 +411,11 @@ class OedSource:
             extension = PANDAS_COMPRESSION_MAP.get(source.get('extention')) or Path(filepath).suffix
             if extension == '.parquet':
                 oed_df = pd.read_parquet(filepath, **source.get('read_param', {}))
+                ods_fields = self.exposure.get_input_fields(self.oed_type)
+                column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
+                oed_df = self.as_oed_type(oed_df, column_to_field)
+                oed_df = self.prepare_df(oed_df, column_to_field, ods_fields)
+
             else:  # default we assume it is csv like
                 read_params = {'keep_default_na': False,
                                'na_values': PANDAS_DEFAULT_NULL_VALUES.difference({'NA'})}
@@ -430,7 +443,29 @@ class OedSource:
                              self.exposure.currency_conversion,
                              self.exposure.oed_schema)
 
-    def save(self, version_name, source):
+    def manage_unknown_columns(self, unknown_columns):
+        if unknown_columns == UnknownColumnSaveOption.IGNORE:
+            return self.dataframe
+        if not isinstance(unknown_columns, dict):
+            option_map = {}
+            default = unknown_columns
+        else:
+            option_map = unknown_columns
+            default = unknown_columns.get('default', UnknownColumnSaveOption.IGNORE)
+        rename = {}
+        drop = set()
+        for column in set(self.dataframe.columns).difference(self.get_column_to_field()):
+            option = option_map.get(column, default)
+            if option == UnknownColumnSaveOption.IGNORE:
+                continue
+            elif option == UnknownColumnSaveOption.RENAME:
+                rename[column] = f'Flexi{self.oed_type}{column}'
+            elif option == UnknownColumnSaveOption.DELETE:
+                drop.add(column)
+
+        return self.dataframe.rename(columns=rename).drop(columns=drop)
+
+    def save(self, version_name, source, unknown_columns=UnknownColumnSaveOption.IGNORE):
         """
         save dataframe as version_name in source
         Args:
@@ -440,7 +475,7 @@ class OedSource:
                 dict : {'source_type': 'filepath' # only support for the moment
                         'extension': 'parquet' or all pandas supported extension
                         'write_param' : all args you may want to pass to the pandas writer function (to_parquet, to_csv)
-
+            unknown_columns (UnknownColumnSaveOption or Dict):  action to take for non OED column
         """
         if isinstance(source, (str, Path)):
             source = {'source_type': 'filepath',
@@ -452,19 +487,20 @@ class OedSource:
                 filepath = Path(self.exposure.working_dir, filepath)
             Path(filepath).parents[0].mkdir(parents=True, exist_ok=True)
             extension = source.get('extension') or ''.join(Path(filepath).suffixes)
+            dataframe = self.manage_unknown_columns(unknown_columns)
             if extension == 'parquet':
-                self.dataframe.to_parquet(filepath, **source.get('write_param', {}))
+                dataframe.to_parquet(filepath, **source.get('write_param', {}))
             else:
                 write_param = {'index': False}
                 write_param.update(source.get('write_param', {}))
-                self.dataframe.to_csv(filepath, **write_param)
+                dataframe.to_csv(filepath, **write_param)
         else:
             raise Exception(f"Source type {source['source_type']} is not supported")
         self.cur_version_name = version_name
         self.sources[version_name] = source
 
     @classmethod
-    def read_csv(cls, filepath, ods_fields, df_engine=pd, **kwargs):
+    def read_csv(cls, filepath_or_buffer, ods_fields, df_engine=pd, **kwargs):
         """
         the function read_csv will load a csv file as a DataFrame
         with all the columns converted to the correct dtype and having the correct default.
@@ -472,40 +508,54 @@ class OedSource:
         By default, it uses pandas to create the DataFrame. In that case you will need to have pandas installed.
         You can use other options such as Dask or modin using the parameter df_engine.
         Args:
-            filepath (str): path to the csv file
+            filepath_or_buffer (str, stream): str, path object or file-like object with seek method
+            ods_fields (dict): OED schema input field definition
             df_engine: engine that will convert csv to a dataframe object (default to pandas if installed)
             kwargs: extra argument that will be passed to the df_engine
         Returns:
             df_engine dataframe of the file with correct dtype and default
         Raises:
         """
+        if is_readable(filepath_or_buffer):
+            stream_start = filepath_or_buffer.tell()
+        else:
+            stream_start = None
 
-        def read_or_try_encoding_read(df_engine, filepath, **read_kwargs):
-            #  try to read, if fail try to detect the encoding and update the top function kwargs for future read
+        def read_or_try_encoding_read(df_engine, filepath_or_buffer, **read_kwargs):
+            #  try to read, if it fails, try to detect the encoding and update the top function kwargs for future read
             try:
-                return df_engine.read_csv(filepath, **kwargs)
+                return df_engine.read_csv(filepath_or_buffer, **read_kwargs)
             except UnicodeDecodeError as e:
-                detected_encoding = detect_encoding(filepath)['encoding']
+                if stream_start is None:
+                    with open(filepath_or_buffer, 'rb') as buffer:
+                        detected_encoding = detect_encoding(buffer)['encoding']
+                else:
+                    detected_encoding = detect_encoding(filepath_or_buffer)['encoding']
+                    filepath_or_buffer.seek(stream_start)
                 if not read_kwargs.get('encoding') and detected_encoding:
                     kwargs['encoding'] = detected_encoding
-                    read_kwargs.pop('encoding')
-                    return df_engine.read_csv(filepath, encoding=detected_encoding, **read_kwargs)
+                    read_kwargs.pop('encoding', None)
+                    return df_engine.read_csv(filepath_or_buffer, encoding=detected_encoding, **read_kwargs)
                 else:
                     raise
+            finally:
+                if stream_start is not None:
+                    filepath_or_buffer.seek(stream_start)
 
         if df_engine is None:
             raise Exception("df_engine parameter not specified, you must install pandas"
                             " or pass your DataFrame engine (modin, dask,...)")
 
-        if Path(filepath).suffix == '.gzip' or kwargs.get('compression') == 'gzip':
-            # support for gzip  https://stackoverflow.com/questions/60460814/pandas-read-csv-failing-on-gzipped-file-with-unicodedecodeerror-utf-8-codec-c
-            with open(filepath, 'rb') as f:
-                header = df_engine.read(f, compression='gzip', nrows=0, index_col=False,
-                                        encoding=kwargs.get('encoding')).columns
-            kwargs['compression'] = 'gzip'
+        header_read_arg = {**kwargs, 'nrows': 0, 'index_col': False}
+        if (stream_start is None
+                and Path(filepath_or_buffer).suffix == '.gzip' or header_read_arg.get('compression') == 'gzip'):
+            # support for gzip https://stackoverflow.com/questions/60460814/pandas-read-csv-failing-on-gzipped-file-with-unicodedecodeerror-utf-8-codec-c
+            with open(filepath_or_buffer, 'rb') as f:
+                header_read_arg['compression'] = kwargs['compression'] = 'gzip'
+                header = df_engine.read(f, **header_read_arg).columns
+
         else:
-            header = read_or_try_encoding_read(df_engine, filepath, nrows=0, index_col=False,
-                                               encoding=kwargs.get('encoding')).columns
+            header = read_or_try_encoding_read(df_engine, filepath_or_buffer, **header_read_arg).columns
 
         # match header column name to oed field name and prepare pd_dtype used to read the data
         pd_dtype = {}
@@ -519,9 +569,9 @@ class OedSource:
 
         # read the oed file
         if kwargs.get('compression') == 'gzip':
-            with open(filepath, 'rb') as f:
+            with open(filepath_or_buffer, 'rb') as f:
                 df = df_engine.read_csv(f, dtype=pd_dtype, **kwargs)
         else:
-            df = df_engine.read_csv(filepath, dtype=pd_dtype, **kwargs)
+            df = df_engine.read_csv(filepath_or_buffer, dtype=pd_dtype, **kwargs)
 
         return cls.prepare_df(df, column_to_field, ods_fields)
