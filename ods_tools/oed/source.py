@@ -3,6 +3,7 @@ import mimetypes
 
 import logging
 import pandas as pd
+from lot3.df_reader.config import get_df_reader, configure
 import numpy as np
 from chardet.universaldetector import UniversalDetector
 
@@ -409,8 +410,13 @@ class OedSource:
             if is_relative(filepath):
                 filepath = Path(self.exposure.working_dir, filepath)
             extension = PANDAS_COMPRESSION_MAP.get(source.get('extention')) or Path(filepath).suffix
+            configure()
             if extension == '.parquet':
-                oed_df = pd.read_parquet(filepath, **source.get('read_param', {}))
+                oed_df = get_df_reader(
+                    self.oed_type,
+                    filepath,
+                    **source.get('read_param', {})
+                ).as_pandas()
                 ods_fields = self.exposure.get_input_fields(self.oed_type)
                 column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
                 oed_df = self.as_oed_type(oed_df, column_to_field)
@@ -420,7 +426,7 @@ class OedSource:
                 read_params = {'keep_default_na': False,
                                'na_values': PANDAS_DEFAULT_NULL_VALUES.difference({'NA'})}
                 read_params.update(source.get('read_param', {}))
-                oed_df = self.read_csv(filepath, self.exposure.get_input_fields(self.oed_type), **read_params)
+                oed_df = self.read_csv(filepath, self.exposure.get_input_fields(self.oed_type), oed_type=self.oed_type, **read_params)
         else:
             raise Exception(f"Source type {source['source_type']} is not supported")
 
@@ -500,7 +506,7 @@ class OedSource:
         self.sources[version_name] = source
 
     @classmethod
-    def read_csv(cls, filepath_or_buffer, ods_fields, df_engine=pd, **kwargs):
+    def read_csv(cls, filepath_or_buffer, ods_fields, df_engine=pd, oed_type=None, **kwargs):
         """
         the function read_csv will load a csv file as a DataFrame
         with all the columns converted to the correct dtype and having the correct default.
@@ -524,7 +530,11 @@ class OedSource:
         def read_or_try_encoding_read(df_engine, filepath_or_buffer, **read_kwargs):
             #  try to read, if it fails, try to detect the encoding and update the top function kwargs for future read
             try:
-                return df_engine.read_csv(filepath_or_buffer, **read_kwargs)
+                return get_df_reader(
+                    oed_type,
+                    filepath_or_buffer,
+                    **read_kwargs
+                ).as_pandas()
             except UnicodeDecodeError as e:
                 if stream_start is None:
                     with open(filepath_or_buffer, 'rb') as buffer:
