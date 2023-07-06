@@ -146,7 +146,7 @@ class OedSource:
     Class to represent and manage oed source (location, account, ...)
     """
 
-    def __init__(self, exposure, oed_type, cur_version_name, sources):
+    def __init__(self, exposure, oed_type, cur_version_name, sources, filters=None):
         """
 
         Args:
@@ -154,6 +154,7 @@ class OedSource:
             oed_type (str): OED type of the source
             cur_version_name (str): name of the current version
             sources (dict): all the version/source of the OED source
+            filters (list): A list of functions that filter the dataframe
         """
         self.exposure = exposure
         self.oed_type = oed_type
@@ -161,6 +162,7 @@ class OedSource:
         self.cur_version_name = cur_version_name
         self.sources = sources
         self.loaded = False
+        self.filters = filters or []
 
     def __str__(self):
         """
@@ -199,13 +201,13 @@ class OedSource:
             return cls.from_filepath(exposure, oed_type, filepath=oed_info, **kwargs)
         elif isinstance(oed_info, dict):
             if oed_info.get('sources'):
-                return cls(exposure, oed_type, **oed_info)
+                return cls(exposure, oed_type, filters=kwargs.get("filters", []), **oed_info)
             else:
-                return cls.from_oed_info(exposure, oed_type, **oed_info)
+                return cls.from_oed_info(exposure, oed_type, filters=kwargs.get("filters", []), **oed_info)
         elif isinstance(oed_info, OedSource):
             return oed_info
         elif isinstance(oed_info, pd.DataFrame):
-            return cls.from_dataframe(exposure, oed_type, oed_info)
+            return cls.from_dataframe(exposure, oed_type, oed_info, filters=kwargs.get("filters", []),)
         elif oed_info is None:
             return None
         elif is_readable(oed_info):
@@ -214,23 +216,29 @@ class OedSource:
             raise OdsException(f'{oed_info} is not a supported format to convert to OedSource')
 
     @classmethod
-    def from_dataframe(cls, exposure, oed_type, oed_df: pd.DataFrame):
+    def from_dataframe(cls, exposure, oed_type, oed_df: pd.DataFrame, filters=None):
         """
         OedSource Constructor from a filepath
         Args:
             exposure (OedExposure): Exposure the oed source is part of
             oed_type (str): type of file (Loc, Acc, ..)
             oed_df (pd.DataFrame): DataFrame that represent the Oed Source
+            filters (list): A list of functions that filter the dataframe
 
         Returns:
             OedSource
         """
-        oed_source = cls(exposure, oed_type, 'orig', {'orig': {'source_type': 'DataFrame'}})
+        oed_source = cls(exposure, oed_type, 'orig', {'orig': {'source_type': 'DataFrame'}}, filters=filters)
 
         ods_fields = exposure.get_input_fields(oed_type)
         column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
         oed_df = cls.as_oed_type(oed_df, column_to_field)
         oed_df = cls.prepare_df(oed_df, column_to_field, ods_fields)
+
+        # apply the filters to the dataframe
+        for fn in oed_source.filters:
+            oed_df = fn(oed_df)
+
         if exposure.use_field:
             oed_df = OedSchema.use_field(oed_df, ods_fields)
         oed_source.dataframe = oed_df
@@ -240,7 +248,7 @@ class OedSource:
         return oed_source
 
     @classmethod
-    def from_filepath(cls, exposure, oed_type, filepath, read_param=None):
+    def from_filepath(cls, exposure, oed_type, filepath, read_param=None, filters=None):
         """
         OedSource Constructor from a filepath
         Args:
@@ -248,29 +256,31 @@ class OedSource:
             oed_type (str): type of file (Loc, Acc, ..)
             filepath (str): path to the oed source file
             read_param (dict): extra parameters to use when reading the file
+            filters (list): A list of functions that filter the dataframe
 
         Returns:
             OedSource
         """
         if read_param is None:
             read_param = {}
-        return cls(exposure, oed_type, 'orig', {'orig': {'source_type': 'filepath', 'filepath': filepath, 'read_param': read_param}})
+        return cls(exposure, oed_type, 'orig', {'orig': {'source_type': 'filepath', 'filepath': filepath, 'read_param': read_param}}, filters=filters)
 
     @classmethod
-    def from_stream_obj(cls, exposure, oed_type, stream_obj, format=None, read_param=None):
+    def from_stream_obj(cls, exposure, oed_type, stream_obj, format=None, read_param=None, filters=None):
         """
         OedSource Constructor from a filepath
         Args:
             exposure (OedExposure): Exposure the oed source is part of
             oed_type (str): type of file (Loc, Acc, ..)
             stream_obj: object with a read() method
+            filters (list): A list of functions that filter the dataframe
 
         Returns:
             OedSource
         """
         if read_param is None:
             read_param = {}
-        oed_source = cls(exposure, oed_type, 'orig', {'orig': {'source_type': 'stream', 'format': format}})
+        oed_source = cls(exposure, oed_type, 'orig', {'orig': {'source_type': 'stream', 'format': format}}, filters=filters)
 
         if not format:
             format = detect_stream_type(stream_obj)
@@ -289,6 +299,10 @@ class OedSource:
         column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
         oed_df = cls.as_oed_type(oed_df, column_to_field)
         oed_df = cls.prepare_df(oed_df, column_to_field, ods_fields)
+
+        # apply the filters to the dataframe
+        for fn in oed_source.filters:
+            oed_df = fn(oed_df)
 
         if exposure.use_field:
             oed_df = OedSchema.use_field(oed_df, ods_fields)
@@ -416,7 +430,7 @@ class OedSource:
                     self.oed_type,
                     filepath,
                     **source.get('read_param', {})
-                ).as_pandas()
+                ).filter(self.filters).as_pandas()
                 ods_fields = self.exposure.get_input_fields(self.oed_type)
                 column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
                 oed_df = self.as_oed_type(oed_df, column_to_field)
@@ -426,7 +440,7 @@ class OedSource:
                 read_params = {'keep_default_na': False,
                                'na_values': PANDAS_DEFAULT_NULL_VALUES.difference({'NA'})}
                 read_params.update(source.get('read_param', {}))
-                oed_df = self.read_csv(filepath, self.exposure.get_input_fields(self.oed_type), oed_type=self.oed_type, **read_params)
+                oed_df = self.read_csv(filepath, self.exposure.get_input_fields(self.oed_type), oed_type=self.oed_type, filter=self.filters, **read_params)
         else:
             raise Exception(f"Source type {source['source_type']} is not supported")
 
@@ -506,7 +520,7 @@ class OedSource:
         self.sources[version_name] = source
 
     @classmethod
-    def read_csv(cls, filepath_or_buffer, ods_fields, df_engine=pd, oed_type=None, **kwargs):
+    def read_csv(cls, filepath_or_buffer, ods_fields, df_engine=pd, oed_type=None, filter=None, **kwargs):
         """
         the function read_csv will load a csv file as a DataFrame
         with all the columns converted to the correct dtype and having the correct default.
@@ -545,7 +559,12 @@ class OedSource:
                 if not read_kwargs.get('encoding') and detected_encoding:
                     kwargs['encoding'] = detected_encoding
                     read_kwargs.pop('encoding', None)
-                    return df_engine.read_csv(filepath_or_buffer, encoding=detected_encoding, **read_kwargs)
+                    return get_df_reader(
+                        oed_type,
+                        filepath_or_buffer,
+                        encoding=detected_encoding,
+                        **read_kwargs
+                    ).as_pandas()
                 else:
                     raise
             finally:
@@ -580,8 +599,18 @@ class OedSource:
         # read the oed file
         if kwargs.get('compression') == 'gzip':
             with open(filepath_or_buffer, 'rb') as f:
-                df = df_engine.read_csv(f, dtype=pd_dtype, **kwargs)
+                df = get_df_reader(
+                    oed_type,
+                    filepath_or_buffer,
+                    dtype=pd_dtype,
+                    **kwargs
+                ).filter(filter).as_pandas()
         else:
-            df = df_engine.read_csv(filepath_or_buffer, dtype=pd_dtype, **kwargs)
+            df = get_df_reader(
+                oed_type,
+                filepath_or_buffer,
+                dtype=pd_dtype,
+                **kwargs
+            ).filter(filter).as_pandas()
 
         return cls.prepare_df(df, column_to_field, ods_fields)
