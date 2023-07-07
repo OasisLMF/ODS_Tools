@@ -6,7 +6,10 @@ This package manage:
 """
 
 import json
+from copy import deepcopy
 from pathlib import Path
+
+import pandas as pd
 
 from .common import (PANDAS_COMPRESSION_MAP,
                      USUAL_FILE_NAME, OED_TYPE_TO_NAME,
@@ -38,7 +41,8 @@ class OedExposure:
                  working_dir=None,
                  location_numbers=None,
                  account_numbers=None,
-                 portfolio_numbers=None,):
+                 portfolio_numbers=None,
+                 base_df_engine='lot3.df_reader.reader.OasisPandasReader'):
         """
         Create an OED object,
         each input can be the object itself or  information that will be used to create the object
@@ -73,21 +77,41 @@ class OedExposure:
             filter_col_in("AccNumber", account_numbers),
             filter_col_in("PortNumber", portfolio_numbers),
         ]
-        self.location = OedSource.from_oed_info(exposure=self, oed_type='Loc', oed_info=location, filters=loc_filters)
+        self.location = OedSource.from_oed_info(
+            exposure=self,
+            oed_type='Loc',
+            oed_info=self.resolve_oed_info(location, base_df_engine),
+            filters=loc_filters,
+        )
 
         acc_filters = [
             filter_col_in("AccNumber", account_numbers),
             filter_col_in("PortNumber", portfolio_numbers),
         ]
-        self.account = OedSource.from_oed_info(exposure=self, oed_type='Acc', oed_info=account, filters=acc_filters)
-        self.ri_info = OedSource.from_oed_info(exposure=self, oed_type='ReinsInfo', oed_info=ri_info)
+        self.account = OedSource.from_oed_info(
+            exposure=self,
+            oed_type='Acc',
+            oed_info=self.resolve_oed_info(account, base_df_engine),
+            filters=acc_filters,
+        )
+
+        self.ri_info = OedSource.from_oed_info(
+            exposure=self,
+            oed_type='ReinsInfo',
+            oed_info=self.resolve_oed_info(ri_info, base_df_engine),
+        )
 
         ri_scope_filters = [
             filter_col_in("LocNumber", location_numbers),
             filter_col_in("AccNumber", account_numbers),
             filter_col_in("PortNumber", portfolio_numbers),
         ]
-        self.ri_scope = OedSource.from_oed_info(exposure=self, oed_type='ReinsScope', oed_info=ri_scope, filters=ri_scope_filters)
+        self.ri_scope = OedSource.from_oed_info(
+            exposure=self,
+            oed_type='ReinsScope',
+            oed_info=self.resolve_oed_info(ri_scope, base_df_engine),
+            filters=ri_scope_filters,
+        )
 
         self.currency_conversion = create_currency_rates(currency_conversion)
 
@@ -102,6 +126,29 @@ class OedExposure:
 
         if check_oed:
             self.check()
+
+    @classmethod
+    def resolve_oed_info(cls, oed_info, base_df_engine):
+        if isinstance(oed_info, (str, Path)):
+            return {
+                "cur_version_name": "curr",
+                "sources": {
+                    "curr": {
+                        "source_type": "filepath",
+                        "filepath": oed_info,
+                        "read_param": {},
+                        "engine": base_df_engine
+                    }
+                }
+            }
+        elif isinstance(oed_info, dict):
+            if "sources" in oed_info:
+                oed_info = deepcopy(oed_info)
+                for k in oed_info["sources"]:
+                    oed_info["sources"][k].setdefault("engine", base_df_engine)
+                return oed_info
+
+        return oed_info
 
     @classmethod
     def from_config(cls, config_fp, **kwargs):

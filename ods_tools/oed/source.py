@@ -3,7 +3,7 @@ import mimetypes
 
 import logging
 import pandas as pd
-from lot3.df_reader.config import get_df_reader, configure
+from lot3.df_reader.config import get_df_reader
 import numpy as np
 from chardet.universaldetector import UniversalDetector
 
@@ -203,7 +203,7 @@ class OedSource:
             if oed_info.get('sources'):
                 return cls(exposure, oed_type, filters=kwargs.get("filters", []), **oed_info)
             else:
-                return cls.from_oed_info(exposure, oed_type, filters=kwargs.get("filters", []), **oed_info)
+                return cls.from_oed_info(exposure, oed_type, **oed_info, filters=kwargs.get("filters", []))
         elif isinstance(oed_info, OedSource):
             return oed_info
         elif isinstance(oed_info, pd.DataFrame):
@@ -424,10 +424,8 @@ class OedSource:
             if is_relative(filepath):
                 filepath = Path(self.exposure.working_dir, filepath)
             extension = PANDAS_COMPRESSION_MAP.get(source.get('extention')) or Path(filepath).suffix
-            configure()
             if extension == '.parquet':
                 oed_df = get_df_reader(
-                    self.oed_type,
                     filepath,
                     **source.get('read_param', {})
                 ).filter(self.filters).as_pandas()
@@ -440,7 +438,7 @@ class OedSource:
                 read_params = {'keep_default_na': False,
                                'na_values': PANDAS_DEFAULT_NULL_VALUES.difference({'NA'})}
                 read_params.update(source.get('read_param', {}))
-                oed_df = self.read_csv(filepath, self.exposure.get_input_fields(self.oed_type), oed_type=self.oed_type, filter=self.filters, **read_params)
+                oed_df = self.read_csv(filepath, self.exposure.get_input_fields(self.oed_type), filter=self.filters, **read_params)
         else:
             raise Exception(f"Source type {source['source_type']} is not supported")
 
@@ -520,7 +518,7 @@ class OedSource:
         self.sources[version_name] = source
 
     @classmethod
-    def read_csv(cls, filepath_or_buffer, ods_fields, df_engine=pd, oed_type=None, filter=None, **kwargs):
+    def read_csv(cls, filepath_or_buffer, ods_fields, df_engine=pd, filter=None, **kwargs):
         """
         the function read_csv will load a csv file as a DataFrame
         with all the columns converted to the correct dtype and having the correct default.
@@ -545,7 +543,6 @@ class OedSource:
             #  try to read, if it fails, try to detect the encoding and update the top function kwargs for future read
             try:
                 return get_df_reader(
-                    oed_type,
                     filepath_or_buffer,
                     **read_kwargs
                 ).as_pandas()
@@ -560,7 +557,6 @@ class OedSource:
                     kwargs['encoding'] = detected_encoding
                     read_kwargs.pop('encoding', None)
                     return get_df_reader(
-                        oed_type,
                         filepath_or_buffer,
                         encoding=detected_encoding,
                         **read_kwargs
@@ -600,14 +596,12 @@ class OedSource:
         if kwargs.get('compression') == 'gzip':
             with open(filepath_or_buffer, 'rb') as f:
                 df = get_df_reader(
-                    oed_type,
                     filepath_or_buffer,
                     dtype=pd_dtype,
                     **kwargs
                 ).filter(filter).as_pandas()
         else:
             df = get_df_reader(
-                oed_type,
                 filepath_or_buffer,
                 dtype=pd_dtype,
                 **kwargs
