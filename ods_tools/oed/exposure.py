@@ -282,9 +282,11 @@ class OedExposure:
 
             filepath = filepath.with_suffix(PANDAS_COMPRESSION_MAP[compression])
 
-            oed_source.save(saved_version_name + '_' + f'{compression}',
-                            {'source_type': 'filepath', 'filepath': filepath, 'extension': compression},
-                            unknown_columns=unknown_columns)
+            new_info = {'source_type': 'filepath', 'filepath': filepath, 'extension': compression}
+            if "engine" in oed_source.sources[oed_source.cur_version_name]:
+                new_info["engine"] = oed_source.sources[oed_source.cur_version_name]["engine"]
+
+            oed_source.save(saved_version_name + '_' + f'{compression}', new_info, unknown_columns=unknown_columns)
         if save_config:
             self.save_config(Path(path, self.DEFAULT_EXPOSURE_CONFIG_NAME))
 
