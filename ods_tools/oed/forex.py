@@ -4,8 +4,7 @@ This package is in charge of converting relevant ods values such as TIV or polic
 import datetime
 import json
 import os
-# import pandas as pd
-from lot3.df_engine import pd
+import pandas as pd
 from pathlib import Path
 
 from .common import OdsException

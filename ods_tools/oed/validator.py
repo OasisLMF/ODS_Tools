@@ -2,8 +2,7 @@ import functools
 import json
 import logging
 
-# import pandas as pd
-from lot3.df_engine import pd
+import pandas as pd
 from pathlib import Path
 from collections.abc import Iterable
 
@@ -136,9 +135,8 @@ class Validator:
                     columns = [columns]
                 for column in columns:
                     if field_info.get("Allow blanks?").upper() == 'NO':
-                        s = oed_source.dataframe[column]
-                        missing_value_df = oed_source.dataframe[s.blank()]
-                        if len(missing_value_df.index) > 0:
+                        missing_value_df = oed_source.dataframe[oed_source.dataframe[column].isin(BLANK_VALUES)]
+                        if not missing_value_df.empty:
                             invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                                  'msg': f"column '{column}' has missing values in \n"
                                                         f"{missing_value_df[identifier_field + [column]]}"})
@@ -195,11 +193,11 @@ class Validator:
             if oed_source.dataframe.empty:
                 continue
             for column in oed_source.dataframe.columns.intersection(set(OED_PERIL_COLUMNS)):
-                invalid_perils = oed_source.dataframe[
-                    oed_source.dataframe[column].with_invalid_categories(
-                        self.exposure.oed_schema.schema['perils']['info']
-                    )
-                ]
+                peril_values = oed_source.dataframe[column].str.split(';').apply(pd.Series, 1).stack()
+                invalid_perils = oed_source.dataframe.iloc[
+                    peril_values[~peril_values.isin(
+                        set(self.exposure.oed_schema.schema['perils']['info']) | BLANK_VALUES
+                    )].index.droplevel(-1)]
                 if not invalid_perils.empty:
                     invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                          'msg': f"{column} has invalid perils.\n"
@@ -261,9 +259,8 @@ class Validator:
             identifier_field = self.identifier_field_maps[oed_source]
             area_code_column = self.field_to_column_maps[oed_source].get('AreaCode')
             if area_code_column is not None:
-                s = oed_source.dataframe[area_code_column]
-                country_only_df = oed_source.dataframe[s.blank()]
-                country_area_df = oed_source.dataframe[~(s.blank())]
+                country_only_df = oed_source.dataframe[oed_source.dataframe[area_code_column].isin(BLANK_VALUES)]
+                country_area_df = oed_source.dataframe[~oed_source.dataframe[area_code_column].isin(BLANK_VALUES)]
                 invalid_country_area = (country_area_df[
                     ~(country_area_df[[country_code_column, area_code_column]]
                       .apply(tuple, axis=1)
