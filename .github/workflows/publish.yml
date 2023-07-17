@@ -123,7 +123,7 @@ jobs:
 
     - name: Setup Changelog builder
       run: |
-        BRANCH='develop'
+        BRANCH='main'
         BASE_URL="https://raw.githubusercontent.com/OasisLMF/OasisPlatform/$BRANCH/scripts"
         pip install -r $BASE_URL/requirments-changelog.txt
         wget $BASE_URL/update-changelog.py
