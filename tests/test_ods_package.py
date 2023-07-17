@@ -24,7 +24,7 @@ logger = logging.getLogger(__file__)
 
 base_test_path = pathlib.Path(__file__).parent
 
-piwind_branch = 'develop'
+piwind_branch = 'main'
 base_url = f'https://raw.githubusercontent.com/OasisLMF/OasisPiWind/{piwind_branch}/tests/inputs'
 input_file_names = {
     "csv": {
