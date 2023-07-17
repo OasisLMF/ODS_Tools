@@ -4,8 +4,8 @@ common static variable and ods_tools exceptions
 from urllib.parse import urlparse
 from pathlib import Path
 import numpy as np
-# import pandas as pd
-from lot3.df_engine import pd
+import pandas as pd
+from enum import Enum
 
 
 class OdsException(Exception):
@@ -104,4 +104,10 @@ def fill_empty(df, columns, value):
         dtype = getattr(df[column], "dtypes", getattr(df[column], "dtype", None))
         if dtype.name == 'category' and value not in {None, np.nan}.union(df[column].cat.categories):
             df[column] = df[column].cat.add_categories(value)
-        df.loc[df[column].blank(), column] = value
+        df.loc[df[column].isin(BLANK_VALUES), column] = value
+
+
+class UnknownColumnSaveOption(Enum):
+    IGNORE = 1
+    RENAME = 2
+    DELETE = 3

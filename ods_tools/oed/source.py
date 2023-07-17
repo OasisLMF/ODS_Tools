@@ -1,14 +1,18 @@
 from pathlib import Path
 import mimetypes
 
-# import pandas as pd
-from lot3.df_engine import pd
+import logging
+import pandas as pd
+from lot3.df_reader.config import get_df_reader
 import numpy as np
 from chardet.universaldetector import UniversalDetector
 
-from .common import OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, BLANK_VALUES, fill_empty
+from .common import (OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, BLANK_VALUES, fill_empty,
+                     UnknownColumnSaveOption)
 from .forex import convert_currency
 from .oed_schema import OedSchema
+
+logger = logging.getLogger(__file__)
 
 try:
     from functools import cached_property
@@ -230,6 +234,8 @@ class OedSource:
         if exposure.use_field:
             oed_df = OedSchema.use_field(oed_df, ods_fields)
         oed_source.dataframe = oed_df
+        if oed_df.empty:
+            logger.info(f'{oed_source.oed_name} {oed_source} is empty')
         oed_source.loaded = True
         return oed_source
 
@@ -289,6 +295,8 @@ class OedSource:
 
         oed_source.dataframe = oed_df
         oed_source.loaded = True
+        if oed_df.empty:
+            logger.info(f'{oed_source.oed_name} {oed_source} is empty')
         return oed_source
 
     @classmethod
@@ -328,7 +336,7 @@ class OedSource:
                     and field_info['Default'] != 'n/a'
                     and (df[col].isna().any() or (field_info['pd_dtype'] == 'category' and df[col].isnull().any()))):
                 fill_empty(df, col, df[col].dtype.type(field_info['Default']))
-            elif df[col].dtype == 'category':
+            elif df[col].dtype.name == 'category':
                 fill_empty(df, col, '')
 
         # add required columns that allow blank values if missing
@@ -350,10 +358,12 @@ class OedSource:
     @cached_property
     def dataframe(self):
         """Dataframe view of the OedSource, loaded once"""
-        self.loaded = True
         df = self.load_dataframe()
         if self.exposure.use_field:
             df = OedSchema.use_field(df, self.exposure.get_input_fields(self.oed_type))
+        self.loaded = True
+        if df.empty:
+            logger.info(f'{self.oed_name} {self} is empty')
         return df
 
     @property
@@ -401,7 +411,11 @@ class OedSource:
                 filepath = Path(self.exposure.working_dir, filepath)
             extension = PANDAS_COMPRESSION_MAP.get(source.get('extention')) or Path(filepath).suffix
             if extension == '.parquet':
-                oed_df = pd.read_parquet(filepath, **source.get('read_param', {}))
+                oed_df = get_df_reader(
+                    self.oed_type,
+                    filepath,
+                    **source.get('read_param', {})
+                ).as_pandas()
                 ods_fields = self.exposure.get_input_fields(self.oed_type)
                 column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
                 oed_df = self.as_oed_type(oed_df, column_to_field)
@@ -411,7 +425,7 @@ class OedSource:
                 read_params = {'keep_default_na': False,
                                'na_values': PANDAS_DEFAULT_NULL_VALUES.difference({'NA'})}
                 read_params.update(source.get('read_param', {}))
-                oed_df = self.read_csv(filepath, self.exposure.get_input_fields(self.oed_type), **read_params)
+                oed_df = self.read_csv(filepath, self.exposure.get_input_fields(self.oed_type), oed_type=self.oed_type, **read_params)
         else:
             raise Exception(f"Source type {source['source_type']} is not supported")
 
@@ -434,7 +448,29 @@ class OedSource:
                              self.exposure.currency_conversion,
                              self.exposure.oed_schema)
 
-    def save(self, version_name, source):
+    def manage_unknown_columns(self, unknown_columns):
+        if unknown_columns == UnknownColumnSaveOption.IGNORE:
+            return self.dataframe
+        if not isinstance(unknown_columns, dict):
+            option_map = {}
+            default = unknown_columns
+        else:
+            option_map = unknown_columns
+            default = unknown_columns.get('default', UnknownColumnSaveOption.IGNORE)
+        rename = {}
+        drop = set()
+        for column in set(self.dataframe.columns).difference(self.get_column_to_field()):
+            option = option_map.get(column, default)
+            if option == UnknownColumnSaveOption.IGNORE:
+                continue
+            elif option == UnknownColumnSaveOption.RENAME:
+                rename[column] = f'Flexi{self.oed_type}{column}'
+            elif option == UnknownColumnSaveOption.DELETE:
+                drop.add(column)
+
+        return self.dataframe.rename(columns=rename).drop(columns=drop)
+
+    def save(self, version_name, source, unknown_columns=UnknownColumnSaveOption.IGNORE):
         """
         save dataframe as version_name in source
         Args:
@@ -444,7 +480,7 @@ class OedSource:
                 dict : {'source_type': 'filepath' # only support for the moment
                         'extension': 'parquet' or all pandas supported extension
                         'write_param' : all args you may want to pass to the pandas writer function (to_parquet, to_csv)
-
+            unknown_columns (UnknownColumnSaveOption or Dict):  action to take for non OED column
         """
         if isinstance(source, (str, Path)):
             source = {'source_type': 'filepath',
@@ -456,19 +492,20 @@ class OedSource:
                 filepath = Path(self.exposure.working_dir, filepath)
             Path(filepath).parents[0].mkdir(parents=True, exist_ok=True)
             extension = source.get('extension') or ''.join(Path(filepath).suffixes)
+            dataframe = self.manage_unknown_columns(unknown_columns)
             if extension == 'parquet':
-                self.dataframe.to_parquet(filepath, **source.get('write_param', {}))
+                dataframe.to_parquet(filepath, **source.get('write_param', {}))
             else:
                 write_param = {'index': False}
                 write_param.update(source.get('write_param', {}))
-                self.dataframe.to_csv(filepath, **write_param)
+                dataframe.to_csv(filepath, **write_param)
         else:
             raise Exception(f"Source type {source['source_type']} is not supported")
         self.cur_version_name = version_name
         self.sources[version_name] = source
 
     @classmethod
-    def read_csv(cls, filepath_or_buffer, ods_fields, df_engine=pd, **kwargs):
+    def read_csv(cls, filepath_or_buffer, ods_fields, df_engine=pd, oed_type=None, **kwargs):
         """
         the function read_csv will load a csv file as a DataFrame
         with all the columns converted to the correct dtype and having the correct default.
@@ -492,7 +529,11 @@ class OedSource:
         def read_or_try_encoding_read(df_engine, filepath_or_buffer, **read_kwargs):
             #  try to read, if it fails, try to detect the encoding and update the top function kwargs for future read
             try:
-                return df_engine.read_csv(filepath_or_buffer, **read_kwargs)
+                return get_df_reader(
+                    oed_type,
+                    filepath_or_buffer,
+                    **read_kwargs
+                ).as_pandas()
             except UnicodeDecodeError as e:
                 if stream_start is None:
                     with open(filepath_or_buffer, 'rb') as buffer:

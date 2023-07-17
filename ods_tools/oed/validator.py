@@ -192,6 +192,8 @@ class Validator:
         invalid_data = []
         for oed_source in self.exposure.get_oed_sources():
             identifier_field = self.identifier_field_maps[oed_source]
+            if oed_source.dataframe.empty:
+                continue
             for column in oed_source.dataframe.columns.intersection(set(OED_PERIL_COLUMNS)):
                 invalid_perils = oed_source.dataframe[
                     oed_source.dataframe[column].with_invalid_categories(
