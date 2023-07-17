@@ -9,7 +9,7 @@ on:
         required: false
 
 env:
-  oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' ||  inputs.oasislmf_branch }}
+  oasislmf_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' ||  inputs.oasislmf_branch }}
 
 jobs:
   build_ods:
