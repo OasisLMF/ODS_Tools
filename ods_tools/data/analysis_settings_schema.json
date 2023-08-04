@@ -353,18 +353,24 @@
                     "description": "Identifier for the event set file that is used for output calculations.",
                     "default": 1
                 },
-        "event_rates_set": {
-            "type": "string",
-            "title": "Event rates set file ID.",
-            "description": "Identifier for the event rates set file that is used for output calculations.",
-            "default": 1
-        },
+                "event_rates_set": {
+                    "type": "string",
+                    "title": "Event rates set file ID.",
+                    "description": "Identifier for the event rates set file that is used for output calculations.",
+                    "default": 1
+                },
                 "event_occurrence_id": {
                     "type": "string",
                     "title": "Event occurrence file ID.",
                     "description": "Identifier for the event occurrence file that is used for output calculations.",
                     "default": 1
-                }
+                },
+                "footprint_set": {
+                    "type": "string",
+		    "title": "Footprint set file ID.",
+		    "description": "Identifier for the footprint files that are used for output calculations.",
+		    "default": 1
+		}
             }
         },
         "gul_output": {
