@@ -42,7 +42,8 @@ class OedExposure:
                  location_numbers=None,
                  account_numbers=None,
                  portfolio_numbers=None,
-                 base_df_engine='lot3.df_reader.reader.OasisPandasReader'):
+                 base_df_engine=None,
+                 exposure_df_engine=None):
         """
         Create an OED object,
         each input can be the object itself or  information that will be used to create the object
@@ -60,9 +61,17 @@ class OedExposure:
             location_numbers (list[str]): A list of location numbers to filter the input data by
             account_numbers (list[str]): A list of account numbers to filter the input data by
             portfolio_numbers (list[str]): A list of portfolio numbers to filter the input data by
+            base_df_engine (Union[str, InputReaderConfig]): The default engine to use when loading dataframes
+            exposure_df_engine (Union[str, InputReaderConfig]):
+                The exposure specific engine to use when loading dataframes
         """
         self.use_field = use_field
         self.oed_schema = OedSchema.from_oed_schema_info(oed_schema_info)
+        df_engine = (
+            exposure_df_engine or
+            base_df_engine or
+            'lot3.df_reader.reader.OasisPandasReader'
+        )
 
         def filter_col_in(column, values):
             def fn(df):
@@ -80,7 +89,7 @@ class OedExposure:
         self.location = OedSource.from_oed_info(
             exposure=self,
             oed_type='Loc',
-            oed_info=self.resolve_oed_info(location, base_df_engine),
+            oed_info=self.resolve_oed_info(location, df_engine),
             filters=loc_filters,
         )
 
@@ -91,14 +100,14 @@ class OedExposure:
         self.account = OedSource.from_oed_info(
             exposure=self,
             oed_type='Acc',
-            oed_info=self.resolve_oed_info(account, base_df_engine),
+            oed_info=self.resolve_oed_info(account, df_engine),
             filters=acc_filters,
         )
 
         self.ri_info = OedSource.from_oed_info(
             exposure=self,
             oed_type='ReinsInfo',
-            oed_info=self.resolve_oed_info(ri_info, base_df_engine),
+            oed_info=self.resolve_oed_info(ri_info, df_engine),
         )
 
         ri_scope_filters = [
@@ -109,7 +118,7 @@ class OedExposure:
         self.ri_scope = OedSource.from_oed_info(
             exposure=self,
             oed_type='ReinsScope',
-            oed_info=self.resolve_oed_info(ri_scope, base_df_engine),
+            oed_info=self.resolve_oed_info(ri_scope, df_engine),
             filters=ri_scope_filters,
         )
 
@@ -128,7 +137,7 @@ class OedExposure:
             self.check()
 
     @classmethod
-    def resolve_oed_info(cls, oed_info, base_df_engine):
+    def resolve_oed_info(cls, oed_info, df_engine):
         if isinstance(oed_info, (str, Path)):
             return {
                 "cur_version_name": "curr",
@@ -137,7 +146,7 @@ class OedExposure:
                         "source_type": "filepath",
                         "filepath": oed_info,
                         "read_param": {},
-                        "engine": base_df_engine
+                        "engine": df_engine
                     }
                 }
             }
@@ -145,7 +154,7 @@ class OedExposure:
             if "sources" in oed_info:
                 oed_info = deepcopy(oed_info)
                 for k in oed_info["sources"]:
-                    oed_info["sources"][k].setdefault("engine", base_df_engine)
+                    oed_info["sources"][k].setdefault("engine", df_engine)
                 return oed_info
 
         return oed_info
