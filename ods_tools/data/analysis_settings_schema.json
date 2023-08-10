@@ -412,7 +412,21 @@
             "title": "Produce fully correlated output",
             "description": "If true generate losses for fully correlated output, i.e. no independence between groups, in addition to losses for default output.",
             "default": false
-        }
+        },
+	"pla": {
+	    "type": "boolean",
+	    "title": "Apply Post Loss Amplification",
+	    "description": "If true apply post loss amplification to losses",
+	    "default": false
+	},
+	"pla_secondary_factor": {
+	    "type": "number",
+	    "title": "Optional secondary factor for Post Loss Amplification",
+	    "description": "Secondary factor to be applied to post loss amplificaion",
+	    "default": 1,
+	    "minimum": 0,
+	    "maximum": 1
+	}
     },
     "required": [
         "model_supplier_id",
