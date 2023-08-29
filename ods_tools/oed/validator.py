@@ -2,7 +2,6 @@ import functools
 import json
 import logging
 
-import pandas as pd
 from pathlib import Path
 from collections.abc import Iterable
 
@@ -65,7 +64,6 @@ class Validator:
             raise OdsException("Unsupported validation type")
 
         invalid_data_group = {}
-
         for check in validation:
             check_fct = getattr(self, 'check_' + str(check['name']), None)
             if check.get('on_error') not in VALIDATOR_ON_ERROR_ACTION:
@@ -106,6 +104,7 @@ class Validator:
                 invalid_data.append({'name': 'reinsurance', 'source': None,
                                      'msg': f"Exposure needs both ri_scope and ri_scope for reinsurance"
                                             f"ri_info={self.exposure.ri_info} ri_scope={self.exposure.ri_scope}"})
+
         return invalid_data
 
     def check_required_fields(self):
@@ -187,17 +186,24 @@ class Validator:
         Returns:
             list of invalid_data
         """
+        valid_perils = set(self.exposure.oed_schema.schema['perils']['info'])
+
+        def invalid_fct(perils):
+            invalid = []
+            for peril in perils.split(';'):
+                if peril not in valid_perils:
+                    invalid.append(peril)
+            return ';'.join(invalid)
+
         invalid_data = []
         for oed_source in self.exposure.get_oed_sources():
             identifier_field = self.identifier_field_maps[oed_source]
             if oed_source.dataframe.empty:
                 continue
             for column in oed_source.dataframe.columns.intersection(set(OED_PERIL_COLUMNS)):
-                peril_values = oed_source.dataframe[column].str.split(';').apply(pd.Series, 1).stack()
-                invalid_perils = oed_source.dataframe.iloc[
-                    peril_values[~peril_values.isin(
-                        set(self.exposure.oed_schema.schema['perils']['info']) | BLANK_VALUES
-                    )].index.droplevel(-1)]
+                invalid_perils_col = oed_source.dataframe[column].apply(invalid_fct)
+                invalid_perils = oed_source.dataframe[invalid_perils_col != '']
+                invalid_perils[column] = invalid_perils_col.loc[invalid_perils_col != '']
                 if not invalid_perils.empty:
                     invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                          'msg': f"{column} has invalid perils.\n"
@@ -279,4 +285,48 @@ class Validator:
                 invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                      'msg': f"invalid CountryCode.\n"
                                             f"{invalid_country[identifier_field + [country_code_column]]}"})
+        return invalid_data
+
+    def check_conditional_requirement(self):
+        invalid_data = []
+        for oed_source in self.exposure.get_oed_sources():
+            cr_field = self.exposure.oed_schema.schema['cr_field'].get(oed_source.oed_type)
+            if not cr_field:
+                continue
+            column_to_field = self.column_to_field_maps[oed_source]
+            identifier_field = self.identifier_field_maps[oed_source]
+
+            def check_cr(rec):
+                cr_fields = set()
+                for col in column_to_field:
+                    field_info = column_to_field[col]
+                    if field_info['Input Field Name'] not in cr_field:
+                        continue
+
+                    if field_info['Default'] != 'n/a':
+                        if oed_source.dataframe[col].dtype.name == 'category':
+                            default_set = {field_info['Default']}
+                        else:
+                            default_set = {oed_source.dataframe[col].dtype.type(field_info['Default'])}
+                    else:
+                        default_set = set()
+
+                    if rec[col] not in BLANK_VALUES | default_set and rec[col]:
+                        cr_fields |= set(cr_field[field_info['Input Field Name']])
+                msg = []
+                for field in cr_fields:
+                    col = self.field_to_column_maps[oed_source].get(field)
+                    if col is None or rec[col] in BLANK_VALUES:
+                        msg.append(f'{self.field_to_column_maps[oed_source].get(field) or field}')
+
+                return ', '.join(msg)
+
+            cr_msg = oed_source.dataframe.apply(check_cr, axis=1)
+            missing_data_df = oed_source.dataframe[cr_msg != ''].copy()
+            if not missing_data_df.empty:
+                missing_data_df['missing value'] = cr_msg
+                invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
+                                     'msg': f"Conditionally required column missing .\n"
+                                            f"{missing_data_df[identifier_field + ['missing value']]}"})
+
         return invalid_data

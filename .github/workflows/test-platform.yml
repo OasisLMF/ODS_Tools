@@ -1,17 +1,17 @@
-#name: Platform Integration
-#
-#on:
-#  pull_request:
-#  workflow_dispatch:
-#    inputs:
-#      platform_branch:
-#        description: "Platform branch to test with: [git ref]"
-#        required: false
-#
-#jobs:
-#  platform_testing:
-#    uses: OasisLMF/OasisPlatform/.github/workflows/test-python.yml@develop
-#    secrets: inherit
-#    with:
-#      ods_branch: ${{ github.ref }}
-#      platform_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' ||  inputs.platform_branch }}
+name: Platform Integration
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      platform_branch:
+        description: "Platform branch to test with: [git ref]"
+        required: false
+
+jobs:
+  platform_testing:
+    uses: OasisLMF/OasisPlatform/.github/workflows/test-python.yml@main
+    secrets: inherit
+    with:
+      ods_branch: ${{ github.ref }}
+      platform_branch: ${{ github.event_name != 'workflow_dispatch' && 'feature/lot3' ||  inputs.platform_branch }}
