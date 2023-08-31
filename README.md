@@ -65,7 +65,7 @@ config = {
             }
         }
     },
-    'ri_scope': 'https://raw.githubusercontent.com/OasisLMF/OasisPiWind/master/tests/inputs/SourceReinsScopeOEDPiWind.csv', # url
+    'ri_scope': 'https://raw.githubusercontent.com/OasisLMF/OasisPiWind/main/tests/inputs/SourceReinsScopeOEDPiWind.csv', # url
 }
 ```
 
