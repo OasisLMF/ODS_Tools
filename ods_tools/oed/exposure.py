@@ -9,8 +9,6 @@ import json
 from copy import deepcopy
 from pathlib import Path
 
-import pandas as pd
-
 from .common import (PANDAS_COMPRESSION_MAP,
                      USUAL_FILE_NAME, OED_TYPE_TO_NAME,
                      UnknownColumnSaveOption)
