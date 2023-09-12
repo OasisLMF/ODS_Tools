@@ -311,6 +311,7 @@ class OedSource:
                 to_tmp_dtype[column] = 'str'
                 if oed_df[column].dtype.name == 'category' and '' not in oed_df[column].dtype.categories:
                     oed_df[column] = oed_df[column].cat.add_categories('')
+                oed_df[column] = oed_df[column]  # make a copy f the col in case it is read_only
                 oed_df.loc[oed_df[column].isin(BLANK_VALUES), column] = ''
             elif pd_dtype[column].startswith('Int'):
                 to_tmp_dtype[column] = 'float'
