@@ -299,11 +299,11 @@
             },
             "footprint_set":{
                 "title":"Footprint set selector",
-		"description":"The 'id' field from options is used as a file suffix, e.g. footprint_<id>.bin, footprint_<id>.idx.z, footprint_<id>.parquet",
-		"type":"object",
-		"uniqueItems":false,
-		"additionalProperties": false,
-		"properties":{
+                "description":"The 'id' field from options is used as a file suffix, e.g. footprint_<id>.bin, footprint_<id>.idx.z, footprint_<id>.parquet",
+                "type":"object",
+                "uniqueItems":false,
+                "additionalProperties": false,
+                "properties":{
                     "name":{
                         "type":"string",
                         "title":"UI Option",
@@ -334,7 +334,7 @@
                        "type":"string",
                        "title":"Default footprint set",
                        "description":"Initial setting for footprint set"
-		    },
+                    },
                     "options":{
                        "type":"array",
                        "title":"Selection options for footprint",
@@ -1092,7 +1092,7 @@
          "type":"object",
          "title":"Model data settings",
          "description":"Additional data options for a model",
-         "additionalProperties":false,
+         "additionalProperties":true,
          "properties":{
             "supported_oed_versions": {
                "title":"Supported OED Versions",
