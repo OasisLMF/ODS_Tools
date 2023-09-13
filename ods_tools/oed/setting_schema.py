@@ -239,6 +239,9 @@ class ModelSettingSchema(SettingSchema):
 
     def __init__(self, schema=None, json_path=None):
         self.SCHEMA_FILE = 'model_settings_schema.json'
+        self.compatibility_profile = [
+            CompatibilityMap(keys='group_fields', updated='damage_group_fields', ver='1.27.0'),
+        ]
         super(ModelSettingSchema, self).__init__(schema, json_path, 'model_settings')
 
 
