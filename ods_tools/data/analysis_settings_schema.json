@@ -353,18 +353,24 @@
                     "description": "Identifier for the event set file that is used for output calculations.",
                     "default": 1
                 },
-        "event_rates_set": {
-            "type": "string",
-            "title": "Event rates set file ID.",
-            "description": "Identifier for the event rates set file that is used for output calculations.",
-            "default": 1
-        },
+                "event_rates_set": {
+                    "type": "string",
+                    "title": "Event rates set file ID.",
+                    "description": "Identifier for the event rates set file that is used for output calculations.",
+                    "default": 1
+                },
                 "event_occurrence_id": {
                     "type": "string",
                     "title": "Event occurrence file ID.",
                     "description": "Identifier for the event occurrence file that is used for output calculations.",
                     "default": 1
-                }
+                },
+                "footprint_set": {
+                    "type": "string",
+		    "title": "Footprint set file ID.",
+		    "description": "Identifier for the footprint files that are used for output calculations.",
+		    "default": 1
+		}
             }
         },
         "gul_output": {
@@ -406,7 +412,28 @@
             "title": "Produce fully correlated output",
             "description": "If true generate losses for fully correlated output, i.e. no independence between groups, in addition to losses for default output.",
             "default": false
-        }
+        },
+	"pla": {
+	    "type": "boolean",
+	    "title": "Apply Post Loss Amplification",
+	    "description": "If true apply post loss amplification/reduction to losses.",
+	    "default": false
+	},
+	"pla_secondary_factor": {
+	    "type": "number",
+	    "title": "Optional secondary factor for Post Loss Amplification",
+	    "description": "Secondary factor to apply to post loss amplification/reduction factors.",
+	    "default": 1,
+	    "minimum": 0,
+	    "maximum": 1
+	},
+	"pla_uniform_factor": {
+	    "type": "number",
+	    "title": "Optional uniform factor for Post Loss Amplification",
+	    "description": "Uniform factor to apply across all losses.",
+	    "default": 0,
+	    "minimum": 0
+	}
     },
     "required": [
         "model_supplier_id",

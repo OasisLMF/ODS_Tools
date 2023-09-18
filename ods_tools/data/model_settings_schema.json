@@ -297,6 +297,86 @@
                   "options"
                ]
             },
+            "footprint_set":{
+                "title":"Footprint set selector",
+                "description":"The 'id' field from options is used as a file suffix, e.g. footprint_<id>.bin, footprint_<id>.idx.z, footprint_<id>.parquet",
+                "type":"object",
+                "uniqueItems":false,
+                "additionalProperties": false,
+                "properties":{
+                    "name":{
+                        "type":"string",
+                        "title":"UI Option",
+                        "description":"UI name for selection",
+                        "minLength":1
+                    },
+                    "desc":{
+                        "type":"string",
+                        "title":"Short description",
+                        "description":"UI description for selection"
+                    },
+                    "used_for":{
+                       "type":"string",
+                       "title":"Where the setting is applied",
+                       "description":"Set if this parameter is ONLY used at input 'generation' or for output 'losses'",
+                       "enum":[
+                          "all",
+                          "generation",
+                          "losses"
+                       ]
+                    },
+                    "tooltip":{
+                       "type":"string",
+                       "title":"UI tooltip",
+                       "description":"Long description (optional)"
+                    },
+                    "default":{
+                       "type":"string",
+                       "title":"Default footprint set",
+                       "description":"Initial setting for footprint set"
+                    },
+                    "options":{
+                       "type":"array",
+                       "title":"Selection options for footprint",
+                       "description":"Array of possible footprint sets",
+                       "items":{
+                          "type":"object",
+                          "title":"Selection option element",
+                          "description":"Footprint set options",
+                          "additionalProperties":false,
+                          "properties":{
+                              "id":{
+                                  "type":"string",
+                                  "title":"footprint set suffix",
+                                  "description":"String value used to select a footprint set",
+                                  "minLength":1
+                              },
+                              "desc":{
+                                  "type":"string",
+                                  "title":"Footprint set description",
+                                  "description":"UI description for selection",
+                                  "minLength":1
+                              },
+                              "tooltip":{
+                                  "type":"string",
+                                  "title":"UI tooltip",
+                                  "description":"Long description (optional)"
+                              }
+                          },
+                          "required":[
+                              "id",
+                              "desc"
+                          ]
+                     }
+                  }
+               },
+               "required":[
+                  "name",
+                  "desc",
+                  "default",
+                  "options"
+               ]
+            },
             "valid_output_perspectives":{
                "type":"array",
                "title":"Globally supported loss perspectives",
@@ -1012,7 +1092,7 @@
          "type":"object",
          "title":"Model data settings",
          "description":"Additional data options for a model",
-         "additionalProperties":false,
+         "additionalProperties":true,
          "properties":{
             "supported_oed_versions": {
                "title":"Supported OED Versions",
