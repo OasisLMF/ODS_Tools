@@ -1,6 +1,18 @@
 ODS_Tools Changelog
 ===================
 
+`3.1.1`_
+ ---------
+* [#39](https://github.com/OasisLMF/ODS_Tools/pull/39) - Release 3.1.0 - for next stable oasislmf release 
+* [#44](https://github.com/OasisLMF/ODS_Tools/pull/44) - add check for conditional requirement
+* [#50](https://github.com/OasisLMF/ODS_Tools/pull/50) - Update CI for stable 3.1.x
+* [#52](https://github.com/OasisLMF/ODS_Tools/pull/52) - Fix/improve check perils
+* [#54](https://github.com/OasisLMF/ODS_Tools/pull/54) - Add footprint file suffix options
+* [#58](https://github.com/OasisLMF/ODS_Tools/pull/59) - Validation crash after converting account file from csv to parquet
+* [#60](https://github.com/OasisLMF/ODS_Tools/pull/60) - Add options to enable/disable post loss amplification, and set secondary and uniform post loss amplification factors
+* [#61](https://github.com/OasisLMF/ODS_Tools/pull/61) - Model_settings, allow additional properties under 'data_settings'
+.. _`3.1.1`:  https://github.com/OasisLMF/ODS_Tools/compare/3.1.0...3.1.1
+
 
 `3.1.0`_
  ---------
