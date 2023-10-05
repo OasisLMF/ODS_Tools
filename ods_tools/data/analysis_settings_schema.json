@@ -46,6 +46,12 @@
                         "description": "If true, output the average annual loss by level for the summary set.",
                         "default": false
                     },
+		    "aalcalcmeanonly": {
+			"type": "boolean",
+			"title": "AAL Mean Only calculaton flag",
+			"description": "If true, output the average annual loss by level for the summary set without calculating the standard deviation.",
+			"default": false
+		    },
                     "pltcalc": {
                         "type": "boolean",
                         "title": "PLT calculation flag",
@@ -166,6 +172,12 @@
                                 "description": "Period Average Loss Table (ORD Output flag)",
                                 "default": false
                             },
+			    "alt_meanonly": {
+				"type": "boolean",
+				"title": "ALT Mean Only",
+				"description": "Average Loss Table with no standard deviation calculation (ORD Output flag)",
+				"default": false
+			    },
                             "alct_convergence": {
                                 "type": "boolean",
                                 "title": "ALCT",
