@@ -1,6 +1,12 @@
 ODS_Tools Changelog
 ===================
 
+`3.1.2`_
+ ---------
+* [#53](https://github.com/OasisLMF/ODS_Tools/pull/53) - Release 3.1.1 (staging)
+* [#62](https://github.com/OasisLMF/ODS_Tools/pull/62) - Add fields for running aalcalcmeanonly ktools component
+.. _`3.1.2`:  https://github.com/OasisLMF/ODS_Tools/compare/3.1.1...3.1.2
+
 `3.1.1`_
  ---------
 * [#39](https://github.com/OasisLMF/ODS_Tools/pull/39) - Release 3.1.0 - for next stable oasislmf release 
