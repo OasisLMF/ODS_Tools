@@ -42,3 +42,6 @@ coverage.xml
 
 # excel
 *.xlsx#
+
+# vscode
+.vscode/

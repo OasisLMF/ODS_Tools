@@ -8,9 +8,12 @@ This package manage:
 import json
 from pathlib import Path
 
-from .common import (PANDAS_COMPRESSION_MAP,
-                     USUAL_FILE_NAME, OED_TYPE_TO_NAME,
-                     UnknownColumnSaveOption)
+from .common import (
+    PANDAS_COMPRESSION_MAP,
+    USUAL_FILE_NAME,
+    OED_TYPE_TO_NAME,
+    UnknownColumnSaveOption,
+)
 from .oed_schema import OedSchema
 from .source import OedSource
 from .validator import Validator
@@ -22,20 +25,23 @@ class OedExposure:
     Object grouping all the OED files related to the exposure Data (location, acoount, ri_info, ri_scope)
     and the OED schema to follow
     """
-    DEFAULT_EXPOSURE_CONFIG_NAME = 'exposure_info.json'
 
-    def __init__(self,
-                 location=None,
-                 account=None,
-                 ri_info=None,
-                 ri_scope=None,
-                 oed_schema_info=None,
-                 currency_conversion=None,
-                 reporting_currency=None,
-                 check_oed=False,
-                 use_field=False,
-                 validation_config=None,
-                 working_dir=None):
+    DEFAULT_EXPOSURE_CONFIG_NAME = "exposure_info.json"
+
+    def __init__(
+        self,
+        location=None,
+        account=None,
+        ri_info=None,
+        ri_scope=None,
+        oed_schema_info=None,
+        currency_conversion=None,
+        reporting_currency=None,
+        check_oed=False,
+        use_field=False,
+        validation_config=None,
+        working_dir=None,
+    ):
         """
         Create an OED object,
         each input can be the object itself or  information that will be used to create the object
@@ -54,10 +60,18 @@ class OedExposure:
         self.use_field = use_field
         self.oed_schema = OedSchema.from_oed_schema_info(oed_schema_info)
 
-        self.location = OedSource.from_oed_info(exposure=self, oed_type='Loc', oed_info=location)
-        self.account = OedSource.from_oed_info(exposure=self, oed_type='Acc', oed_info=account)
-        self.ri_info = OedSource.from_oed_info(exposure=self, oed_type='ReinsInfo', oed_info=ri_info)
-        self.ri_scope = OedSource.from_oed_info(exposure=self, oed_type='ReinsScope', oed_info=ri_scope)
+        self.location = OedSource.from_oed_info(
+            exposure=self, oed_type="Loc", oed_info=location
+        )
+        self.account = OedSource.from_oed_info(
+            exposure=self, oed_type="Acc", oed_info=account
+        )
+        self.ri_info = OedSource.from_oed_info(
+            exposure=self, oed_type="ReinsInfo", oed_info=ri_info
+        )
+        self.ri_scope = OedSource.from_oed_info(
+            exposure=self, oed_type="ReinsScope", oed_info=ri_scope
+        )
 
         self.currency_conversion = create_currency_rates(currency_conversion)
 
@@ -66,7 +80,7 @@ class OedExposure:
         self.validation_config = validation_config
 
         if not working_dir:
-            self.working_dir = Path('.').absolute()
+            self.working_dir = Path(".").absolute()
         else:
             self.working_dir = working_dir
 
@@ -83,7 +97,7 @@ class OedExposure:
             OedExposure object
         """
         with open(config_fp) as config:
-            kwargs['working_dir'] = Path(config_fp).parent
+            kwargs["working_dir"] = Path(config_fp).parent
             return cls(**{**json.load(config), **kwargs})
 
     @classmethod
@@ -95,6 +109,7 @@ class OedExposure:
         Returns:
             OedExposure object
         """
+
         def find_fp(names):
             for name in names:
                 for extension in PANDAS_COMPRESSION_MAP.values():
@@ -102,15 +117,19 @@ class OedExposure:
                         return Path(oed_dir, name).with_suffix(extension)
 
         if Path(oed_dir, cls.DEFAULT_EXPOSURE_CONFIG_NAME).is_file():
-            return cls.from_config(Path(oed_dir, cls.DEFAULT_EXPOSURE_CONFIG_NAME), **kwargs)
+            return cls.from_config(
+                Path(oed_dir, cls.DEFAULT_EXPOSURE_CONFIG_NAME), **kwargs
+            )
         else:
             config = {}
             for attr, filenames in USUAL_FILE_NAME.items():
                 config[attr] = find_fp(filenames)
 
             if Path(oed_dir, OedSchema.DEFAULT_ODS_SCHEMA_FILE).is_file():
-                config['oed_schema_info'] = Path(oed_dir, OedSchema.DEFAULT_ODS_SCHEMA_FILE)
-            kwargs['working_dir'] = oed_dir
+                config["oed_schema_info"] = Path(
+                    oed_dir, OedSchema.DEFAULT_ODS_SCHEMA_FILE
+                )
+            kwargs["working_dir"] = oed_dir
             return cls(**{**config, **kwargs})
 
     @property
@@ -119,7 +138,7 @@ class OedExposure:
         info = {}
         for source in self.get_oed_sources():
             info[source.oed_name] = source.info
-        info['oed_schema_info'] = self.oed_schema.info
+        info["oed_schema_info"] = self.oed_schema.info
         return info
 
     def get_input_fields(self, oed_type):
@@ -131,7 +150,7 @@ class OedExposure:
         Returns:
             dict of OED input field info
         """
-        return self.oed_schema.schema['input_fields'][oed_type]
+        return self.oed_schema.schema["input_fields"][oed_type]
 
     @property
     def reporting_currency(self):
@@ -163,10 +182,17 @@ class OedExposure:
             filepath (str): path to save the config file
         """
         Path(filepath).parents[0].mkdir(parents=True, exist_ok=True)
-        with open(filepath, 'w') as info_file:
-            json.dump(self.info, info_file, indent='  ', default=str)
+        with open(filepath, "w") as info_file:
+            json.dump(self.info, info_file, indent="  ", default=str)
 
-    def save(self, path, version_name=None, compression=None, save_config=False, unknown_columns=UnknownColumnSaveOption.IGNORE):
+    def save(
+        self,
+        path,
+        version_name=None,
+        compression=None,
+        save_config=False,
+        unknown_columns=UnknownColumnSaveOption.IGNORE,
+    ):
         """
         helper function to save all OED data to a location with specific compression
         Args:
@@ -179,18 +205,27 @@ class OedExposure:
         self.working_dir = path
 
         for oed_source in self.get_oed_sources():
-            if version_name is None and oed_source.sources[oed_source.cur_version_name]['source_type'] == 'filepath':
-                oed_name = Path(oed_source.sources[oed_source.cur_version_name]['filepath']).name
-                if oed_source.cur_version_name.rsplit('_', 1)[-1] in PANDAS_COMPRESSION_MAP:
-                    saved_version_name = oed_source.cur_version_name.rsplit('_', 1)[0]
+            if (
+                version_name is None
+                and oed_source.sources[oed_source.cur_version_name]["source_type"]
+                == "filepath"
+            ):
+                oed_name = Path(
+                    oed_source.sources[oed_source.cur_version_name]["filepath"]
+                ).name
+                if (
+                    oed_source.cur_version_name.rsplit("_", 1)[-1]
+                    in PANDAS_COMPRESSION_MAP
+                ):
+                    saved_version_name = oed_source.cur_version_name.rsplit("_", 1)[0]
                 else:
                     saved_version_name = oed_source.cur_version_name
             elif version_name:
-                oed_name = f'{version_name}_{OED_TYPE_TO_NAME[oed_source.oed_type]}'
+                oed_name = f"{version_name}_{OED_TYPE_TO_NAME[oed_source.oed_type]}"
                 saved_version_name = version_name
             else:
-                oed_name = f'{OED_TYPE_TO_NAME[oed_source.oed_type]}'
-                saved_version_name = ''
+                oed_name = f"{OED_TYPE_TO_NAME[oed_source.oed_type]}"
+                saved_version_name = ""
 
             if save_config:  # we store filepath relative to config file
                 filepath = Path(oed_name)
@@ -198,16 +233,27 @@ class OedExposure:
                 filepath = Path(path, oed_name)
 
             if compression is None:
-                if oed_source.sources[oed_source.cur_version_name]['source_type'] == 'filepath':
-                    compression = oed_source.sources[oed_source.cur_version_name].get('extension')
+                if (
+                    oed_source.sources[oed_source.cur_version_name]["source_type"]
+                    == "filepath"
+                ):
+                    compression = oed_source.sources[oed_source.cur_version_name].get(
+                        "extension"
+                    )
                 if compression is None:
-                    compression = 'csv'
+                    compression = "csv"
 
             filepath = filepath.with_suffix(PANDAS_COMPRESSION_MAP[compression])
 
-            oed_source.save(saved_version_name + '_' + f'{compression}',
-                            {'source_type': 'filepath', 'filepath': filepath, 'extension': compression},
-                            unknown_columns=unknown_columns)
+            oed_source.save(
+                saved_version_name + "_" + f"{compression}",
+                {
+                    "source_type": "filepath",
+                    "filepath": filepath,
+                    "extension": compression,
+                },
+                unknown_columns=unknown_columns,
+            )
         if save_config:
             self.save_config(Path(path, self.DEFAULT_EXPOSURE_CONFIG_NAME))
 
@@ -229,3 +275,44 @@ class OedExposure:
             validation_config = self.validation_config
         validator = Validator(self)
         return validator(validation_config)
+
+    def to_version(self, version):
+        """
+        goes through location to convert columns to specific version
+
+        Args:
+            version (str): specific version to roll to
+
+        Returns:
+            itself (OedExposure): not sure about this.
+        """
+
+        # TODO: check that version passed is valid
+
+        if version not in self.oed_schema.schema["versioning"]:
+            raise ValueError(f"Version {version} is not valid.")
+
+        # TODO: Determine the current version. If the current version is the same as the target version, return the current object.
+        # Perhaps also if the target version is superior to the current version, just return the current object.
+        # There may be a more efficient way to determine the current version, depending on the overall structure
+        current_version = "3.2"
+        for ver, attributes in self.oed_schema.schema["versioning"].items():
+            print(ver)
+        #            if "Category" in attributes and attributes["Category"] == "Occupancy":  # Checking one attribute as an example
+        #                current_version = ver
+        #                break
+
+        # If we couldn't determine the version, raise an error or handle appropriately
+        #        if not current_version:
+        #            raise ValueError("Could not determine the current version of the OED Exposure.")
+
+        # Check if the determined version matches the target version
+        if current_version == version:
+            print("same version")
+            return self  # No conversion needed, just return the current object
+        else:
+            print("different version")
+
+        # TODO: handle the actual version conversion based on attributes in oed_schema_info["versioning"][version]
+
+        return self  # Return the updated object
