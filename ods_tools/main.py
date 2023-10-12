@@ -62,7 +62,7 @@ def check(**kwargs):
 
 
 def convert(**kwargs):
-    """Convert exposure data to an other format (ex: csv to parquet)"""
+    """Convert exposure data to an other format (ex: csv to parquet) or to another version (ex: 3.0.6 to 3.0.4)"""
     path = kwargs.pop("output_dir", None) or kwargs.get("oed_dir", None)
     if not path:
         raise OdsException(
@@ -71,7 +71,12 @@ def convert(**kwargs):
     oed_exposure = get_oed_exposure(**extract_exposure_args(kwargs))
     version = kwargs.pop("version", None)
     if version:
-        oed_exposure.to_version(version)
+        logger.info(f"Converting to version {version}.")  # Log the conversion version
+        try:
+            oed_exposure.to_version(version)
+        except OdsException as e:
+            logger.error("Conversion failed:")
+            logger.error(e)
     oed_exposure.save(path=path, **kwargs)
 
 

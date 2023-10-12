@@ -289,30 +289,46 @@ class OedExposure:
 
         # TODO: check that version passed is valid
 
+        print(self.location.dataframe.loc[:9, ["LocNumber", "OccupancyCode"]])
+
         if version not in self.oed_schema.schema["versioning"]:
-            raise ValueError(f"Version {version} is not valid.")
+            raise ValueError(
+                f"Version {version} is not a known version present in the OED schema."
+            )
+
+        try:
+            # Convert the version string to a float
+            version_float = float(version)
+        except ValueError:
+            raise ValueError(f"Version {version} is not a valid number.")
 
         # TODO: Determine the current version. If the current version is the same as the target version, return the current object.
         # Perhaps also if the target version is superior to the current version, just return the current object.
         # There may be a more efficient way to determine the current version, depending on the overall structure
+
         current_version = "3.2"
         for ver, attributes in self.oed_schema.schema["versioning"].items():
             print(ver)
-        #            if "Category" in attributes and attributes["Category"] == "Occupancy":  # Checking one attribute as an example
-        #                current_version = ver
-        #                break
 
-        # If we couldn't determine the version, raise an error or handle appropriately
-        #        if not current_version:
-        #            raise ValueError("Could not determine the current version of the OED Exposure.")
+        # Select which conversions to apply
+        conversions = sorted(
+            [
+                ver
+                for ver in self.oed_schema.schema["versioning"].keys()
+                if float(ver) >= version_float
+            ],
+            reverse=True,
+        )
+        print(conversions)
 
-        # Check if the determined version matches the target version
-        if current_version == version:
-            print("same version")
-            return self  # No conversion needed, just return the current object
-        else:
-            print("different version")
+        for ver in conversions:
+            for rule in self.oed_schema.schema["versioning"][ver]:
+                if rule["Category"] == "Occupancy":
+                    # Replace the "Fallback" code with the "New code"
+                    self.location.dataframe["OccupancyCode"] = self.location.dataframe[
+                        "OccupancyCode"
+                    ].replace(rule["New code"], rule["Fallback"])
 
-        # TODO: handle the actual version conversion based on attributes in oed_schema_info["versioning"][version]
+        print(self.location.dataframe.loc[:9, ["LocNumber", "OccupancyCode"]])
 
         return self  # Return the updated object
