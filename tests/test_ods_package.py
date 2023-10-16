@@ -1,3 +1,13 @@
+from ods_tools.oed import (
+    OedExposure,
+    OedSchema,
+    OdsException,
+    ModelSettingSchema,
+    AnalysisSettingSchema,
+    OED_TYPE_TO_NAME,
+    UnknownColumnSaveOption,
+)
+from ods_tools.main import convert
 import json
 import logging
 import os
@@ -17,17 +27,6 @@ import tempfile
 # from `python3.xx/site-packages/ods_tools` instead of the local module
 sys.path.append(sys.path.pop(0))
 
-from ods_tools.main import convert
-from ods_tools.oed import (
-    OedExposure,
-    OedSchema,
-    OdsException,
-    ModelSettingSchema,
-    AnalysisSettingSchema,
-    OED_TYPE_TO_NAME,
-    PANDAS_COMPRESSION_MAP,
-    UnknownColumnSaveOption,
-)
 
 logger = logging.getLogger(__file__)
 
