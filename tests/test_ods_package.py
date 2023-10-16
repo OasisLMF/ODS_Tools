@@ -25,6 +25,7 @@ from ods_tools.oed import (
     ModelSettingSchema,
     AnalysisSettingSchema,
     OED_TYPE_TO_NAME,
+    PANDAS_COMPRESSION_MAP,
     UnknownColumnSaveOption,
 )
 
@@ -860,7 +861,6 @@ class OdsPackageTests(TestCase):
             "OccupancyCode": [1075, 1050, 1054],
         }
 
-        # A Mock dataframe class with basic functionality for testing.
         class MockDataFrame:
             dataframe = pd.DataFrame(self.data)
 
@@ -870,11 +870,12 @@ class OdsPackageTests(TestCase):
 
     def test_oed_exposure_conversion(self):
         self.oed_exposure.to_version("3.1")
+        # Expected OccupancyCode values after conversion
         expected_data = [
             1074,
             1050,
             9989,
-        ]  # Expected OccupancyCode values after conversion
+        ]
         for i, row in enumerate(self.oed_exposure.location.dataframe.iterrows()):
             self.assertEqual(row[1]["OccupancyCode"], expected_data[i])
 
@@ -892,6 +893,6 @@ class OdsPackageTests(TestCase):
             self.oed_exposure.to_version("3.x")
 
         self.assertTrue(
-            "Version 3.x is not a known version present in the OED schema."
+            "Version should be provided in 'major.minor' format, e.g. 3.2, 7.4, etc."
             in str(context.exception)
         )

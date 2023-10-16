@@ -6,6 +6,7 @@ __all__ = ["main", "convert", "check"]
 import argparse
 import logging
 
+from ods_tools.oed.common import PANDAS_COMPRESSION_MAP
 from ods_tools import logger
 from ods_tools.oed import (
     OedExposure,
@@ -68,15 +69,21 @@ def convert(**kwargs):
         raise OdsException(
             "--output-dir or --oed-dir need to be provided to perform convert"
         )
+    if not kwargs.get("compression") and not kwargs.get("version"):
+        raise OdsException("either --compression or --version must be provided")
+
     oed_exposure = get_oed_exposure(**extract_exposure_args(kwargs))
     version = kwargs.pop("version", None)
+
     if version:
         logger.info(f"Converting to version {version}.")  # Log the conversion version
         try:
             oed_exposure.to_version(version)
+            kwargs["version_name"] = version.replace(".", "-")
         except OdsException as e:
             logger.error("Conversion failed:")
             logger.error(e)
+
     oed_exposure.save(path=path, **kwargs)
 
 
@@ -142,7 +149,7 @@ convert_command.add_argument(
     "-c",
     "--compression",
     help="compression to use (ex: parquet, zip, gzip, csv,...)",
-    required=True,
+    required=False,
 )
 convert_command.add_argument(
     "--save-config",

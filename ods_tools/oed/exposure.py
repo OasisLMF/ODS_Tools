@@ -6,6 +6,7 @@ This package manage:
 """
 
 import json
+import re
 from pathlib import Path
 
 from .common import (
@@ -278,7 +279,9 @@ class OedExposure:
 
     def to_version(self, version):
         """
-        goes through location to convert columns to specific version
+        goes through location to convert columns to specific version.
+        Right now it works for OccupancyCode and ConstructionCode.
+        (please note that it only supports minor version changes in "major.minor" format, e.g. 3.2, 7.4, etc.)
 
         Args:
             version (str): specific version to roll to
@@ -287,28 +290,22 @@ class OedExposure:
             itself (OedExposure): not sure about this.
         """
 
-        # TODO: check that version passed is valid
-
-        print(self.location.dataframe.loc[:9, ["LocNumber", "OccupancyCode"]])
+        # Input checks - format, version, and convert to float
+        if not re.match(r"^\d+\.\d+$", version):
+            raise ValueError(
+                "Version should be provided in 'major.minor' format, e.g. 3.2, 7.4, etc."
+            )
 
         if version not in self.oed_schema.schema["versioning"]:
             raise ValueError(
                 f"Version {version} is not a known version present in the OED schema."
             )
-
         try:
-            # Convert the version string to a float
             version_float = float(version)
         except ValueError:
             raise ValueError(f"Version {version} is not a valid number.")
 
         # TODO: Determine the current version. If the current version is the same as the target version, return the current object.
-        # Perhaps also if the target version is superior to the current version, just return the current object.
-        # There may be a more efficient way to determine the current version, depending on the overall structure
-
-        current_version = "3.2"
-        for ver, attributes in self.oed_schema.schema["versioning"].items():
-            print(ver)
 
         # Select which conversions to apply
         conversions = sorted(
@@ -319,16 +316,26 @@ class OedExposure:
             ],
             reverse=True,
         )
-        print(conversions)
 
         for ver in conversions:
+            # Create a dictionary for each category
+            replace_dict_occupancy = {}
+            replace_dict_construction = {}
+
             for rule in self.oed_schema.schema["versioning"][ver]:
                 if rule["Category"] == "Occupancy":
-                    # Replace the "Fallback" code with the "New code"
-                    self.location.dataframe["OccupancyCode"] = self.location.dataframe[
-                        "OccupancyCode"
-                    ].replace(rule["New code"], rule["Fallback"])
+                    replace_dict_occupancy[rule["New code"]] = rule["Fallback"]
+                elif rule["Category"] == "Construction":
+                    replace_dict_construction[rule["New code"]] = rule["Fallback"]
 
-        print(self.location.dataframe.loc[:9, ["LocNumber", "OccupancyCode"]])
+            # If the dict is not empty, replace values
+            if replace_dict_occupancy:
+                self.location.dataframe["OccupancyCode"].replace(
+                    replace_dict_occupancy, inplace=True
+                )
+            if replace_dict_construction:
+                self.location.dataframe["ConstructionCode"].replace(
+                    replace_dict_construction, inplace=True
+                )
 
         return self  # Return the updated object
