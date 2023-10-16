@@ -6,7 +6,6 @@ __all__ = ["main", "convert", "check"]
 import argparse
 import logging
 
-from ods_tools.oed.common import PANDAS_COMPRESSION_MAP
 from ods_tools import logger
 from ods_tools.oed import (
     OedExposure,
