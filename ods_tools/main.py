@@ -62,6 +62,15 @@ def convert(**kwargs):
     if not path:
         raise OdsException('--output-dir or --oed-dir need to be provided to perform convert')
     oed_exposure = get_oed_exposure(**extract_exposure_args(kwargs))
+    version = kwargs.pop("version", None)
+    if version:
+        logger.info(f"Converting to version {version}.")  # Log the conversion version
+        try:
+            oed_exposure.to_version(version)
+            kwargs["version_name"] = version.replace(".", "-")
+        except OdsException as e:
+            logger.error("Conversion failed:")
+            logger.error(e)
     oed_exposure.save(path=path, **kwargs)
 
 
