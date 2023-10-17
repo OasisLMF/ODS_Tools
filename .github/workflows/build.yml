@@ -16,6 +16,10 @@ on:
         description: 'Test unreleased OED spec'
         required: false
         type: string
+      oed_spec_branch:
+        description: 'Branch of OED spec'
+        required: false
+        type: string
     outputs:
       src_filename:
         description: "Source Package filename"
@@ -25,8 +29,6 @@ on:
         value: ${{ jobs.build.outputs.whl_filename }}
 
 jobs:
-
-
   oed_spec:
     if: inputs.oed_spec_branch != ''
     uses:  OasisLMF/ODS_OpenExposureData/.github/workflows/build.yml@develop
