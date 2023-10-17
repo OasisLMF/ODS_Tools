@@ -6,6 +6,7 @@ This package manage:
 """
 
 import json
+import re
 from pathlib import Path
 
 from .common import (PANDAS_COMPRESSION_MAP,
@@ -229,3 +230,66 @@ class OedExposure:
             validation_config = self.validation_config
         validator = Validator(self)
         return validator(validation_config)
+
+    def to_version(self, version):
+        """
+        goes through location to convert columns to specific version.
+        Right now it works for OccupancyCode and ConstructionCode.
+        (please note that it only supports minor version changes in "major.minor" format, e.g. 3.2, 7.4, etc.)
+
+        Args:
+            version (str): specific version to roll to
+
+        Returns:
+            itself (OedExposure): not sure about this.
+        """
+
+        # Input checks - format, version, and convert to float
+        if not re.match(r"^\d+\.\d+$", version):
+            raise ValueError(
+                "Version should be provided in 'major.minor' format, e.g. 3.2, 7.4, etc."
+            )
+
+        if version not in self.oed_schema.schema["versioning"]:
+            raise ValueError(
+                f"Version {version} is not a known version present in the OED schema."
+            )
+        try:
+            version_float = float(version)
+        except ValueError:
+            raise ValueError(f"Version {version} is not a valid number.")
+
+        # TODO: Determine the current version. If the current version is the same as the target version, return the current object.
+
+        # Select which conversions to apply
+        conversions = sorted(
+            [
+                ver
+                for ver in self.oed_schema.schema["versioning"].keys()
+                if float(ver) >= version_float
+            ],
+            reverse=True,
+        )
+
+        for ver in conversions:
+            # Create a dictionary for each category
+            replace_dict_occupancy = {}
+            replace_dict_construction = {}
+
+            for rule in self.oed_schema.schema["versioning"][ver]:
+                if rule["Category"] == "Occupancy":
+                    replace_dict_occupancy[rule["New code"]] = rule["Fallback"]
+                elif rule["Category"] == "Construction":
+                    replace_dict_construction[rule["New code"]] = rule["Fallback"]
+
+            # If the dict is not empty, replace values
+            if replace_dict_occupancy:
+                self.location.dataframe["OccupancyCode"].replace(
+                    replace_dict_occupancy, inplace=True
+                )
+            if replace_dict_construction:
+                self.location.dataframe["ConstructionCode"].replace(
+                    replace_dict_construction, inplace=True
+                )
+
+        return self  # Return the updated object
