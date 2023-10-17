@@ -2,6 +2,10 @@ name: ODS-tools Build
 
 on:
   workflow_dispatch:
+    inputs:
+      oed_spec_branch:
+        description: 'Branch of OED spec'
+        required: false
   workflow_call:
     inputs:
       ods_branch:
@@ -21,7 +25,18 @@ on:
         value: ${{ jobs.build.outputs.whl_filename }}
 
 jobs:
+
+
+  oed_spec:
+    if: inputs.oed_spec_branch != ''
+    uses:  OasisLMF/ODS_OpenExposureData/.github/workflows/build.yml@develop
+    secrets: inherit
+    with:
+      ods_branch: ${{ inputs.oed_spec_branch }}
+
   build:
+    if: ${{ ! failure() || ! cancelled() }}
+    needs: [oed_spec]
     name: Build OpenData Package
     runs-on: ubuntu-latest
     outputs:
@@ -62,17 +77,17 @@ jobs:
         python setup.py bdist_wheel
 
     - name: Download OED spec
-      if: inputs.oed_spec_json != ''
+      if: inputs.oed_spec_json != '' || inputs.oed_spec_branch != ''
       uses: actions/download-artifact@v3
       with:
         name: extracted_spec
         path: ${{ github.workspace }}/
 
     # Testing only - not for release
-    - name: Build package (from OED schema file)
-      if: inputs.oed_spec_json != ''
+    - name: Buildpackage (from OED schema file)
+      if: inputs.oed_spec_json != '' || inputs.oed_spec_branch != ''
       run: |
-        python setup.py bdist_wheel install "--local-oed-spec=${{ github.workspace }}/${{ inputs.oed_spec_json }}"
+        python setup.py bdist_wheel install "--local-oed-spec=${{ github.workspace }}/OpenExposureData_Spec.json"
 
     - name: Build Output
       id: build_package
