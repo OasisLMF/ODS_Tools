@@ -588,3 +588,25 @@ class OdsPackageTests(TestCase):
             oed.check()
         assert 'location ' in self._caplog.text
         assert 'is empty' in self._caplog.text
+
+    def test_to_version_with_invalid_format(self):
+        with pytest.raises(ValueError, match="Version should be provided in 'major.minor' format, e.g. 3.2, 7.4, etc."):
+            exposure = OedExposure(
+                location=base_url + "/SourceLocOEDPiWind.csv",
+                account=base_url + "/SourceAccOEDPiWind.csv",
+                ri_info=base_url + "/SourceReinsInfoOEDPiWind.csv",
+                ri_scope=base_url + "/SourceReinsScopeOEDPiWind.csv",
+                use_field=True,
+            )
+            exposure.to_version("3.x")
+
+    def test_to_version_with_valid_format(self):
+        with pytest.raises(ValueError, match="Version 2.8 is not a known version present in the OED schema."):
+            exposure = OedExposure(
+                location=base_url + "/SourceLocOEDPiWind.csv",
+                account=base_url + "/SourceAccOEDPiWind.csv",
+                ri_info=base_url + "/SourceReinsInfoOEDPiWind.csv",
+                ri_scope=base_url + "/SourceReinsScopeOEDPiWind.csv",
+                use_field=True,
+            )
+            exposure.to_version("2.8")
