@@ -590,7 +590,7 @@ class OdsPackageTests(TestCase):
         assert 'is empty' in self._caplog.text
 
     def test_to_version_with_invalid_format(self):
-        exposure = OedExposure(
+        oed_exposure = OedExposure(
             location=base_url + "/SourceLocOEDPiWind.csv",
             account=base_url + "/SourceAccOEDPiWind.csv",
             ri_info=base_url + "/SourceReinsInfoOEDPiWind.csv",
@@ -598,14 +598,14 @@ class OdsPackageTests(TestCase):
             use_field=True,
         )
 
-        if "versioning" in exposure.oed_schema.schema:
+        if "versioning" in oed_exposure.oed_schema.schema:
             with pytest.raises(ValueError, match="Version should be provided in 'major.minor' format, e.g. 3.2, 7.4, etc."):
-                exposure.to_version("3.x")
+                oed_exposure.to_version("3.x")
         else:
             assert True
 
     def test_to_version_with_valid_format(self):
-        exposure = OedExposure(
+        oed_exposure = OedExposure(
             location=base_url + "/SourceLocOEDPiWind.csv",
             account=base_url + "/SourceAccOEDPiWind.csv",
             ri_info=base_url + "/SourceReinsInfoOEDPiWind.csv",
@@ -613,8 +613,39 @@ class OdsPackageTests(TestCase):
             use_field=True,
         )
 
-        if "versioning" in exposure.oed_schema.schema:
+        if "versioning" in oed_exposure.oed_schema.schema:
             with pytest.raises(ValueError, match="Version 2.8 is not a known version present in the OED schema."):
-                exposure.to_version("2.8")
+                oed_exposure.to_version("2.8")
         else:
             assert True
+
+    def test_versioning_fallback(self):
+        oed_exposure = OedExposure(
+            location=base_url + "/SourceLocOEDPiWind.csv",
+            account=base_url + "/SourceAccOEDPiWind.csv",
+            ri_info=base_url + "/SourceReinsInfoOEDPiWind.csv",
+            ri_scope=base_url + "/SourceReinsScopeOEDPiWind.csv",
+            use_field=True,
+        )
+
+        if "versioning" not in oed_exposure.oed_schema.schema:
+            oed_exposure.oed_schema.schema["versioning"] = {}
+
+        oed_exposure.oed_schema.schema["versioning"] = {
+            "1.9": [
+                {
+                    "Category": "Occupancy",
+                    "New code": 9999,
+                    "Fallback": 9998
+                }
+            ]
+        }
+
+        # Modify the first line of exposure.location.dataframe
+        oed_exposure.location.dataframe.loc[0, "OccupancyCode"] = 9999
+
+        # Convert
+        oed_exposure.to_version("1.9")
+        assert True
+        # # Assert the OccupancyCode is as expected
+        # assert exposure.location.dataframe.loc[0, "OccupancyCode"] == 9998
