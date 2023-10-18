@@ -646,6 +646,6 @@ class OdsPackageTests(TestCase):
 
         # Convert
         oed_exposure.to_version("1.9")
-        assert True
+
         # # Assert the OccupancyCode is as expected
-        # assert exposure.location.dataframe.loc[0, "OccupancyCode"] == 9998
+        assert oed_exposure.location.dataframe.loc[0, "OccupancyCode"] == 9998

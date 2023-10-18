@@ -241,7 +241,7 @@ class OedExposure:
             version (str): specific version to roll to
 
         Returns:
-            itself (OedExposure): not sure about this.
+            itself (OedExposure): updated object
         """
 
         # Input checks - format, version, and convert to float
