@@ -20,9 +20,10 @@ from .forex import create_currency_rates
 
 logger = logging.getLogger(__name__)
 
+
 class OedExposure:
     """
-    Object grouping all the OED files related to the exposure Data (location, acoount, ri_info, ri_scope)
+    Object grouping all the OED files related to the exposure Data (location, account, ri_info, ri_scope)
     and the OED schema to follow
     """
     DEFAULT_EXPOSURE_CONFIG_NAME = 'exposure_info.json'
