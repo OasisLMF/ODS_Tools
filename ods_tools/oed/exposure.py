@@ -6,6 +6,7 @@ This package manage:
 """
 
 import json
+import logging
 import re
 from pathlib import Path
 
@@ -17,6 +18,7 @@ from .source import OedSource
 from .validator import Validator
 from .forex import create_currency_rates
 
+logger = logging.getLogger(__name__)
 
 class OedExposure:
     """
@@ -102,16 +104,27 @@ class OedExposure:
                     if Path(oed_dir, name).with_suffix(extension).is_file():
                         return Path(oed_dir, name).with_suffix(extension)
 
+        necessary_files = ["location"]
+        files_found = {file: False for file in necessary_files}
+
         if Path(oed_dir, cls.DEFAULT_EXPOSURE_CONFIG_NAME).is_file():
             return cls.from_config(Path(oed_dir, cls.DEFAULT_EXPOSURE_CONFIG_NAME), **kwargs)
         else:
             config = {}
             for attr, filenames in USUAL_FILE_NAME.items():
-                config[attr] = find_fp(filenames)
+                file_path = find_fp(filenames)
+                if file_path and attr in files_found:
+                    files_found[attr] = True
+                config[attr] = file_path
 
             if Path(oed_dir, OedSchema.DEFAULT_ODS_SCHEMA_FILE).is_file():
                 config['oed_schema_info'] = Path(oed_dir, OedSchema.DEFAULT_ODS_SCHEMA_FILE)
             kwargs['working_dir'] = oed_dir
+
+            missing_files = [file for file, found in files_found.items() if not found]
+            if missing_files:
+                raise FileNotFoundError(f"Files not found in current path ({oed_dir}): {', '.join(missing_files)}")
+
             return cls(**{**config, **kwargs})
 
     @property
@@ -244,20 +257,44 @@ class OedExposure:
             itself (OedExposure): updated object
         """
 
-        # Input checks - format, version, and convert to float
-        if not re.match(r"^\d+\.\d+$", version):
+        def version_to_tuple(version_str):
+            """Converts the version in string format to a tuple of integers"""
+            return tuple(map(int, version_str.split('.')))
+
+        def strip_version(version_str):
+            """
+            Strips a version string to the format 'major.minor'.
+
+            Args:
+                version_str (str): The version string.
+
+            Returns:
+                str: The stripped version string.
+            """
+            # Use regex to find 'major.minor' format
+            match = re.match(r"(\d+\.\d+)", version_str)
+            if match:
+                return match.group(1)
+            else:
+                raise ValueError(f"Invalid version format: {version_str}")
+
+        # Strip the version string down to 'major.minor' format
+        stripped_version = strip_version(version)
+
+        # Input checks - format, version, and convert to tuple
+        if not re.match(r"^\d+\.\d+$", stripped_version):
             raise ValueError(
                 "Version should be provided in 'major.minor' format, e.g. 3.2, 7.4, etc."
             )
 
-        if version not in self.oed_schema.schema["versioning"]:
+        if stripped_version not in self.oed_schema.schema["versioning"]:
             raise ValueError(
                 f"Version {version} is not a known version present in the OED schema."
             )
         try:
-            version_float = float(version)
+            version_tuple = version_to_tuple(stripped_version)
         except ValueError:
-            raise ValueError(f"Version {version} is not a valid number.")
+            raise ValueError(f"Version {stripped_version} is not a valid number.")
 
         # TODO: Determine the current version. If the current version is the same as the target version, return the current object.
 
@@ -266,7 +303,7 @@ class OedExposure:
             [
                 ver
                 for ver in self.oed_schema.schema["versioning"].keys()
-                if float(ver) >= version_float
+                if version_to_tuple(ver) >= version_tuple
             ],
             reverse=True,
         )
@@ -282,14 +319,20 @@ class OedExposure:
                 elif rule["Category"] == "Construction":
                     replace_dict_construction[rule["New code"]] = rule["Fallback"]
 
-            # If the dict is not empty, replace values
-            if replace_dict_occupancy:
-                self.location.dataframe["OccupancyCode"].replace(
-                    replace_dict_occupancy, inplace=True
-                )
-            if replace_dict_construction:
-                self.location.dataframe["ConstructionCode"].replace(
-                    replace_dict_construction, inplace=True
-                )
+            # Replace and log changes for OccupancyCode
+            for key, value in replace_dict_occupancy.items():
+                # Check done in advance to log what is being changed
+                changes = self.location.dataframe["OccupancyCode"][self.location.dataframe["OccupancyCode"] == key].count()
+                if changes:
+                    self.location.dataframe["OccupancyCode"].replace({key: value}, inplace=True)
+                    logger.info(f"{key} -> {value}: {changes} occurrences in OccupancyCode.")
+
+            # Replace and log changes for ConstructionCode
+            for key, value in replace_dict_construction.items():
+                # Check done in advance to log what is being changed
+                changes = self.location.dataframe["ConstructionCode"][self.location.dataframe["ConstructionCode"] == key].count()
+                if changes:
+                    self.location.dataframe["ConstructionCode"].replace({key: value}, inplace=True)
+                    logger.info(f"{key} -> {value}: {changes} occurrences in ConstructionCode.")
 
         return self  # Return the updated object

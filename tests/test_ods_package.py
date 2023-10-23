@@ -599,7 +599,7 @@ class OdsPackageTests(TestCase):
         )
 
         if "versioning" in oed_exposure.oed_schema.schema:
-            with pytest.raises(ValueError, match="Version should be provided in 'major.minor' format, e.g. 3.2, 7.4, etc."):
+            with pytest.raises(ValueError, match="Invalid version format: 3.x"):
                 oed_exposure.to_version("3.x")
         else:
             assert True

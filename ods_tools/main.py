@@ -9,6 +9,7 @@ __all__ = [
 
 import argparse
 import logging
+import os
 
 from ods_tools import logger
 from ods_tools.oed import (
@@ -57,13 +58,26 @@ def check(**kwargs):
 
 
 def convert(**kwargs):
-    """Convert exposure data to an other format (ex: csv to parquet)"""
-    path = kwargs.pop('output_dir', None) or kwargs.get('oed_dir', None)
-    if not path:
-        raise OdsException('--output-dir or --oed-dir need to be provided to perform convert')
+    """Convert exposure data to an other format (ex: csv to parquet) or version (ex: 3.0 to 2.2)"""
+    path = kwargs.pop('output_dir', None)
+
     if not kwargs.get("compression") and not kwargs.get("version"):
         raise OdsException("either --compression or --version must be provided")
+
+    if kwargs.get("config_json"):
+        if not path:
+            path = os.path.dirname(kwargs.get("config_json"))
+    elif kwargs.get("oed_dir"):
+        path = kwargs.get("oed_dir")
+    elif kwargs.get("location"):
+        if not path:
+            raise OdsException("output_dir must be provided when location is provided as single file")
+
+    if not path:
+        kwargs["oed_dir"] = path = os.getcwd()
+
     oed_exposure = get_oed_exposure(**extract_exposure_args(kwargs))
+
     version = kwargs.pop("version", None)
     if version:
         logger.info(f"Converting to version {version}.")  # Log the conversion version
@@ -73,6 +87,8 @@ def convert(**kwargs):
         except OdsException as e:
             logger.error("Conversion failed:")
             logger.error(e)
+
+    logger.info(f"Saving to: {path}")
     oed_exposure.save(path=path, **kwargs)
 
 
@@ -106,7 +122,7 @@ specific paths (--location, --account, --ri-info, --ri-scope) will overwrite the
 
 
 convert_description = """
-convert OED files to an other format
+convert OED files to an other format or version
 """
 
 command_parser = main_parser.add_subparsers(help='command [convert]', dest='command', required=True)
