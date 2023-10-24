@@ -288,16 +288,17 @@ class OedExposure:
                 "Version should be provided in 'major.minor' format, e.g. 3.2, 7.4, etc."
             )
 
-        if stripped_version not in self.oed_schema.schema["versioning"]:
-            raise ValueError(
-                f"Version {version} is not a known version present in the OED schema."
-            )
         try:
             version_tuple = version_to_tuple(stripped_version)
         except ValueError:
             raise ValueError(f"Version {stripped_version} is not a valid number.")
 
-        # TODO: Determine the current version. If the current version is the same as the target version, return the current object.
+        # Get list of tuples of all versions in the schema
+        all_versions = [version_to_tuple(ver) for ver in self.oed_schema.schema["versioning"].keys()]
+
+        # If no conversions to be made (because version is higher than all versions in the schema), return self
+        if all(version_tuple > ver for ver in all_versions):
+            return self
 
         # Select which conversions to apply
         conversions = sorted(

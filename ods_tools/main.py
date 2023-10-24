@@ -135,7 +135,7 @@ convert_command.add_argument('-c', '--compression', help='compression to use (ex
 convert_command.add_argument('--save-config', help='if True, OED config file will be save in the --path directory', default=False)
 convert_command.add_argument('-v', '--logging-level', help='logging level (debug:10, info:20, warning:30, error:40, critical:50)',
                              default=30, type=int)
-convert_command.add_argument("-vsc", "--version", help="specific OED version to use in the conversion", default=None, type=str)
+convert_command.add_argument('--version', help='specific OED version to use in the conversion', default=None, type=str)
 
 check_description = """
 check exposure data.
