@@ -133,6 +133,15 @@
                                  "minLength":1
                               }
                            },
+                           "valid_footprint_ids":{
+                              "type":"array",
+                              "title":"Supported footprint files",
+                              "description":"An optional list of viable footprint file ids to use with this event set",
+                              "items":{
+                                 "type":"string",
+                                 "minLength":1
+                              }
+                           },
                            "valid_perspectives":{
                               "type":"array",
                               "title":"Supported loss perspectives ",
