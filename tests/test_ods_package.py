@@ -710,3 +710,48 @@ class OdsPackageTests(TestCase):
 
         # # Assert the OccupancyCode is as expected
         assert oed_exposure.location.dataframe.loc[0, "OccupancyCode"] == 9999
+
+    def test_versioning_lower_than_supported(self):
+        oed_exposure = OedExposure(
+            location=base_url + "/SourceLocOEDPiWind.csv",
+            account=base_url + "/SourceAccOEDPiWind.csv",
+            ri_info=base_url + "/SourceReinsInfoOEDPiWind.csv",
+            ri_scope=base_url + "/SourceReinsScopeOEDPiWind.csv",
+            use_field=True,
+        )
+
+        if "versioning" not in oed_exposure.oed_schema.schema:
+            oed_exposure.oed_schema.schema["versioning"] = {}
+
+        oed_exposure.oed_schema.schema["versioning"] = {
+            "1.9": [
+                {
+                    "Category": "Occupancy",
+                    "New code": 9999,
+                    "Fallback": 9998
+                }
+            ],
+            "1.5": [
+                {
+                    "Category": "Occupancy",
+                    "New code": 9998,
+                    "Fallback": 9997
+                }
+            ],
+            "1.1": [
+                {
+                    "Category": "Occupancy",
+                    "New code": 9997,
+                    "Fallback": 9996
+                }
+            ]
+        }
+
+        # Modify the first line of exposure.location.dataframe
+        oed_exposure.location.dataframe.loc[0, "OccupancyCode"] = 9999
+
+        # Convert
+        oed_exposure.to_version("0.8")
+
+        # # Assert the OccupancyCode is as expected
+        assert oed_exposure.location.dataframe.loc[0, "OccupancyCode"] == 9996

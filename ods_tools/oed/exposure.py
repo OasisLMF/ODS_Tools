@@ -300,6 +300,12 @@ class OedExposure:
         if all(version_tuple > ver for ver in all_versions):
             return self
 
+        # Find the lowest version in the schema
+        lowest_version = min(all_versions)
+
+        if version_tuple < lowest_version:
+            logger.warning(f"Version {stripped_version} is lower than the lowest supported version {lowest_version[0]}.{lowest_version[1]}. Will convert to {lowest_version[0]}.{lowest_version[1]}.")
+
         # Select which conversions to apply
         conversions = sorted(
             [
@@ -309,6 +315,10 @@ class OedExposure:
             ],
             reverse=True,
         )
+
+        # Check for the existence of OccupancyCode and ConstructionCode columns
+        has_occupancy_code = "OccupancyCode" in self.location.dataframe.columns
+        has_construction_code = "ConstructionCode" in self.location.dataframe.columns
 
         for ver in conversions:
             # Create a dictionary for each category
@@ -322,19 +332,21 @@ class OedExposure:
                     replace_dict_construction[rule["New code"]] = rule["Fallback"]
 
             # Replace and log changes for OccupancyCode
-            for key, value in replace_dict_occupancy.items():
-                # Check done in advance to log what is being changed
-                changes = self.location.dataframe["OccupancyCode"][self.location.dataframe["OccupancyCode"] == key].count()
-                if changes:
-                    self.location.dataframe["OccupancyCode"].replace({key: value}, inplace=True)
-                    logger.info(f"{key} -> {value}: {changes} occurrences in OccupancyCode.")
+            if has_occupancy_code:
+                for key, value in replace_dict_occupancy.items():
+                    # Check done in advance to log what is being changed
+                    changes = self.location.dataframe["OccupancyCode"][self.location.dataframe["OccupancyCode"] == key].count()
+                    if changes:
+                        self.location.dataframe["OccupancyCode"].replace({key: value}, inplace=True)
+                        logger.info(f"{key} -> {value}: {changes} occurrences in OccupancyCode.")
 
             # Replace and log changes for ConstructionCode
-            for key, value in replace_dict_construction.items():
-                # Check done in advance to log what is being changed
-                changes = self.location.dataframe["ConstructionCode"][self.location.dataframe["ConstructionCode"] == key].count()
-                if changes:
-                    self.location.dataframe["ConstructionCode"].replace({key: value}, inplace=True)
-                    logger.info(f"{key} -> {value}: {changes} occurrences in ConstructionCode.")
+            if has_construction_code:
+                for key, value in replace_dict_construction.items():
+                    # Check done in advance to log what is being changed
+                    changes = self.location.dataframe["ConstructionCode"][self.location.dataframe["ConstructionCode"] == key].count()
+                    if changes:
+                        self.location.dataframe["ConstructionCode"].replace({key: value}, inplace=True)
+                        logger.info(f"{key} -> {value}: {changes} occurrences in ConstructionCode.")
 
         return self  # Return the updated object
