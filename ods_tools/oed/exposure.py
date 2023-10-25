@@ -304,7 +304,10 @@ class OedExposure:
         lowest_version = min(all_versions)
 
         if version_tuple < lowest_version:
-            logger.warning(f"Version {stripped_version} is lower than the lowest supported version {lowest_version[0]}.{lowest_version[1]}. Will convert to {lowest_version[0]}.{lowest_version[1]}.")
+            logger.warning(
+                f"Version {stripped_version} is lower than the lowest supported version {lowest_version[0]}.{lowest_version[1]}. "
+                f"Will convert to {lowest_version[0]}.{lowest_version[1]}."
+            )
 
         # Select which conversions to apply
         conversions = sorted(
