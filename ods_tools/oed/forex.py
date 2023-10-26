@@ -192,8 +192,10 @@ def create_currency_rates(currency_conversion):
         elif currency_conversion.get("source_type") == 'parquet':
             return DictBasedCurrencyRates.from_parquet(get_path('file_path'),
                                                        **currency_conversion.get("read_parameters", {}))
-        elif currency_conversion.get("source_type", '').lower() == 'dict':
+        elif currency_conversion.get("source_type", '').lower() == 'dict':  # doesn't work in json as key must be single value
             return DictBasedCurrencyRates(currency_conversion['currency_rates'])
+        elif currency_conversion.get("source_type", '').lower() == 'list':  # option to write directly the rate in the json file
+            return DictBasedCurrencyRates.from_list(currency_conversion['currency_rates'])
         else:
             raise OdsException(
                 f"Unsupported currency_conversion source type : {currency_conversion.get('source_type')}")
@@ -254,9 +256,10 @@ def convert_currency(oed_df, oed_type, reporting_currency, currency_rate, oed_sc
         for field, column in field_to_column.items():
             field_type = ods_fields[field.lower()].get('Back End DB Field Name', '').lower()
 
-            if (field_type in ['tax', 'grosspremium', 'netpremium', 'brokerage', 'extraexpenselimit', 'minded',
-                               'maxded']
-                    or field.lower().endswith('tiv')):
+            if (
+                    field_type in ['tax', 'grosspremium', 'netpremium', 'brokerage', 'extraexpenselimit', 'minded', 'maxded']
+                    or field.lower().endswith('tiv')
+                    or field in ['LayerLimit', 'LayerAttachment']):
                 row_filter = orig_cur_rows
             elif field_type == 'ded':
                 column_type_name = field.replace('Ded', 'DedType')
