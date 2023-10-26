@@ -253,21 +253,22 @@ def convert_currency(oed_df, oed_type, reporting_currency, currency_rate, oed_sc
         oed_df.loc[orig_cur_rows, 'RateOfExchange'] *= rate
         for field, column in field_to_column.items():
             field_type = ods_fields[field.lower()].get('Back End DB Field Name', '').lower()
+
             if (field_type in ['tax', 'grosspremium', 'netpremium', 'brokerage', 'extraexpenselimit', 'minded',
                                'maxded']
-                    or field.endswith('tiv')):
+                    or field.lower().endswith('tiv')):
                 row_filter = orig_cur_rows
             elif field_type == 'ded':
-                column_type_name = field.replace('ded', 'dedtype')
+                column_type_name = field.replace('Ded', 'DedType')
                 row_filter = orig_cur_rows & (oed_df[field_to_column[column_type_name]] == 0)
             elif field_type == 'limit':
-                column_type_name = field.replace('limit', 'limittype')
+                column_type_name = field.replace('Limit', 'LimitType')
                 row_filter = orig_cur_rows & (oed_df[field_to_column[column_type_name]] == 0)
             elif field_type in ['payoutstart', 'payoutend', 'payoutlimit']:
-                column_type_name = 'payouttype'
+                column_type_name = 'PayoutType'
                 row_filter = orig_cur_rows & (oed_df[field_to_column[column_type_name]] == 0)
             elif field_type in ['triggerstart', 'triggerend']:
-                column_type_name = 'triggertype'
+                column_type_name = 'TriggerType'
                 row_filter = orig_cur_rows & (oed_df[field_to_column[column_type_name]] == 0)
             else:  # not a currency unit column we go to the next one
                 continue
