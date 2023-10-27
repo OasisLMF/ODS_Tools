@@ -293,22 +293,6 @@ class OedExposure:
         except ValueError:
             raise ValueError(f"Version {stripped_version} is not a valid number.")
 
-        # Get list of tuples of all versions in the schema
-        all_versions = [version_to_tuple(ver) for ver in self.oed_schema.schema["versioning"].keys()]
-
-        # If no conversions to be made (because version is higher than all versions in the schema), return self
-        if all(version_tuple > ver for ver in all_versions):
-            return self
-
-        # Find the lowest version in the schema
-        lowest_version = min(all_versions)
-
-        if version_tuple < lowest_version:
-            logger.warning(
-                f"Version {stripped_version} is lower than the lowest supported version {lowest_version[0]}.{lowest_version[1]}. "
-                f"Will convert to {lowest_version[0]}.{lowest_version[1]}."
-            )
-
         # Select which conversions to apply
         conversions = sorted(
             [
