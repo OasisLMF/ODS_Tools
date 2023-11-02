@@ -7,7 +7,7 @@ This package manage:
 
 import json
 import logging
-import re
+from packaging import version
 from pathlib import Path
 
 from .common import (PANDAS_COMPRESSION_MAP,
@@ -245,7 +245,7 @@ class OedExposure:
         validator = Validator(self)
         return validator(validation_config)
 
-    def to_version(self, version):
+    def to_version(self, to_version):
         """
         goes through location to convert columns to specific version.
         Right now it works for OccupancyCode and ConstructionCode.
@@ -257,49 +257,24 @@ class OedExposure:
         Returns:
             itself (OedExposure): updated object
         """
+        def strip_version(version_string):
+            parsed_version = version.parse(version_string)
+            return f'{parsed_version.release[0]}.{parsed_version.release[1]}'
 
-        def version_to_tuple(version_str):
-            """Converts the version in string format to a tuple of integers"""
-            return tuple(map(int, version_str.split('.')))
-
-        def strip_version(version_str):
-            """
-            Strips a version string to the format 'major.minor'.
-
-            Args:
-                version_str (str): The version string.
-
-            Returns:
-                str: The stripped version string.
-            """
-            # Use regex to find 'major.minor' format
-            match = re.match(r"(\d+\.\d+)", version_str)
-            if match:
-                return match.group(1)
-            else:
-                raise ValueError(f"Invalid version format: {version_str}")
-
-        # Strip the version string down to 'major.minor' format
-        stripped_version = strip_version(version)
-
-        # Input checks - format, version, and convert to tuple
-        if not re.match(r"^\d+\.\d+$", stripped_version):
-            raise ValueError(
-                "Version should be provided in 'major.minor' format, e.g. 3.2, 7.4, etc."
-            )
-
+        # Parse version string
         try:
-            version_tuple = version_to_tuple(stripped_version)
-        except ValueError:
-            raise ValueError(f"Version {stripped_version} is not a valid number.")
+            target_version = strip_version(to_version)
+        except version.InvalidVersion:
+            raise ValueError(f"Invalid version: {to_version}")
 
         # Select which conversions to apply
         conversions = sorted(
             [
                 ver
                 for ver in self.oed_schema.schema["versioning"].keys()
-                if version_to_tuple(ver) >= version_tuple
+                if version.parse(ver) >= version.parse(target_version)
             ],
+            key=lambda x: version.parse(x),
             reverse=True,
         )
 
