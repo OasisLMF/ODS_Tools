@@ -24,6 +24,7 @@ def is_relative(filepath):
     url_parsed = urlparse(str(filepath))
     return not (all([url_parsed.scheme, url_parsed.netloc]) or Path(filepath).is_absolute())
 
+
 try:
     from functools import cached_property
 except ImportError:  # support for python < 3.8
@@ -68,7 +69,6 @@ except ImportError:  # support for python < 3.8
                 value = self.func(obj)
                 obj.__dict__[self.__name__] = value
             return value
-
 
 
 # PANDAS_COMPRESSION_MAP is also used to order the preferred input format in ExposureData.from_dir

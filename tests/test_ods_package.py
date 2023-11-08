@@ -589,15 +589,14 @@ class OdsPackageTests(TestCase):
         assert 'location ' in self._caplog.text
         assert 'is empty' in self._caplog.text
 
-
     def test_peril_filtering(self):
         """check that oed_schema.peril_filtering works correctly"""
         loc_df = pd.DataFrame({
             'PortNumber': [1, 1, 1, 1],
             'AccNumber': [1, 1, 1, 1],
             'LocNumber': [1, 2, 3, 4],
-            'CountryCode': ['UK', 'UK','UK','UK',],
-            'LocPerilsCovered': ['WW2', 'WTC,WSS', 'QQ1;WW2', 'WTC'],
+            'CountryCode': ['UK', 'UK', 'UK', 'UK',],
+            'LocPerilsCovered': ['WW2', 'WTC;WSS', 'QQ1;WW2', 'WTC'],
             'BuildingTIV': ['1', '1', '1', '1'],
             'ContentsTIV': ['1', '1', '1', '1'],
             'LocCurrency': ['1', '1', '1', '1'],
@@ -607,5 +606,3 @@ class OdsPackageTests(TestCase):
         peril_out = pd.Series(['XLT'] * 4)
         assert oed.oed_schema.peril_filtering(peril_in, oed.location.dataframe['LocPerilsCovered']).all()
         assert not oed.oed_schema.peril_filtering(peril_out, oed.location.dataframe['LocPerilsCovered']).any()
-
-
