@@ -1,8 +1,32 @@
 import json
 import os
 from pathlib import Path
+import numba as nb
+import numpy as np
 
-from .common import OdsException, BLANK_VALUES
+from .common import OdsException, BLANK_VALUES, cached_property
+
+ENV_ODS_SCHEMA_PATH = os.getenv('ODS_SCHEMA_PATH')
+
+
+# function to check if a subperil is part of a peril
+@nb.jit(cache=True, nopython=True)
+def __single_peril_filtering(peril_id, peril_filter, perils_dict):
+    if peril_filter:
+        for peril_filter in peril_filter.split(';'):
+            for p in perils_dict[peril_filter]:
+                if p == peril_id:
+                    return True
+    return False
+
+
+@nb.jit(cache=True, nopython=True)
+def jit_peril_filtering(peril_ids, peril_filters, perils_dict):
+    result = np.empty_like(peril_ids, dtype=np.bool_)
+    for i in range(peril_ids.shape[0]):
+        result[i] = __single_peril_filtering(peril_ids[i], peril_filters[i], perils_dict)
+
+    return result
 
 
 class OedSchema:
@@ -14,8 +38,8 @@ class OedSchema:
         json_path (Path or str): path to the json file from where the schema was loaded
     """
     DEFAULT_ODS_SCHEMA_FILE = 'OpenExposureData_Spec.json'
-    DEFAULT_ODS_SCHEMA_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                                           'data', DEFAULT_ODS_SCHEMA_FILE)
+    DEFAULT_ODS_SCHEMA_PATH = (ENV_ODS_SCHEMA_PATH if ENV_ODS_SCHEMA_PATH
+                               else os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', DEFAULT_ODS_SCHEMA_FILE))
 
     def __init__(self, schema, json_path):
         """
@@ -74,6 +98,20 @@ class OedSchema:
             schema["country_area"] = country_area
 
             return cls(schema, oed_json)
+
+    @cached_property
+    def nb_perils_dict(self):
+        nb_perils_dict = nb.typed.Dict.empty(
+            key_type=nb.types.UnicodeCharSeq(3),
+            value_type=nb.types.UnicodeCharSeq(3)[:],
+        )
+        for peril_group, perils in self.schema['perils']['covered'].items():
+            nb_perils_dict[peril_group] = np.array(perils, dtype='U3')
+
+        return nb_perils_dict
+
+    def peril_filtering(self, peril_ids, peril_filters):
+        return jit_peril_filtering(peril_ids.to_numpy().astype('str'), peril_filters.to_numpy().astype('str'), self.nb_perils_dict)
 
     @staticmethod
     def to_universal_field_name(column: str):
