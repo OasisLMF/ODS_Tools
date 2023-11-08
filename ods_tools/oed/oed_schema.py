@@ -111,6 +111,14 @@ class OedSchema:
         return nb_perils_dict
 
     def peril_filtering(self, peril_ids, peril_filters):
+        """
+        check if peril_ids are part of the peril groups in peril_filters, both array need to match size
+        Args:
+            peril_ids (pd.Series): peril that are checked
+            peril_filters (pd.Series): peril groups to check against
+        :return:
+            np.array of True and False
+        """
         return jit_peril_filtering(peril_ids.to_numpy().astype('str'), peril_filters.to_numpy().astype('str'), self.nb_perils_dict)
 
     @staticmethod
