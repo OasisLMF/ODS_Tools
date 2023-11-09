@@ -1,6 +1,12 @@
 ODS_Tools Changelog
 ===================
 
+`3.0.8`_
+ ---------
+* [#51](https://github.com/OasisLMF/ODS_Tools/pull/51) - Update CI for stable 3.0.x
+* [#70](https://github.com/OasisLMF/ODS_Tools/pull/70) - Fix/forex case error
+.. _`3.0.8`:  https://github.com/OasisLMF/ODS_Tools/compare/3.0.7...3.0.8
+
 `3.0.7`_
  ---------
 * [#42](https://github.com/OasisLMF/ODS_Tools/pull/43) - ods_tools check crashes on empty location file
