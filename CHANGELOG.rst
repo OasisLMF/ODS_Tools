@@ -1,6 +1,12 @@
 ODS_Tools Changelog
 ===================
 
+`3.1.3`_
+ ---------
+* [#64](https://github.com/OasisLMF/ODS_Tools/pull/66) - Backward compatibility when adding new codes in OED
+* [#68](https://github.com/OasisLMF/ODS_Tools/pull/69) - Define relationships between event and footprint sets
+* [#70](https://github.com/OasisLMF/ODS_Tools/pull/70) - Fix/forex case error
+* [#73](https://github.com/OasisLMF/ODS_Tools/pull/73) - Feature/peril filter
 .. _`3.1.3`:  https://github.com/OasisLMF/ODS_Tools/compare/3.1.2...3.1.3
 
 `3.1.2`_
