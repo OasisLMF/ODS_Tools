@@ -1,6 +1,8 @@
 ODS_Tools Changelog
 ===================
 
+.. _`3.1.3`:  https://github.com/OasisLMF/ODS_Tools/compare/3.1.2...3.1.3
+
 `3.1.2`_
  ---------
 * [#53](https://github.com/OasisLMF/ODS_Tools/pull/53) - Release 3.1.1 (staging)
