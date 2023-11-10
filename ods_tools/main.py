@@ -9,6 +9,7 @@ __all__ = [
 
 import argparse
 import logging
+import os
 
 from ods_tools import logger
 from ods_tools.oed import (
@@ -57,11 +58,37 @@ def check(**kwargs):
 
 
 def convert(**kwargs):
-    """Convert exposure data to an other format (ex: csv to parquet)"""
-    path = kwargs.pop('output_dir', None) or kwargs.get('oed_dir', None)
+    """Convert exposure data to an other format (ex: csv to parquet) or version (ex: 3.0 to 2.2)"""
+    path = kwargs.pop('output_dir', None)
+
+    if not kwargs.get("compression") and not kwargs.get("version"):
+        raise OdsException("either --compression or --version must be provided")
+
+    if kwargs.get("config_json"):
+        if not path:
+            path = os.path.dirname(kwargs.get("config_json"))
+    elif kwargs.get("oed_dir"):
+        path = kwargs.get("oed_dir")
+    elif kwargs.get("location"):
+        if not path:
+            raise OdsException("output_dir must be provided when location is provided as single file")
+
     if not path:
-        raise OdsException('--output-dir or --oed-dir need to be provided to perform convert')
+        kwargs["oed_dir"] = path = os.getcwd()
+
     oed_exposure = get_oed_exposure(**extract_exposure_args(kwargs))
+
+    version = kwargs.pop("version", None)
+    if version:
+        logger.info(f"Converting to version {version}.")  # Log the conversion version
+        try:
+            oed_exposure.to_version(version)
+            kwargs["version_name"] = version.replace(".", "-")
+        except OdsException as e:
+            logger.error("Conversion failed:")
+            logger.error(e)
+
+    logger.info(f"Saving to: {path}")
     oed_exposure.save(path=path, **kwargs)
 
 
@@ -95,7 +122,7 @@ specific paths (--location, --account, --ri-info, --ri-scope) will overwrite the
 
 
 convert_description = """
-convert OED files to an other format
+convert OED files to an other format or version
 """
 
 command_parser = main_parser.add_subparsers(help='command [convert]', dest='command', required=True)
@@ -104,10 +131,11 @@ convert_command = command_parser.add_parser('convert', description=convert_descr
 add_exposure_data_args(convert_command)
 convert_command.add_argument('--check-oed', help='if True, OED file will be checked before convertion', default=False)
 convert_command.add_argument('--output-dir', help='path of the output directory', required=False)
-convert_command.add_argument('-c', '--compression', help='compression to use (ex: parquet, zip, gzip, csv,...)', required=True)
+convert_command.add_argument('-c', '--compression', help='compression to use (ex: parquet, zip, gzip, csv,...)', required=False)
 convert_command.add_argument('--save-config', help='if True, OED config file will be save in the --path directory', default=False)
 convert_command.add_argument('-v', '--logging-level', help='logging level (debug:10, info:20, warning:30, error:40, critical:50)',
                              default=30, type=int)
+convert_command.add_argument('--version', help='specific OED version to use in the conversion', default=None, type=str)
 
 check_description = """
 check exposure data.
