@@ -163,6 +163,7 @@
                                  "type":"string",
                                  "enum":[
                                     "aal",
+                                    "aalcalcmeanonly",
                                     "elt",
                                     "plt",
                                     "lec",
@@ -186,6 +187,8 @@
                                     "plt_quantile",
                                     "plt_moment",
                                     "alt_period",
+                                    "alt_meanonly",
+                                    "alct_confidence",
                                     "alct_convergence",
                                     "ept",
                                     "ept_full_uncertainty_aep",
@@ -407,6 +410,7 @@
                   "type":"string",
                   "enum":[
                      "aal",
+                     "aalcalcmeanonly",
                      "elt",
                      "plt",
                      "lec",
@@ -429,6 +433,8 @@
                      "plt_quantile",
                      "plt_moment",
                      "alt_period",
+                     "alt_meanonly",
+                     "alct_confidence",
                      "alct_convergence",
                      "ept",
                      "ept_full_uncertainty_aep",
