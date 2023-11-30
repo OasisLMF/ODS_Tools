@@ -827,16 +827,17 @@ class OdsPackageTests(TestCase):
         # # Assert the OccupancyCode is as expected
         assert oed_exposure.location.dataframe.loc[0, "OccupancyCode"] == 9995
 
-    def test_all_analysis_options__in_valid_metrics(self): 
+    def test_all_analysis_options__in_valid_metrics(self):
         model_schema = ModelSettingSchema().schema
-        analysis_schema = AnalysisSettingSchema().schema 
- 
-        # extract model settings 'valid_metrics' options, and check both match 
+        analysis_schema = AnalysisSettingSchema().schema
+
+        # extract model settings 'valid_metrics' options, and check both match
         global__valid_output_metrics = set(model_schema['properties']['model_settings']['properties']['valid_output_metrics']['items']['enum'])
-        event_set__valid_metrics = set(model_schema['properties']['model_settings']['properties']['event_set']['properties']['options']['items']['properties']['valid_metrics']['items']['enum'])
+        event_set__valid_metrics = set(model_schema['properties']['model_settings']['properties']['event_set']
+                                       ['properties']['options']['items']['properties']['valid_metrics']['items']['enum'])
         self.assertEqual(global__valid_output_metrics, event_set__valid_metrics)
 
-        # Build expected list from analysis settings schema. 
+        # Build expected list from analysis settings schema.
         excluded_keys_list = ['id', 'oed_fields', 'lec_output', 'return_period_file', 'parquet_format', 'eltcalc', 'pltcalc', 'leccalc', 'aalcalc']
         extra_keys_list = ['aal', 'elt', 'plt', 'lec', 'aep', 'oep', 'ept', 'psept']
 
@@ -844,7 +845,7 @@ class OdsPackageTests(TestCase):
             **analysis_schema['definitions']['output_summaries']['items']['properties'],
             **analysis_schema['definitions']['output_summaries']['items']['properties']['leccalc']['properties'],
             **analysis_schema['definitions']['output_summaries']['items']['properties']['ord_output']['properties']
-        }    
+        }
         expected_list = set(extra_keys_list + [k for k in settings_output_options if k not in excluded_keys_list])
 
         self.assertEqual(expected_list, global__valid_output_metrics)
