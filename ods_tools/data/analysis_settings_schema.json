@@ -379,10 +379,16 @@
                 },
                 "footprint_set": {
                     "type": "string",
-		    "title": "Footprint set file ID.",
-		    "description": "Identifier for the footprint files that are used for output calculations.",
-		    "default": 1
-		}
+                    "title": "Footprint set file ID.",
+                    "description": "Identifier for the footprint files that are used for output calculations.",
+                    "default": 1
+		        },
+                "vulnerability_set": {
+                    "type": "string",
+                    "title": "Vulnerability set file ID.",
+                    "description": "Identifier for the vulnerability files that are used for output calculations.",
+                    "default": 1
+                }
             }
         },
         "gul_output": {
