@@ -472,13 +472,7 @@
 	    "description": "Uniform factor to apply across all losses.",
 	    "default": 0,
 	    "minimum": 0
-	},
-    "vulnerability_adjustments": {
-        "type": ["string", "object"],
-        "title": "Optional adjustments to specific vulnerability IDs",
-        "description": "Either a dictionary of changes or the path of a file containing the data of specific vulnerability IDs",
-        "default": "1"
-    }
+	}
     },
     "required": [
         "model_supplier_id",
