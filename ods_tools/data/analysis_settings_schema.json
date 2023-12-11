@@ -379,10 +379,37 @@
                 },
                 "footprint_set": {
                     "type": "string",
-            "title": "Footprint set file ID.",
-            "description": "Identifier for the footprint files that are used for output calculations.",
-            "default": 1
-        }
+                    "title": "Footprint set file ID.",
+                    "description": "Identifier for the footprint files that are used for output calculations.",
+                    "default": 1
+                },
+                "vulnerability_set": {
+                    "type": "string",
+                    "title": "Vulnerability set file ID.",
+                    "description": "Identifier for the vulnerability files that are used for output calculations.",
+                    "default": 1
+                },
+                "correlation_settings": {
+                    "type": "array",
+                    "title": "Correlation Settings",
+                    "description": "The Correlation Settings",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "peril_correlation_group": {
+                               "type": "integer",
+                               "title": "Peril Correlation Group",
+                               "description": "The Peril Correlation Group",
+                               "minLength": 1
+                            },
+                            "correlation_value": {
+                               "type": "string",
+                               "title": "Correlation Value",
+                               "description": "The Correlation Value"
+                            }
+                         }
+                    }
+                }
             }
         },
         "gul_output": {
