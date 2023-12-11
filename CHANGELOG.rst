@@ -1,6 +1,8 @@
 ODS_Tools Changelog
 ===================
 
+.. _`3.1.4`:  https://github.com/OasisLMF/ODS_Tools/compare/3.1.3...3.1.4
+
 `3.1.3`_
  ---------
 * [#64](https://github.com/OasisLMF/ODS_Tools/pull/66) - Backward compatibility when adding new codes in OED
