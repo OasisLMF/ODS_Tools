@@ -412,6 +412,37 @@
                 }
             }
         },
+        "vulnerability_adjustments": {
+            "type": ["object", "string"],
+            "title": "Vulnerability Adjustments",
+            "description": "This can either be a JSON object with detailed settings (vulnerability ID and associated adjustments) or a path to a csv file with that data.",
+            "oneOf": [
+                {
+                    "type": "string",
+                    "description": "Path to a CSV file containing vulnerability adjustments."
+                },
+                {
+                    "type": "object",
+                    "description": "Detailed vulnerability adjustment settings.",
+                    "patternProperties": {
+                        "^[0-9]+$": {
+                            "type": "array",
+                            "items": {
+                                "type": "array",
+                                "minItems": 3,
+                                "maxItems": 3,
+                                "items": [
+                                    { "type": "integer" },
+                                    { "type": "integer" },
+                                    { "type": "number", "minimum": 0, "maximum": 1 }
+                                ]
+                            }
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            ]
+        },
         "gul_output": {
             "type": "boolean",
             "title": "Produce GUL output",
