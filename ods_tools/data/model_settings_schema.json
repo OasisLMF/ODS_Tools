@@ -1211,6 +1211,21 @@
                         "title":"Deployment target",
                         "description":"Target for deploying this additional asset",
                         "minLength":1
+                     },
+                     "event_set_options":{
+                        "title":"Asset event set options",
+                        "description":"Event set options related to the additional asset",
+                        "$ref": "#/properties/model_settings/properties/event_set/properties/options"
+                     },
+                     "event_occurrence_id_options":{
+                        "title":"Asset event occurrence set options",
+                        "description":"Event occurrence set options related to the additional asset",
+                        "$ref": "#/properties/model_settings/properties/event_occurrence_id/properties/options"
+                     },
+                     "footprint_set_options":{
+                        "title":"Asset event occurrence set options",
+                        "description":"Footprint set options related to the additional asset",
+                        "$ref": "#/properties/model_settings/properties/footprint_set/properties/options"
                      }
                   },
                   "required":[
