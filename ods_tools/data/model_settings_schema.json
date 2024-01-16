@@ -389,6 +389,86 @@
                   "options"
                ]
             },
+            "vulnerability_set":{
+               "title":"Vulnerability set selector",
+               "description":"The 'id' field from options is used as a file suffix, e.g. vulnerability_<id>.bin, vulnerability_<id>.csv, vulnerability_<id>.parquet",
+               "type":"object",
+               "uniqueItems":false,
+               "additionalProperties": false,
+               "properties":{
+                   "name":{
+                       "type":"string",
+                       "title":"UI Option",
+                       "description":"UI name for selection",
+                       "minLength":1
+                   },
+                   "desc":{
+                       "type":"string",
+                       "title":"Short description",
+                       "description":"UI description for selection"
+                   },
+                   "used_for":{
+                      "type":"string",
+                      "title":"Where the setting is applied",
+                      "description":"Set if this parameter is ONLY used at input 'generation' or for output 'losses'",
+                      "enum":[
+                         "all",
+                         "generation",
+                         "losses"
+                      ]
+                   },
+                   "tooltip":{
+                      "type":"string",
+                      "title":"UI tooltip",
+                      "description":"Long description (optional)"
+                   },
+                   "default":{
+                      "type":"string",
+                      "title":"Default footprint set",
+                      "description":"Initial setting for vulnerability set"
+                   },
+                   "options":{
+                      "type":"array",
+                      "title":"Selection options for footprint",
+                      "description":"Array of possible vulnerability sets",
+                      "items":{
+                         "type":"object",
+                         "title":"Selection option element",
+                         "description":"Vulnerability set options",
+                         "additionalProperties":false,
+                         "properties":{
+                             "id":{
+                                 "type":"string",
+                                 "title":"Vulnerability set suffix",
+                                 "description":"String value used to select a vulnerability set",
+                                 "minLength":1
+                             },
+                             "desc":{
+                                 "type":"string",
+                                 "title":"Vulnerability set description",
+                                 "description":"UI description for selection",
+                                 "minLength":1
+                             },
+                             "tooltip":{
+                                 "type":"string",
+                                 "title":"UI tooltip",
+                                 "description":"Long description (optional)"
+                             }
+                         },
+                         "required":[
+                             "id",
+                             "desc"
+                         ]
+                    }
+                 }
+              },
+              "required":[
+                 "name",
+                 "desc",
+                 "default",
+                 "options"
+              ]
+           },
             "valid_output_perspectives":{
                "type":"array",
                "title":"Globally supported loss perspectives",
