@@ -529,6 +529,49 @@
                   ]
                }
             },
+            "vulnerability_adjustments": {
+               "type": "object",
+               "title": "Vulnerability Factor Adjustments",
+               "description": "Dictionary containing vulnerability adjustments with vulnerability ID as integer keys and adjustment factors as float values.",
+               "patternProperties": {
+                   "^[0-9]+$": {
+                       "type": "number",
+                       "minimum": 0
+                   }
+               },
+               "additionalProperties": false
+           },
+           "vulnerability_replacements": {
+            "type": ["object", "string"],
+            "title": "Vulnerability Replacements",
+            "description": "This can either be a JSON object with detailed settings (vulnerability ID and associated replacement data) or a path to a csv file with that data.",
+            "oneOf": [
+                {
+                    "type": "string",
+                    "description": "Path to a CSV file containing vulnerability data to be replaced."
+                },
+                {
+                    "type": "object",
+                    "description": "Detailed vulnerability replacements.",
+                    "patternProperties": {
+                        "^[0-9]+$": {
+                            "type": "array",
+                            "items": {
+                                "type": "array",
+                                "minItems": 3,
+                                "maxItems": 3,
+                                "items": [
+                                    { "type": "integer" },
+                                    { "type": "integer" },
+                                    { "type": "number", "minimum": 0, "maximum": 1 }
+                                ]
+                            }
+                        }
+                    },
+                    "additionalProperties": false
+                }
+            ]
+        },                   
             "string_parameters":{
                "title":"Single string paramters",
                "type":"array",
