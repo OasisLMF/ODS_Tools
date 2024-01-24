@@ -40,6 +40,15 @@
          "description":"The version ID for the model. (optional)",
          "minLength":1
       },
+      "model_run_mode": {
+         "type":"string",
+         "title":"Model Run Model",
+         "description":"OasisPlatform execution mode for running an analysis, V1 = 'Single server execution' (worker versions `1.x.x` or `2.3.x`) , V2 = 'Distributed execution' scale an analysis across multiple nodes  (Only workers `2.3.x` and above)",
+         "enum":[
+            "V1",
+            "V2"
+         ]
+      },
       "model_configurable": {
          "type":"boolean",
          "title":"Model configurable",
