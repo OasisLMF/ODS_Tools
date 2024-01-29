@@ -1195,7 +1195,7 @@
                   "type":"object",
                   "title":"Assets Details",
                   "description":"Name, version and location of data",
-                  "additionalProperties":false,
+                  "additionalProperties":true,
                   "properties":{
                      "name":{
                         "type":"string",
