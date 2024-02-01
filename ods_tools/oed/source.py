@@ -3,7 +3,7 @@ import mimetypes
 
 import logging
 import pandas as pd
-from lot3.df_reader.config import get_df_reader
+from oasis_data_manager.df_reader.config import get_df_reader
 import numpy as np
 from chardet.universaldetector import UniversalDetector
 

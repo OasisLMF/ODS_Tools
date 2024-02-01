@@ -68,7 +68,7 @@ class OedExposure:
         df_engine = (
             exposure_df_engine or
             base_df_engine or
-            'lot3.df_reader.reader.OasisPandasReader'
+            'oasis_data_manager.df_reader.reader.OasisPandasReader'
         )
 
         def filter_col_in(column, values):
