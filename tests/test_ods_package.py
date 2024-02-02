@@ -588,3 +588,265 @@ class OdsPackageTests(TestCase):
             oed.check()
         assert 'location ' in self._caplog.text
         assert 'is empty' in self._caplog.text
+
+    def test_peril_filtering(self):
+        """check that oed_schema.peril_filtering works correctly"""
+        loc_df = pd.DataFrame({
+            'PortNumber': [1, 1, 1, 1],
+            'AccNumber': [1, 1, 1, 1],
+            'LocNumber': [1, 2, 3, 4],
+            'CountryCode': ['UK', 'UK', 'UK', 'UK',],
+            'LocPerilsCovered': ['WW2', 'WTC;WSS', 'QQ1;WW2', 'WTC'],
+            'BuildingTIV': ['1', '1', '1', '1'],
+            'ContentsTIV': ['1', '1', '1', '1'],
+            'LocCurrency': ['1', '1', '1', '1'],
+        })
+        oed = OedExposure(**{'location': loc_df, 'use_field': True})
+        peril_in = pd.Series(['WTC'] * 4)
+        peril_out = pd.Series(['XLT'] * 4)
+        assert oed.oed_schema.peril_filtering(peril_in, oed.location.dataframe['LocPerilsCovered']).all()
+        assert not oed.oed_schema.peril_filtering(peril_out, oed.location.dataframe['LocPerilsCovered']).any()
+
+    def test_to_version_with_invalid_format(self):
+        oed_exposure = OedExposure(
+            location=base_url + "/SourceLocOEDPiWind.csv",
+            account=base_url + "/SourceAccOEDPiWind.csv",
+            ri_info=base_url + "/SourceReinsInfoOEDPiWind.csv",
+            ri_scope=base_url + "/SourceReinsScopeOEDPiWind.csv",
+            use_field=True,
+        )
+
+        if "versioning" in oed_exposure.oed_schema.schema:
+            with pytest.raises(ValueError, match="Invalid version: 3.x"):
+                oed_exposure.to_version("3.x")
+        else:
+            assert True
+
+    def test_versioning_fallback(self):
+        oed_exposure = OedExposure(
+            location=base_url + "/SourceLocOEDPiWind.csv",
+            account=base_url + "/SourceAccOEDPiWind.csv",
+            ri_info=base_url + "/SourceReinsInfoOEDPiWind.csv",
+            ri_scope=base_url + "/SourceReinsScopeOEDPiWind.csv",
+            use_field=True,
+        )
+
+        if "versioning" not in oed_exposure.oed_schema.schema:
+            oed_exposure.oed_schema.schema["versioning"] = {}
+
+        oed_exposure.oed_schema.schema["versioning"] = {
+            "1.9": [
+                {
+                    "Category": "Occupancy",
+                    "New code": 9999,
+                    "Fallback": 9998
+                }
+            ]
+        }
+
+        # Modify the first line of exposure.location.dataframe
+        oed_exposure.location.dataframe.loc[0, "OccupancyCode"] = 9999
+
+        # Convert
+        oed_exposure.to_version("1.9")
+
+        # # Assert the OccupancyCode is as expected
+        assert oed_exposure.location.dataframe.loc[0, "OccupancyCode"] == 9998
+
+    def test_versioning_fallback_not_exact(self):
+        oed_exposure = OedExposure(
+            location=base_url + "/SourceLocOEDPiWind.csv",
+            account=base_url + "/SourceAccOEDPiWind.csv",
+            ri_info=base_url + "/SourceReinsInfoOEDPiWind.csv",
+            ri_scope=base_url + "/SourceReinsScopeOEDPiWind.csv",
+            use_field=True,
+        )
+
+        if "versioning" not in oed_exposure.oed_schema.schema:
+            oed_exposure.oed_schema.schema["versioning"] = {}
+
+        oed_exposure.oed_schema.schema["versioning"] = {
+            "1.9": [
+                {
+                    "Category": "Occupancy",
+                    "New code": 9999,
+                    "Fallback": 9998
+                }
+            ],
+            "1.5": [
+                {
+                    "Category": "Occupancy",
+                    "New code": 9998,
+                    "Fallback": 9997
+                }
+            ],
+            "1.1": [
+                {
+                    "Category": "Occupancy",
+                    "New code": 9997,
+                    "Fallback": 9996
+                }
+            ]
+        }
+
+        # Modify the first line of exposure.location.dataframe
+        oed_exposure.location.dataframe.loc[0, "OccupancyCode"] = 9999
+
+        # Convert
+        oed_exposure.to_version("1.3")
+
+        # # Assert the OccupancyCode is as expected
+        assert oed_exposure.location.dataframe.loc[0, "OccupancyCode"] == 9997
+
+    def test_versioning_higher(self):
+        oed_exposure = OedExposure(
+            location=base_url + "/SourceLocOEDPiWind.csv",
+            account=base_url + "/SourceAccOEDPiWind.csv",
+            ri_info=base_url + "/SourceReinsInfoOEDPiWind.csv",
+            ri_scope=base_url + "/SourceReinsScopeOEDPiWind.csv",
+            use_field=True,
+        )
+
+        if "versioning" not in oed_exposure.oed_schema.schema:
+            oed_exposure.oed_schema.schema["versioning"] = {}
+
+        oed_exposure.oed_schema.schema["versioning"] = {
+            "1.9": [
+                {
+                    "Category": "Occupancy",
+                    "New code": 9999,
+                    "Fallback": 9998
+                }
+            ]
+        }
+
+        # Modify the first line of exposure.location.dataframe
+        oed_exposure.location.dataframe.loc[0, "OccupancyCode"] = 9999
+
+        # Convert
+        oed_exposure.to_version("1.10")
+
+        # # Assert the OccupancyCode is as expected
+        assert oed_exposure.location.dataframe.loc[0, "OccupancyCode"] == 9999
+
+    def test_versioning_lower_than_supported(self):
+        oed_exposure = OedExposure(
+            location=base_url + "/SourceLocOEDPiWind.csv",
+            account=base_url + "/SourceAccOEDPiWind.csv",
+            ri_info=base_url + "/SourceReinsInfoOEDPiWind.csv",
+            ri_scope=base_url + "/SourceReinsScopeOEDPiWind.csv",
+            use_field=True,
+        )
+
+        if "versioning" not in oed_exposure.oed_schema.schema:
+            oed_exposure.oed_schema.schema["versioning"] = {}
+
+        oed_exposure.oed_schema.schema["versioning"] = {
+            "1.9": [
+                {
+                    "Category": "Occupancy",
+                    "New code": 9999,
+                    "Fallback": 9998
+                }
+            ],
+            "1.5": [
+                {
+                    "Category": "Occupancy",
+                    "New code": 9998,
+                    "Fallback": 9997
+                }
+            ],
+            "1.1": [
+                {
+                    "Category": "Occupancy",
+                    "New code": 9997,
+                    "Fallback": 9996
+                }
+            ]
+        }
+
+        # Modify the first line of exposure.location.dataframe
+        oed_exposure.location.dataframe.loc[0, "OccupancyCode"] = 9999
+
+        # Convert
+        oed_exposure.to_version("0.8")
+
+        # # Assert the OccupancyCode is as expected
+        assert oed_exposure.location.dataframe.loc[0, "OccupancyCode"] == 9996
+
+    def test_versioning_wrong_order(self):
+        oed_exposure = OedExposure(
+            location=base_url + "/SourceLocOEDPiWind.csv",
+            account=base_url + "/SourceAccOEDPiWind.csv",
+            ri_info=base_url + "/SourceReinsInfoOEDPiWind.csv",
+            ri_scope=base_url + "/SourceReinsScopeOEDPiWind.csv",
+            use_field=True,
+        )
+
+        if "versioning" not in oed_exposure.oed_schema.schema:
+            oed_exposure.oed_schema.schema["versioning"] = {}
+
+        oed_exposure.oed_schema.schema["versioning"] = {
+            "1.9": [
+                {
+                    "Category": "Occupancy",
+                    "New code": 9997,
+                    "Fallback": 9995
+                }
+            ],
+            "1.12": [
+                {
+                    "Category": "Occupancy",
+                    "New code": 9998,
+                    "Fallback": 9997
+                }
+            ],
+            "1.1": [
+                {
+                    "Category": "Occupancy",
+                    "New code": 9995,
+                    "Fallback": 9993
+                }
+            ],
+            "2.1": [
+                {
+                    "Category": "Occupancy",
+                    "New code": 9990,
+                    "Fallback": 9998
+                }
+            ]
+
+        }
+
+        # Modify the first line of exposure.location.dataframe
+        oed_exposure.location.dataframe.loc[0, "OccupancyCode"] = 9990
+
+        # Convert
+        oed_exposure.to_version("1.8")
+
+        # # Assert the OccupancyCode is as expected
+        assert oed_exposure.location.dataframe.loc[0, "OccupancyCode"] == 9995
+
+    def test_all_analysis_options__in_valid_metrics(self):
+        model_schema = ModelSettingSchema().schema
+        analysis_schema = AnalysisSettingSchema().schema
+
+        # extract model settings 'valid_metrics' options, and check both match
+        global__valid_output_metrics = set(model_schema['properties']['model_settings']['properties']['valid_output_metrics']['items']['enum'])
+        event_set__valid_metrics = set(model_schema['properties']['model_settings']['properties']['event_set']
+                                       ['properties']['options']['items']['properties']['valid_metrics']['items']['enum'])
+        self.assertEqual(global__valid_output_metrics, event_set__valid_metrics)
+
+        # Build expected list from analysis settings schema.
+        excluded_keys_list = ['id', 'oed_fields', 'lec_output', 'return_period_file', 'parquet_format', 'eltcalc', 'pltcalc', 'leccalc', 'aalcalc']
+        extra_keys_list = ['aal', 'elt', 'plt', 'lec', 'aep', 'oep', 'ept', 'psept']
+
+        settings_output_options = {
+            **analysis_schema['definitions']['output_summaries']['items']['properties'],
+            **analysis_schema['definitions']['output_summaries']['items']['properties']['leccalc']['properties'],
+            **analysis_schema['definitions']['output_summaries']['items']['properties']['ord_output']['properties']
+        }
+        expected_list = set(extra_keys_list + [k for k in settings_output_options if k not in excluded_keys_list])
+
+        self.assertEqual(expected_list, global__valid_output_metrics)
+        self.assertEqual(expected_list, event_set__valid_metrics)

@@ -1,14 +1,19 @@
 name: ODS-tools Testing
 
-
 on:
   push:
   workflow_dispatch:
+    inputs:
+      oed_spec_branch:
+        description: 'Branch of OED spec'
+        required: false
 
 jobs:
   build-ods:
     uses: ./.github/workflows/build.yml
     secrets: inherit
+    with:
+      oed_spec_branch: ${{ inputs.oed_spec_branch }}
 
   build-odm:
     uses: OasisLMF/OasisDataManager/.github/workflows/build.yml@fix/release-0.1.0

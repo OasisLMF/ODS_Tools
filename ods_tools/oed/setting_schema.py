@@ -133,7 +133,6 @@ class SettingSchema:
                 old_key = compat_map.keys.split('.')[-1]
                 new_key = compat_map.updated.split('.')[-1]
                 self._remap_key(settings_data, new_key, old_key)
-                self.logger.warning(f'Deprecated key in {self.settings_type}.json, "{old_key}" updated to "{new_key}"')
 
         return settings_data
 

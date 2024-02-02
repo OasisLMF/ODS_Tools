@@ -7,6 +7,8 @@ This package manage:
 
 import json
 from copy import deepcopy
+import logging
+from packaging import version
 from pathlib import Path
 
 from .common import (PANDAS_COMPRESSION_MAP,
@@ -17,10 +19,12 @@ from .source import OedSource
 from .validator import Validator
 from .forex import create_currency_rates
 
+logger = logging.getLogger(__name__)
+
 
 class OedExposure:
     """
-    Object grouping all the OED files related to the exposure Data (location, acoount, ri_info, ri_scope)
+    Object grouping all the OED files related to the exposure Data (location, account, ri_info, ri_scope)
     and the OED schema to follow
     """
     DEFAULT_EXPOSURE_CONFIG_NAME = 'exposure_info.json'
@@ -185,16 +189,27 @@ class OedExposure:
                     if Path(oed_dir, name).with_suffix(extension).is_file():
                         return Path(oed_dir, name).with_suffix(extension)
 
+        necessary_files = ["location"]
+        files_found = {file: False for file in necessary_files}
+
         if Path(oed_dir, cls.DEFAULT_EXPOSURE_CONFIG_NAME).is_file():
             return cls.from_config(Path(oed_dir, cls.DEFAULT_EXPOSURE_CONFIG_NAME), **kwargs)
         else:
             config = {}
             for attr, filenames in USUAL_FILE_NAME.items():
-                config[attr] = find_fp(filenames)
+                file_path = find_fp(filenames)
+                if file_path and attr in files_found:
+                    files_found[attr] = True
+                config[attr] = file_path
 
             if Path(oed_dir, OedSchema.DEFAULT_ODS_SCHEMA_FILE).is_file():
                 config['oed_schema_info'] = Path(oed_dir, OedSchema.DEFAULT_ODS_SCHEMA_FILE)
             kwargs['working_dir'] = oed_dir
+
+            missing_files = [file for file, found in files_found.items() if not found]
+            if missing_files:
+                raise FileNotFoundError(f"Files not found in current path ({oed_dir}): {', '.join(missing_files)}")
+
             return cls(**{**config, **kwargs})
 
     @property
@@ -315,3 +330,71 @@ class OedExposure:
             validation_config = self.validation_config
         validator = Validator(self)
         return validator(validation_config)
+
+    def to_version(self, to_version):
+        """
+        goes through location to convert columns to specific version.
+        Right now it works for OccupancyCode and ConstructionCode.
+        (please note that it only supports minor version changes in "major.minor" format, e.g. 3.2, 7.4, etc.)
+
+        Args:
+            version (str): specific version to roll to
+
+        Returns:
+            itself (OedExposure): updated object
+        """
+        def strip_version(version_string):
+            parsed_version = version.parse(version_string)
+            return f'{parsed_version.release[0]}.{parsed_version.release[1]}'
+
+        # Parse version string
+        try:
+            target_version = strip_version(to_version)
+        except version.InvalidVersion:
+            raise ValueError(f"Invalid version: {to_version}")
+
+        # Select which conversions to apply
+        conversions = sorted(
+            [
+                ver
+                for ver in self.oed_schema.schema["versioning"].keys()
+                if version.parse(ver) >= version.parse(target_version)
+            ],
+            key=lambda x: version.parse(x),
+            reverse=True,
+        )
+
+        # Check for the existence of OccupancyCode and ConstructionCode columns
+        has_occupancy_code = "OccupancyCode" in self.location.dataframe.columns
+        has_construction_code = "ConstructionCode" in self.location.dataframe.columns
+
+        for ver in conversions:
+            # Create a dictionary for each category
+            replace_dict_occupancy = {}
+            replace_dict_construction = {}
+
+            for rule in self.oed_schema.schema["versioning"][ver]:
+                if rule["Category"] == "Occupancy":
+                    replace_dict_occupancy[rule["New code"]] = rule["Fallback"]
+                elif rule["Category"] == "Construction":
+                    replace_dict_construction[rule["New code"]] = rule["Fallback"]
+
+            # Replace and log changes for OccupancyCode
+            if has_occupancy_code:
+                for key, value in replace_dict_occupancy.items():
+                    # Check done in advance to log what is being changed
+                    changes = self.location.dataframe["OccupancyCode"][self.location.dataframe["OccupancyCode"] == key].count()
+                    if changes:
+                        self.location.dataframe["OccupancyCode"].replace({key: value}, inplace=True)
+                        logger.info(f"{key} -> {value}: {changes} occurrences in OccupancyCode.")
+
+            # Replace and log changes for ConstructionCode
+            if has_construction_code:
+                for key, value in replace_dict_construction.items():
+                    # Check done in advance to log what is being changed
+                    changes = self.location.dataframe["ConstructionCode"][self.location.dataframe["ConstructionCode"] == key].count()
+                    if changes:
+                        self.location.dataframe["ConstructionCode"].replace({key: value}, inplace=True)
+                        logger.info(f"{key} -> {value}: {changes} occurrences in ConstructionCode.")
+
+        return self  # Return the updated object

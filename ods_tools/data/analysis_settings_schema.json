@@ -46,6 +46,12 @@
                         "description": "If true, output the average annual loss by level for the summary set.",
                         "default": false
                     },
+                    "aalcalcmeanonly": {
+                        "type": "boolean",
+                        "title": "AAL Mean Only calculaton flag",
+                        "description": "If true, output the average annual loss by level for the summary set without calculating the standard deviation.",
+                        "default": false
+                    },
                     "pltcalc": {
                         "type": "boolean",
                         "title": "PLT calculation flag",
@@ -164,6 +170,12 @@
                                 "type": "boolean",
                                 "title": "PALT",
                                 "description": "Period Average Loss Table (ORD Output flag)",
+                                "default": false
+                            },
+                            "alt_meanonly": {
+                                "type": "boolean",
+                                "title": "ALT Mean Only",
+                                "description": "Average Loss Table with no standard deviation calculation (ORD Output flag)",
                                 "default": false
                             },
                             "alct_convergence": {
@@ -367,12 +379,85 @@
                 },
                 "footprint_set": {
                     "type": "string",
-		    "title": "Footprint set file ID.",
-		    "description": "Identifier for the footprint files that are used for output calculations.",
-		    "default": 1
-		}
+                    "title": "Footprint set file ID.",
+                    "description": "Identifier for the footprint files that are used for output calculations.",
+                    "default": 1
+                },
+                "vulnerability_set": {
+                    "type": "string",
+                    "title": "Vulnerability set file ID.",
+                    "description": "Identifier for the vulnerability files that are used for output calculations.",
+                    "default": 1
+                },
+                "correlation_settings": {
+                    "type": "array",
+                    "title": "Correlation Settings",
+                    "description": "The Correlation Settings",
+                    "items": {
+                        "type": "object",
+                        "properties": {
+                            "peril_correlation_group": {
+                               "type": "integer",
+                               "title": "Peril Correlation Group",
+                               "description": "The Peril Correlation Group",
+                               "minLength": 1
+                            },
+                            "correlation_value": {
+                               "type": "string",
+                               "title": "Correlation Value",
+                               "description": "The Correlation Value"
+                            }
+                         }
+                    }
+                }
             }
         },
+        "vulnerability_adjustments": {
+            "type": "object",
+            "title": "Vulnerability Adjustments",
+            "description": "Object containing vulnerability adjustments and replacements.",
+            "properties": {
+                "adjustments": {
+                    "type": "object",
+                    "title": "Vulnerability Factor Adjustments",
+                    "description": "Dictionary containing vulnerability adjustments with vulnerability ID as integer keys and adjustment factors as float values.",
+                    "patternProperties": {
+                        "^[0-9]+$": {
+                            "type": "number",
+                            "minimum": 0
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "replace_data": {
+                    "type": "object",
+                    "title": "Vulnerability Replacements",
+                    "description": "Detailed vulnerability replacements.",
+                    "patternProperties": {
+                        "^[0-9]+$": {
+                            "type": "array",
+                            "items": {
+                                "type": "array",
+                                "minItems": 3,
+                                "maxItems": 3,
+                                "items": [
+                                    { "type": "integer" },
+                                    { "type": "integer" },
+                                    { "type": "number", "minimum": 0, "maximum": 1 }
+                                ]
+                            }
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "replace_file": {
+                    "type": "string",
+                    "title": "Vulnerability Replacement File",
+                    "description": "Path to a CSV file containing vulnerability data to be replaced."
+                }
+            },
+            "additionalProperties": false
+        },    
         "gul_output": {
             "type": "boolean",
             "title": "Produce GUL output",
@@ -412,6 +497,27 @@
             "title": "Produce fully correlated output",
             "description": "If true generate losses for fully correlated output, i.e. no independence between groups, in addition to losses for default output.",
             "default": false
+        },
+        "pla": {
+            "type": "boolean",
+            "title": "Apply Post Loss Amplification",
+            "description": "If true apply post loss amplification/reduction to losses.",
+            "default": false
+        },
+        "pla_secondary_factor": {
+            "type": "number",
+            "title": "Optional secondary factor for Post Loss Amplification",
+            "description": "Secondary factor to apply to post loss amplification/reduction factors.",
+            "default": 1,
+            "minimum": 0,
+            "maximum": 1
+        },
+        "pla_uniform_factor": {
+            "type": "number",
+            "title": "Optional uniform factor for Post Loss Amplification",
+            "description": "Uniform factor to apply across all losses.",
+            "default": 0,
+            "minimum": 0
         }
     },
     "required": [
