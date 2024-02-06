@@ -40,6 +40,15 @@
          "description":"The version ID for the model. (optional)",
          "minLength":1
       },
+      "model_run_mode": {
+         "type":"string",
+         "title":"Model Run Model",
+         "description":"OasisPlatform execution mode for running an analysis, V1 = 'Single server execution' (worker versions `1.x.x` or `2.3.x`) , V2 = 'Distributed execution' scale an analysis across multiple nodes  (Only workers `2.3.x` and above)",
+         "enum":[
+            "V1",
+            "V2"
+         ]
+      },
       "model_configurable": {
          "type":"boolean",
          "title":"Model configurable",
@@ -389,6 +398,86 @@
                   "options"
                ]
             },
+            "vulnerability_set":{
+               "title":"Vulnerability set selector",
+               "description":"The 'id' field from options is used as a file suffix, e.g. vulnerability_<id>.bin, vulnerability_<id>.csv, vulnerability_<id>.parquet",
+               "type":"object",
+               "uniqueItems":false,
+               "additionalProperties": false,
+               "properties":{
+                   "name":{
+                       "type":"string",
+                       "title":"UI Option",
+                       "description":"UI name for selection",
+                       "minLength":1
+                   },
+                   "desc":{
+                       "type":"string",
+                       "title":"Short description",
+                       "description":"UI description for selection"
+                   },
+                   "used_for":{
+                      "type":"string",
+                      "title":"Where the setting is applied",
+                      "description":"Set if this parameter is ONLY used at input 'generation' or for output 'losses'",
+                      "enum":[
+                         "all",
+                         "generation",
+                         "losses"
+                      ]
+                   },
+                   "tooltip":{
+                      "type":"string",
+                      "title":"UI tooltip",
+                      "description":"Long description (optional)"
+                   },
+                   "default":{
+                      "type":"string",
+                      "title":"Default footprint set",
+                      "description":"Initial setting for vulnerability set"
+                   },
+                   "options":{
+                      "type":"array",
+                      "title":"Selection options for footprint",
+                      "description":"Array of possible vulnerability sets",
+                      "items":{
+                         "type":"object",
+                         "title":"Selection option element",
+                         "description":"Vulnerability set options",
+                         "additionalProperties":false,
+                         "properties":{
+                             "id":{
+                                 "type":"string",
+                                 "title":"Vulnerability set suffix",
+                                 "description":"String value used to select a vulnerability set",
+                                 "minLength":1
+                             },
+                             "desc":{
+                                 "type":"string",
+                                 "title":"Vulnerability set description",
+                                 "description":"UI description for selection",
+                                 "minLength":1
+                             },
+                             "tooltip":{
+                                 "type":"string",
+                                 "title":"UI tooltip",
+                                 "description":"Long description (optional)"
+                             }
+                         },
+                         "required":[
+                             "id",
+                             "desc"
+                         ]
+                    }
+                 }
+              },
+              "required":[
+                 "name",
+                 "desc",
+                 "default",
+                 "options"
+              ]
+           },
             "valid_output_perspectives":{
                "type":"array",
                "title":"Globally supported loss perspectives",
@@ -449,6 +538,52 @@
                   ]
                }
             },
+            "vulnerability_adjustments": {
+               "type": "object",
+               "title": "Vulnerability Adjustments",
+               "description": "Object containing vulnerability adjustments and replacements.",
+               "properties": {
+                   "adjustments": {
+                       "type": "object",
+                       "title": "Vulnerability Factor Adjustments",
+                       "description": "Dictionary containing vulnerability adjustments with vulnerability ID as integer keys and adjustment factors as float values.",
+                       "patternProperties": {
+                           "^[0-9]+$": {
+                               "type": "number",
+                               "minimum": 0
+                           }
+                       },
+                       "additionalProperties": false
+                   },
+                   "replace_data": {
+                       "type": "object",
+                       "title": "Vulnerability Replacements",
+                       "description": "Detailed vulnerability replacements.",
+                       "patternProperties": {
+                           "^[0-9]+$": {
+                               "type": "array",
+                               "items": {
+                                   "type": "array",
+                                   "minItems": 3,
+                                   "maxItems": 3,
+                                   "items": [
+                                       { "type": "integer" },
+                                       { "type": "integer" },
+                                       { "type": "number", "minimum": 0, "maximum": 1 }
+                                   ]
+                               }
+                           }
+                       },
+                       "additionalProperties": false
+                   },
+                   "replace_file": {
+                       "type": "string",
+                       "title": "Vulnerability Replacement File",
+                       "description": "Path to a CSV file containing vulnerability data to be replaced."
+                   }
+               },
+               "additionalProperties": false
+           },                          
             "string_parameters":{
                "title":"Single string paramters",
                "type":"array",
@@ -1186,7 +1321,7 @@
                   "type":"object",
                   "title":"Assets Details",
                   "description":"Name, version and location of data",
-                  "additionalProperties":false,
+                  "additionalProperties":true,
                   "properties":{
                      "name":{
                         "type":"string",

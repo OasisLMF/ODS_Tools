@@ -1,6 +1,29 @@
 ODS_Tools Changelog
 ===================
 
+`3.2.0`_
+ ---------
+* [#78](https://github.com/OasisLMF/ODS_Tools/pull/78) - Release 3.1.4
+* [#80](https://github.com/OasisLMF/ODS_Tools/pull/80) - Added fields to analysis settings schema
+* [#81](https://github.com/OasisLMF/ODS_Tools/pull/81) - Add vulnerability adjustments field to schema
+* [#82](https://github.com/OasisLMF/ODS_Tools/pull/83) - Enable additional properties for additional assets in model_settings.json
+* [#72, #55](https://github.com/OasisLMF/ODS_Tools/pull/84) - Remove warning message
+* [#85](https://github.com/OasisLMF/ODS_Tools/pull/86) - Add api run_mode, model running on (v1 / v2), to model settings 
+* [#88](https://github.com/OasisLMF/ODS_Tools/pull/88) - Lot3 integration with ODS-tools package
+* [#89](https://github.com/OasisLMF/ODS_Tools/pull/89) - Fix CI workflow default branches
+.. _`3.2.0`:  https://github.com/OasisLMF/ODS_Tools/compare/3.1.4...3.2.0
+
+`3.2.0`_
+ ---------
+* [#78](https://github.com/OasisLMF/ODS_Tools/pull/78) - Release 3.1.4
+* [#80](https://github.com/OasisLMF/ODS_Tools/pull/80) - Added fields to analysis settings schema
+* [#81](https://github.com/OasisLMF/ODS_Tools/pull/81) - Add vulnerability adjustments field to schema
+* [#82](https://github.com/OasisLMF/ODS_Tools/pull/83) - Enable additional properties for additional assets in model_settings.json
+* [#72, #55](https://github.com/OasisLMF/ODS_Tools/pull/84) - Remove warning message
+* [#85](https://github.com/OasisLMF/ODS_Tools/pull/86) - Add api run_mode, model running on (v1 / v2), to model settings 
+* [#88](https://github.com/OasisLMF/ODS_Tools/pull/88) - Lot3 integration with ODS-tools package
+.. _`3.2.0`:  https://github.com/OasisLMF/ODS_Tools/compare/3.1.4...3.2.0
+
 .. _`3.1.4`:  https://github.com/OasisLMF/ODS_Tools/compare/3.1.3...3.1.4
 
 `3.1.3`_

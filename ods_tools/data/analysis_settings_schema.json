@@ -412,6 +412,52 @@
                 }
             }
         },
+        "vulnerability_adjustments": {
+            "type": "object",
+            "title": "Vulnerability Adjustments",
+            "description": "Object containing vulnerability adjustments and replacements.",
+            "properties": {
+                "adjustments": {
+                    "type": "object",
+                    "title": "Vulnerability Factor Adjustments",
+                    "description": "Dictionary containing vulnerability adjustments with vulnerability ID as integer keys and adjustment factors as float values.",
+                    "patternProperties": {
+                        "^[0-9]+$": {
+                            "type": "number",
+                            "minimum": 0
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "replace_data": {
+                    "type": "object",
+                    "title": "Vulnerability Replacements",
+                    "description": "Detailed vulnerability replacements.",
+                    "patternProperties": {
+                        "^[0-9]+$": {
+                            "type": "array",
+                            "items": {
+                                "type": "array",
+                                "minItems": 3,
+                                "maxItems": 3,
+                                "items": [
+                                    { "type": "integer" },
+                                    { "type": "integer" },
+                                    { "type": "number", "minimum": 0, "maximum": 1 }
+                                ]
+                            }
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "replace_file": {
+                    "type": "string",
+                    "title": "Vulnerability Replacement File",
+                    "description": "Path to a CSV file containing vulnerability data to be replaced."
+                }
+            },
+            "additionalProperties": false
+        },    
         "gul_output": {
             "type": "boolean",
             "title": "Produce GUL output",
