@@ -148,7 +148,8 @@ def fill_empty(df, columns, value):
     if isinstance(columns, str):
         columns = [columns]
     for column in columns:
-        if df[column].dtypes.name == 'category' and value not in {None, np.nan}.union(df[column].cat.categories):
+        dtype = getattr(df[column], "dtypes", getattr(df[column], "dtype", None))
+        if dtype.name == 'category' and value not in {None, np.nan}.union(df[column].cat.categories):
             df[column] = df[column].cat.add_categories(value)
         df.loc[df[column].isin(BLANK_VALUES), column] = value
 
