@@ -10,7 +10,7 @@ on:
 
 jobs:
   platform_testing:
-    uses: OasisLMF/OasisPlatform/.github/workflows/test-python.yml@main
+    uses: OasisLMF/OasisPlatform/.github/workflows/test-python_api.yml@main
     secrets: inherit
     with:
       ods_branch: ${{ github.ref }}

@@ -19,7 +19,7 @@ jobs:
     uses: OasisLMF/OasisDataManager/.github/workflows/build.yml@fix/release-0.1.0
     secrets: inherit
     with:
-      odm_branch: ${{ github.event_name != 'workflow_dispatch' && 'fix/release-0.1.0' ||  inputs.ods_branch }}
+      odm_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' ||  inputs.ods_branch }}
 
   test:
     name: Run Pytest
