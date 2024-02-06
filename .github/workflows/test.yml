@@ -16,7 +16,7 @@ jobs:
       oed_spec_branch: ${{ inputs.oed_spec_branch }}
 
   build-odm:
-    uses: OasisLMF/OasisDataManager/.github/workflows/build.yml@fix/release-0.1.0
+    uses: OasisLMF/OasisDataManager/.github/workflows/build.yml@main
     secrets: inherit
     with:
       odm_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' ||  inputs.ods_branch }}
