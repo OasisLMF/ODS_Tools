@@ -18,6 +18,7 @@ from ods_tools.oed import (
     ModelSettingSchema,
     AnalysisSettingSchema,
 )
+from ods_tools.odtf.controller import transform_format
 
 
 def get_oed_exposure(config_json=None, oed_dir=None, **kwargs):
@@ -92,9 +93,17 @@ def convert(**kwargs):
     oed_exposure.save(path=path, **kwargs)
 
 
+def transform(**kwargs):
+    """Wrapper function for transform command.
+    Transform location and account data to a new format (ex: AIR to OED)"""
+    path_to_config_file = kwargs['config_file']
+    transform_format(path_to_config_file)
+
+
 command_action = {
     'check': check,
     'convert': convert,
+    'transform': transform,
 }
 
 
@@ -148,6 +157,16 @@ check_command.add_argument('--model-settings-json', help='Path to Model settings
 check_command.add_argument('--analysis-settings-json', help='Path to Analysis settings file to check', default=None)
 check_command.add_argument('-v', '--logging-level', help='logging level (debug:10, info:20, warning:30, error:40, critical:50)',
                            default=30, type=int)
+
+
+transform_description = """
+Transform data format to/from OED.
+"""
+transform_command = command_parser.add_parser('transform', description=transform_description,
+                                              formatter_class=argparse.RawTextHelpFormatter)
+transform_command.add_argument('--config-file', help='Path to the config file', required=True)
+transform_command.add_argument('-v', '--logging-level', help='logging level (debug:10, info:20, warning:30, error:40, critical:50)',
+                               default=30, type=int)
 
 
 def main():
