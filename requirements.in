@@ -6,3 +6,10 @@ jsonref
 oasis-data-manager
 packaging
 PyYAML
+lark
+pyodbc
+sqlparams
+sqlparse
+psycopg2
+networkx
+dask

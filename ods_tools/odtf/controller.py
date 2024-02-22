@@ -4,6 +4,7 @@ import sys
 import threading
 from datetime import datetime
 from typing import Any, Type
+import yaml
 
 from .config import Config, TransformationConfig
 from .connector import BaseConnector
@@ -66,7 +67,7 @@ class Controller:
         try:
             mapping_class: Type[BaseMapping] = self._load_from_module(
                 config.get(
-                    "mapping.path", fallback="converter.mapping.FileMapping"
+                    "mapping.path", fallback="ods_tools.odtf.mapping.FileMapping"
                 )
             )
             mapping: BaseMapping = mapping_class(
@@ -77,7 +78,7 @@ class Controller:
 
             extractor_class: Type[BaseConnector] = self._load_from_module(
                 config.get(
-                    "extractor.path", fallback="converter.connector.CsvConnector"
+                    "extractor.path", fallback="ods_tools.odtf.connector.CsvConnector"
                 )
             )
             extractor: BaseConnector = extractor_class(
@@ -86,7 +87,7 @@ class Controller:
 
             loader_class: Type[BaseConnector] = self._load_from_module(
                 config.get(
-                    "loader.path", fallback="converter.connector.CsvConnector"
+                    "loader.path", fallback="odtf.connector.CsvConnector"
                 )
             )
             loader: BaseConnector = loader_class(
@@ -94,7 +95,7 @@ class Controller:
             )
 
             runner_class: Type[BaseRunner] = self._load_from_module(
-                config.get("runner.path", fallback="converter.runner.PandasRunner")
+                config.get("runner.path", fallback=".runner.PandasRunner")
             )
             runner: BaseRunner = runner_class(
                 config, **config.get("runner.options", fallback={})
@@ -109,6 +110,8 @@ class Controller:
 
 
 def transform_format(path_to_config_file):
-    config = Config(config_path=path_to_config_file)
+    with open(path_to_config_file, 'r') as file:
+        config_dict = yaml.safe_load(file)
+    config = Config(config_dict)
     controller = Controller(config)
     controller.run()
