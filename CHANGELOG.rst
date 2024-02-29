@@ -1,6 +1,9 @@
 ODS_Tools Changelog
 ===================
 
+* [#91](https://github.com/OasisLMF/ODS_Tools/pull/91) - Add ri_inuring_priorities field to analysis settings schema for outputs at intermediate inuring priorities
+.. _`3.2.1`:  https://github.com/OasisLMF/ODS_Tools/compare/3.2.0...3.2.1
+
 `3.2.0`_
  ---------
 * [#78](https://github.com/OasisLMF/ODS_Tools/pull/78) - Release 3.1.4
