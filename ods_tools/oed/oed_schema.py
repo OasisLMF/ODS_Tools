@@ -133,6 +133,7 @@ class OedSchema:
         Args:
             peril_ids (pd.Series): peril that are checked
             peril_filters (pd.Series): peril groups to check against
+            include_sub_group (bool): if True condiders peril group as valid (WW1 is valid for AA1)
         :return:
             np.array of True and False
         """
