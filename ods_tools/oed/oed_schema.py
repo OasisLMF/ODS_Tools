@@ -126,8 +126,7 @@ class OedSchema:
             nb_peril_groups_dict[peril_group_key] = np.array(peril_groups, dtype='U3')
         return nb_peril_groups_dict
 
-
-    def peril_filtering(self, peril_ids, peril_filters, include_sub_group = True):
+    def peril_filtering(self, peril_ids, peril_filters, include_sub_group=True):
         """
         check if peril_ids are part of the peril groups in peril_filters, both array need to match size
         Args:
