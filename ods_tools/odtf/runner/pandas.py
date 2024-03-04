@@ -23,15 +23,11 @@ from ..transformers.transform import (
 from ..notset import NotSet, NotSetType
 from ..validator_pandas import PandasValidator
 from .base import BaseRunner
-
-
-def get_logger():
-    return logging.getLogger(__name__)
-
-
 #
 # Group Wrappers
 #
+
+logger = logging.getLogger(__name__)
 
 
 class PandasGroupWrapper(GroupWrapper):
@@ -401,7 +397,7 @@ class PandasRunner(BaseRunner):
         else:
             # if the filter series is normal value that resolves to false
             # return no rows, this should never happen so raise a warning.
-            get_logger().warning(
+            logger.warning(
                 f"A transformer when clause resolves to false in all cases "
                 f"({entry.when})."
             )
@@ -423,12 +419,14 @@ class PandasRunner(BaseRunner):
         transformations = mapping.get_transformations()
 
         df = self.get_dataframe(extractor)
+        logger.info(f"Loaded {len(df)} rows from {extractor.name}")
 
         validator = PandasValidator(
             search_paths=(
                 [os.path.dirname(self.config.path)] if self.config.path else []
             ),
         )
+
         validator.run(
             self.coerce_row_types(df, transformations[0].types),
             mapping.input_format.name,

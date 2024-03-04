@@ -16,14 +16,11 @@ import yaml
 
 from .data import get_data_path
 
+logger = logging.getLogger(__name__)
 
 DataType = TypeVar("DataType")
 GroupedDataType = TypeVar("GroupedDataType")
 GroupedDataType_cov = TypeVar("GroupedDataType_cov", covariant=True)
-
-
-def get_logger():
-    return logging.getLogger(__name__)
 
 
 class ValidationResultEntry(TypedDict, total=False):
@@ -118,7 +115,7 @@ class BaseValidator(Generic[DataType, GroupedDataType]):
         )
 
         if not config_path:
-            get_logger().warning(
+            logger.warning(
                 f"Could not find validator config for {fmt}. "
                 f"Tried paths {', '.join(candidate_paths)}"
             )
@@ -139,7 +136,7 @@ class BaseValidator(Generic[DataType, GroupedDataType]):
             for entry in config.entries:
                 result["validations"].append(self.run_entry(data, entry))
 
-        get_logger().info(yaml.safe_dump([result]))
+        logger.info(yaml.safe_dump([result]))
         return result
 
     def group_data(

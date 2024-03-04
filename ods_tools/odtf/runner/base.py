@@ -26,11 +26,8 @@ from ..transformers.transform import run
 from ..notset import NotSet, NotSetType
 
 
-def get_logger():
-    return logging.getLogger(__name__)
-
-
 RowType = Any
+logger = logging.getLogger(__name__)
 
 
 class Converters(TypedDict):
@@ -72,7 +69,7 @@ class _BaseRunner:
         :param to_type: The type the coercion was attempting
         :param reason: The error message
         """
-        get_logger().warning(
+        logger.warning(
             f"Cannot coerce {column} ({value}) to {to_type}. "
             f"Reason: {reason}. Row: {json.dumps(row)}."
         )
@@ -208,7 +205,7 @@ class _BaseRunner:
 
         :return: The transformed row
         """
-        get_logger().info(
+        logger.info(
             f"Running transformation set {transformations.input_format} -> "
             f"{transformations.output_format}."
         )

@@ -18,8 +18,7 @@ from .errors import NoConversionPathError
 from ..transformers.transform import parse
 
 
-def get_logger():
-    return logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 class TransformationEntry:
@@ -243,10 +242,9 @@ class BaseMapping:
         :return: The mappings along the conversion path.
         """
         path = self.path
-        get_logger().info(
+        logger.info(
             f"Path found {' -> '.join(f'{n.name} v{n.version}' for n in path)}"
         )
-
         # parse the trees of the path so that is doesnt need
         # to be done for every row
         transformations = [edge["transform"] for edge in self.path_edges]

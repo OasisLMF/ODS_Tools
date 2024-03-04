@@ -11,9 +11,7 @@ from .connector import BaseConnector
 from .mapping import BaseMapping
 from .runner import BaseRunner
 
-
-def get_logger():
-    return logging.getLogger(__name__)
+logger = logging.getLogger(__name__)    
 
 
 class Controller:
@@ -37,7 +35,7 @@ class Controller:
         transformation
         """
         start_time = datetime.now()
-        get_logger().info("Starting transformation")
+        logger.info("Starting transformation")
 
         transformation_configs = self.config.get_transformation_configs()
         if self.config.get("parallel", True):
@@ -57,9 +55,9 @@ class Controller:
                 thread.join()
         else:
             for c in transformation_configs:
-                self._run_transformation(c, pbar)
+                self._run_transformation(c)
 
-        get_logger().info(
+        logger.info(
             f"Transformation finished in {datetime.now() - start_time}"
         )
 
@@ -104,7 +102,7 @@ class Controller:
             runner.run(extractor, mapping, loader)
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
-            get_logger().error(
+            logger.error(
                 f"{repr(e)}, line {exc_tb.tb_lineno} in {exc_tb.tb_frame.f_code.co_filename}"
             )
 

@@ -22,8 +22,7 @@ from .base import (
 )
 
 
-def get_logger():  # pragma: no cover
-    return logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 RawTransformConfig = TypedDict(
@@ -559,7 +558,7 @@ class FileMapping(BaseMapping):
                     k, v, self.raw_configs, self.search_paths
                 )
             except InvalidMappingFile as e:
-                get_logger().warning(str(e))
+                logger.warning(str(e))
 
     @property
     def mapping_specs(self) -> Reversible[FileMappingSpec]:

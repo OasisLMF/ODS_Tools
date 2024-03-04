@@ -172,12 +172,8 @@ transform_command.add_argument('-v', '--logging-level', help='logging level (deb
 def main():
     """command line interface for ODS conversion between csv and parquet"""
     kwargs = vars(main_parser.parse_args())
-    ch = logging.StreamHandler()
-    formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
     logging_level = kwargs.pop('logging_level')
-    logger.setLevel(logging_level)
+    logging.basicConfig(level=logging_level, format='%(asctime)s - %(levelname)s - %(message)s')
 
     command_action[kwargs.pop('command')](** kwargs)
 
