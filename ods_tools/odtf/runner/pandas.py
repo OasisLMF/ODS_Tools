@@ -35,6 +35,8 @@ if tuple(map(int, pd.__version__.split('.'))) >= (2, 1, 9):
     pd.set_option('future.no_silent_downcasting', True)
 logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
+
 
 class PandasGroupWrapper(GroupWrapper):
     """
