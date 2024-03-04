@@ -57,7 +57,7 @@ class Controller:
                 thread.join()
         else:
             for c in transformation_configs:
-                self._run_transformation(c)
+                self._run_transformation(c, pbar)
 
         get_logger().info(
             f"Transformation finished in {datetime.now() - start_time}"
