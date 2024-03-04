@@ -11,7 +11,7 @@ from .connector import BaseConnector
 from .mapping import BaseMapping
 from .runner import BaseRunner
 
-logger = logging.getLogger(__name__)    
+logger = logging.getLogger(__name__)
 
 
 class Controller:
