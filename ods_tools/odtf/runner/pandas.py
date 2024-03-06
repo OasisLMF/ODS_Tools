@@ -26,8 +26,8 @@ from .base import BaseRunner
 #
 # Group Wrappers
 #
-
-pd.set_option('future.no_silent_downcasting', True)
+if tuple(map(int, pd.__version__.split('.'))) >= (1, 5, 0):
+    pd.set_option('future.no_silent_downcasting', True)
 logger = logging.getLogger(__name__)
 
 
