@@ -123,7 +123,7 @@ class BaseValidator(Generic[DataType, GroupedDataType]):
 
         return ValidatorConfig(config_path)
 
-    def run(self, data: DataType, fmt: str, version: str, file_type: str):
+    def run(self, data: DataType, fmt: str, version: str, file_type: str, enable_logging: bool = False):
         config = self.load_config(fmt, version, file_type)
 
         result: ValidationLogEntry = {
@@ -136,7 +136,8 @@ class BaseValidator(Generic[DataType, GroupedDataType]):
             for entry in config.entries:
                 result["validations"].append(self.run_entry(data, entry))
 
-        logger.info(yaml.safe_dump([result]))
+        if enable_logging:
+            logger.info(yaml.safe_dump([result]))
         return result
 
     def group_data(

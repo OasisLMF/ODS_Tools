@@ -205,10 +205,10 @@ class _BaseRunner:
 
         :return: The transformed row
         """
-        logger.info(
-            f"Running transformation set {transformations.input_format} -> "
-            f"{transformations.output_format}."
-        )
+        # logger.info(
+        #     f"Running transformation set {transformations.input_format} -> "
+        #     f"{transformations.output_format}."
+        # )
         coerced_row = self.coerce_row_types(row, transformations.types)
         if coerced_row is None:
             return NotSet

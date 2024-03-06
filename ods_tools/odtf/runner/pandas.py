@@ -418,10 +418,11 @@ class PandasRunner(BaseRunner):
         transformations = mapping.get_transformations()
 
         validator = PandasValidator(search_paths=([os.path.dirname(self.config.path)] if self.config.path else []))
+
+        logger.info(f"Running transformation set {transformations[0].input_format} -> {transformations[-1].output_format}")
         total_rows = 0
-        for batch in pd.read_csv(extractor.file_path, chunksize=25000):
-            total_rows += len(batch)
-            logger.info(f"Loaded {len(batch)} rows from {extractor.name}.\nTotal rows processed: {total_rows}.")
+
+        for batch in pd.read_csv(extractor.file_path, chunksize=25):
             validator.run(self.coerce_row_types(batch, transformations[0].types),
                           mapping.input_format.name, mapping.input_format.version, mapping.file_type)
 
@@ -430,6 +431,8 @@ class PandasRunner(BaseRunner):
                 transformed = self.apply_transformation_set(transformed, transformation)
 
             validator.run(transformed, mapping.output_format.name, mapping.output_format.version, mapping.file_type)
+            total_rows += len(batch)
+            logger.info(f"Processed {len(batch)} rows in the current batch (total: {total_rows})")
 
             yield from (r.to_dict() for idx, r in transformed.iterrows())
 
