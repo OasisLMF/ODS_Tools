@@ -27,6 +27,7 @@ from .base import BaseRunner
 # Group Wrappers
 #
 
+pd.set_option('future.no_silent_downcasting', True)
 logger = logging.getLogger(__name__)
 
 
@@ -208,17 +209,14 @@ class PandasRunner(BaseRunner):
     name = "Pandas"
 
     row_value_conversions = {
-        "int": lambda col, nullable, null_values: col.apply(
+        "int": lambda col, nullable, null_values: col.astype(object).apply(
             type_converter((lambda v: int(float(v))), nullable, null_values),
-            # convert_dtype=False,
         ),
-        "float": lambda col, nullable, null_values: col.apply(
+        "float": lambda col, nullable, null_values: col.astype(object).apply(
             type_converter(float, nullable, null_values),
-            # convert_dtype=False,
         ),
-        "string": lambda col, nullable, null_values: col.apply(
+        "string": lambda col, nullable, null_values: col.astype(object).apply(
             type_converter(str, nullable, null_values),
-            # convert_dtype=False,
         ),
     }
 
@@ -350,6 +348,7 @@ class PandasRunner(BaseRunner):
                 output_row, series = output_row.align(
                     series, axis=0, fill_value=NotSet
                 )
+                output_row = output_row.infer_objects(copy=False)
                 output_row = output_row.assign(**{name: series})
 
         return output_row
@@ -418,33 +417,55 @@ class PandasRunner(BaseRunner):
     ) -> Iterable[Dict[str, Any]]:
         transformations = mapping.get_transformations()
 
-        df = self.get_dataframe(extractor)
-        logger.info(f"Loaded {len(df)} rows from {extractor.name}")
+        validator = PandasValidator(search_paths=([os.path.dirname(self.config.path)] if self.config.path else []))
+        total_rows = 0
+        for batch in pd.read_csv(extractor.file_path, chunksize=25000):
+            total_rows += len(batch)
+            logger.info(f"Loaded {len(batch)} rows from {extractor.name}.\nTotal rows processed: {total_rows}.")
+            validator.run(self.coerce_row_types(batch, transformations[0].types),
+                          mapping.input_format.name, mapping.input_format.version, mapping.file_type)
 
-        validator = PandasValidator(
-            search_paths=(
-                [os.path.dirname(self.config.path)] if self.config.path else []
-            ),
-        )
+            transformed = batch
+            for transformation in transformations:
+                transformed = self.apply_transformation_set(transformed, transformation)
 
-        validator.run(
-            self.coerce_row_types(df, transformations[0].types),
-            mapping.input_format.name,
-            mapping.input_format.version,
-            mapping.file_type,
-        )
+            validator.run(transformed, mapping.output_format.name, mapping.output_format.version, mapping.file_type)
 
-        transformed = reduce(
-            self.apply_transformation_set,
-            transformations,
-            df,
-        )
+            yield from (r.to_dict() for idx, r in transformed.iterrows())
 
-        validator.run(
-            transformed,
-            mapping.output_format.name,
-            mapping.output_format.version,
-            mapping.file_type,
-        )
+        # df = self.get_dataframe(extractor)
+        # logger.info(f"Loaded {len(df)} rows from {extractor.name}")
 
-        return (r.to_dict() for idx, r in transformed.iterrows())
+        # validator = PandasValidator(
+        #     search_paths=(
+        #         [os.path.dirname(self.config.path)] if self.config.path else []
+        #     ),
+        # )
+
+        # validator.run(
+        #     self.coerce_row_types(df, transformations[0].types),
+        #     mapping.input_format.name,
+        #     mapping.input_format.version,
+        #     mapping.file_type,
+        # )
+
+        # # transformed = reduce(
+        # #     self.apply_transformation_set,
+        # #     transformations,
+        # #     df,
+        # # )
+        # transformed = df
+        # for i, transformation in enumerate(transformations, start=1):
+        #     transformed = self.apply_transformation_set(transformed, transformation)
+        #     progress = (i / len(transformations)) * 100
+        #     if progress % 10 == 0:  # Log progress every 10%
+        #         logger.info(f"Progress: {progress:.0f}% ({i}/{len(transformations)} transformations)")
+
+        # validator.run(
+        #     transformed,
+        #     mapping.output_format.name,
+        #     mapping.output_format.version,
+        #     mapping.file_type,
+        # )
+
+        # return (r.to_dict() for idx, r in transformed.iterrows())
