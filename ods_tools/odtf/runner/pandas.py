@@ -4,6 +4,7 @@ import os
 import re
 from functools import reduce
 from operator import and_, or_
+from lark import Tree
 from typing import Any, Dict, Iterable, Union
 
 import pandas as pd
@@ -26,7 +27,7 @@ from .base import BaseRunner
 #
 # Group Wrappers
 #
-if tuple(map(int, pd.__version__.split('.'))) >= (1, 5, 0):
+if tuple(map(int, pd.__version__.split('.'))) >= (2, 1, 9):
     pd.set_option('future.no_silent_downcasting', True)
 logger = logging.getLogger(__name__)
 
@@ -412,6 +413,12 @@ class PandasRunner(BaseRunner):
         else:
             return self.create_series(input_df.index, result)
 
+    def extract_column_name(self, transformation_tree):
+        if isinstance(transformation_tree, Tree):
+            if transformation_tree.data == 'lookup':
+                return transformation_tree.children[0].value
+        return ""
+
     def transform(
         self, extractor: BaseConnector, mapping: BaseMapping
     ) -> Iterable[Dict[str, Any]]:
@@ -423,6 +430,19 @@ class PandasRunner(BaseRunner):
         total_rows = 0
 
         for batch in pd.read_csv(extractor.file_path, chunksize=25):
+
+            required_columns = set()
+            for entries in transformations[0].transformation_set.values():
+                for entry in entries:
+                    column_name = self.extract_column_name(entry.transformation_tree)
+                    if column_name:
+                        required_columns.add(column_name)
+
+            missing_columns = required_columns - set(batch.columns)
+            for column in missing_columns:
+                batch[column] = ""
+                logger.warning(f"Column {column} not found in the input data, adding empty column")
+
             validator.run(self.coerce_row_types(batch, transformations[0].types),
                           mapping.input_format.name, mapping.input_format.version, mapping.file_type)
 
