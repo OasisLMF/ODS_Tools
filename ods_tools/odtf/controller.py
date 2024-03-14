@@ -38,11 +38,12 @@ class Controller:
         logger.info("Starting transformation")
 
         transformation_configs = self.config.get_transformation_configs()
+        output_file_paths = []
         if self.config.get("parallel", True):
             threads = list(
                 map(
                     lambda c: threading.Thread(
-                        target=lambda: self._run_transformation(c)
+                        target=lambda: output_file_paths.append(self._run_transformation(c))
                     ),
                     transformation_configs,
                 )
@@ -53,13 +54,17 @@ class Controller:
 
             for thread in threads:
                 thread.join()
+            output_file_paths = [path for path in output_file_paths if path is not None]
         else:
             for c in transformation_configs:
-                self._run_transformation(c)
+                output_file_path = self._run_transformation(c)
+                if output_file_path:
+                    output_file_paths[c.file_type] = output_file_path
 
         logger.info(
             f"Transformation finished in {datetime.now() - start_time}"
         )
+        return output_file_paths
 
     def _run_transformation(self, config: TransformationConfig):
         try:
@@ -100,11 +105,14 @@ class Controller:
             )
 
             runner.run(extractor, mapping, loader)
+            output_file_path = config.get("loader.options.path")
+            return output_file_path
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             logger.error(
                 f"{repr(e)}, line {exc_tb.tb_lineno} in {exc_tb.tb_frame.f_code.co_filename}"
             )
+            return None
 
 
 def transform_format(path_to_config_file):
@@ -112,4 +120,5 @@ def transform_format(path_to_config_file):
         config_dict = yaml.safe_load(file)
     config = Config(config_dict)
     controller = Controller(config)
-    controller.run()
+    output_file_paths = controller.run()
+    return output_file_paths

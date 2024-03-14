@@ -11,7 +11,12 @@ import pandas as pd
 from numpy import nan
 
 from ..connector.base import BaseConnector
-from ..mapping.base import BaseMapping, ColumnConversions, TransformationEntry
+from ..mapping.base import (
+    BaseMapping,
+    DirectionalMapping,
+    ColumnConversions,
+    TransformationEntry
+)
 from ..transformers import run
 from ..transformers.transform import (
     GroupWrapper,
@@ -428,8 +433,10 @@ class PandasRunner(BaseRunner):
 
         logger.info(f"Running transformation set {transformations[0].input_format} -> {transformations[-1].output_format}")
         total_rows = 0
+        runner_config = self.config.config.get('runner', None)
+        batch_size = runner_config.get('batch_size', 25)
 
-        for batch in pd.read_csv(extractor.file_path, chunksize=25):
+        for batch in pd.read_csv(extractor.file_path, chunksize=batch_size):
 
             required_columns = set()
             for entries in transformations[0].transformation_set.values():
@@ -439,16 +446,24 @@ class PandasRunner(BaseRunner):
                         required_columns.add(column_name)
 
             missing_columns = required_columns - set(batch.columns)
-            for column in missing_columns:
-                batch[column] = ""
-                logger.warning(f"Column {column} not found in the input data, adding empty column")
 
-            validator.run(self.coerce_row_types(batch, transformations[0].types),
+            updated_transformations = [
+                DirectionalMapping(
+                    input_format=t.input_format,
+                    output_format=t.output_format,
+                    transformation_set={k: v for k, v in t.transformation_set.items() if k not in missing_columns},
+                    types=t.types,
+                    null_values=t.null_values,
+                )
+                for t in transformations
+            ]
+
+            validator.run(self.coerce_row_types(batch, updated_transformations[0].types),
                           mapping.input_format.name, mapping.input_format.version, mapping.file_type)
 
             transformed = batch
-            for transformation in transformations:
-                transformed = self.apply_transformation_set(transformed, transformation)
+            for transformation in updated_transformations:
+                transformed = self.apply_transformation_set(transformed, transformation, missing_columns)
 
             validator.run(transformed, mapping.output_format.name, mapping.output_format.version, mapping.file_type)
             total_rows += len(batch)
