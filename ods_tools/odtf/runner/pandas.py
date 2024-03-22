@@ -108,20 +108,39 @@ def not_in_transformer(row, lhs, rhs):
 #
 
 
+# class StrReplace:
+#     def __init__(self, series_type):
+#         self.series_type = series_type
+
+#     def __call__(self, row: RowType, target, *pattern_repl):
+#         result = target
+#         patterns = (p for i, p in enumerate(pattern_repl) if i % 2 == 0)
+#         repls = (r for i, r in enumerate(pattern_repl) if i % 2 != 0)
+
+#         for pattern, repl in zip(patterns, repls):
+#             if isinstance(result, self.series_type):
+#                 result = result.astype(str).str.replace(pattern, repl)
+#             else:
+#                 result = default_replace(row, result, pattern, repl)
+
+#         return result
+    
 class StrReplace:
     def __init__(self, series_type):
         self.series_type = series_type
 
     def __call__(self, row: RowType, target, *pattern_repl):
         result = target
-        patterns = (p for i, p in enumerate(pattern_repl) if i % 2 == 0)
+        patterns = (re.compile(f'^{re.escape(p)}$') for i, p in enumerate(pattern_repl) if i % 2 == 0)
         repls = (r for i, r in enumerate(pattern_repl) if i % 2 != 0)
 
-        for pattern, repl in zip(patterns, repls):
-            if isinstance(result, self.series_type):
-                result = result.astype(str).str.replace(pattern, repl)
-            else:
-                result = default_replace(row, result, pattern, repl)
+        if isinstance(result, self.series_type):
+            result = result.astype(str)
+            for pattern, repl in zip(patterns, repls):
+                result = result.str.replace(pattern, repl, regex=True)
+        else:
+            for pattern, repl in zip(patterns, repls):
+                result = pattern.sub(repl, str(result))
 
         return result
 
@@ -436,7 +455,7 @@ class PandasRunner(BaseRunner):
         runner_config = self.config.config.get('runner', None)
         batch_size = runner_config.get('batch_size', 25)
 
-        for batch in pd.read_csv(extractor.file_path, chunksize=batch_size):
+        for batch in pd.read_csv(extractor.file_path, chunksize=batch_size, low_memory=False): # Ideally, we should be able to take the filetypes from the mapping yaml?
 
             required_columns = set()
             for entries in transformations[0].transformation_set.values():

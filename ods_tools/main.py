@@ -97,19 +97,17 @@ def transform(**kwargs):
     """Wrapper function for transform command.
     Transform location and account data to a new format (ex: AIR to OED)"""
     path_to_config_file = kwargs['config_file']
-    output_file_paths = transform_format(path_to_config_file)
-    if not output_file_paths:
+    output_file_paths, output_file_type = transform_format(path_to_config_file)
+    if not output_file_paths or not output_file_type:
         logger.error("Transformation failed")
     else:
         for file_path in output_file_paths:
             logger.info(f"Transformation completed successfully. Output file: {file_path}")
             # Run the exposure check on the output file
-            if 'loc' in file_path:
+            if output_file_type == 'loc':
                 check(location=file_path, **kwargs)
-            elif 'acc' in file_path:
+            elif output_file_type == 'acc':
                 check(account=file_path, **kwargs)
-            else:
-                check(location=file_path, **kwargs)
 
 
 command_action = {

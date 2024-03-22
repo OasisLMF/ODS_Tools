@@ -121,4 +121,10 @@ def transform_format(path_to_config_file):
     config = Config(config_dict)
     controller = Controller(config)
     output_file_paths = controller.run()
-    return output_file_paths
+    if config.has_loc is True:
+        output_file_type = 'loc'
+    elif config.has_acc is True:
+        output_file_type = 'acc'
+    else:
+        output_file_type = None
+    return output_file_paths, output_file_type
