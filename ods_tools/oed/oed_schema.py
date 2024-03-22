@@ -101,6 +101,7 @@ class OedSchema:
 
     @cached_property
     def nb_perils_dict(self):
+        """dict peril group to sub_peril"""
         nb_perils_dict = nb.typed.Dict.empty(
             key_type=nb.types.UnicodeCharSeq(3),
             value_type=nb.types.UnicodeCharSeq(3)[:],
@@ -110,16 +111,33 @@ class OedSchema:
 
         return nb_perils_dict
 
-    def peril_filtering(self, peril_ids, peril_filters):
+    @cached_property
+    def nb_peril_groups_dict(self):
+        """ dict peril group to all included peril group """
+        nb_peril_groups_dict = nb.typed.Dict.empty(
+            key_type=nb.types.UnicodeCharSeq(3),
+            value_type=nb.types.UnicodeCharSeq(3)[:],
+        )
+        for peril_group_key, perils in self.schema['perils']['covered'].items():
+            peril_groups = []
+            for peril_group_include, perils_include in self.schema['perils']['covered'].items():
+                if not set(perils_include).difference(set(perils)):
+                    peril_groups.append(peril_group_include)
+            nb_peril_groups_dict[peril_group_key] = np.array(peril_groups, dtype='U3')
+        return nb_peril_groups_dict
+
+    def peril_filtering(self, peril_ids, peril_filters, include_sub_group=True):
         """
         check if peril_ids are part of the peril groups in peril_filters, both array need to match size
         Args:
             peril_ids (pd.Series): peril that are checked
             peril_filters (pd.Series): peril groups to check against
+            include_sub_group (bool): if True condiders peril group as valid (WW1 is valid for AA1)
         :return:
             np.array of True and False
         """
-        return jit_peril_filtering(peril_ids.to_numpy().astype('str'), peril_filters.to_numpy().astype('str'), self.nb_perils_dict)
+        return jit_peril_filtering(peril_ids.to_numpy().astype('str'), peril_filters.to_numpy().astype('str'),
+                                   self.nb_peril_groups_dict if include_sub_group else self.nb_perils_dict)
 
     @staticmethod
     def to_universal_field_name(column: str):
