@@ -105,8 +105,7 @@ class Controller:
             )
 
             runner.run(extractor, mapping, loader)
-            output_file_path = config.get("loader.options.path")
-            return output_file_path
+
         except Exception as e:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             logger.error(
@@ -120,11 +119,15 @@ def transform_format(path_to_config_file):
         config_dict = yaml.safe_load(file)
     config = Config(config_dict)
     controller = Controller(config)
-    output_file_paths = controller.run()
-    if config.has_loc is True:
-        output_file_type = 'loc'
-    elif config.has_acc is True:
-        output_file_type = 'acc'
-    else:
-        output_file_type = None
-    return output_file_paths, output_file_type
+    controller.run()
+    outputs = []
+    for key, value in config_dict.get('transformations', {}).items():
+        if value.get('output_format').get('name') == 'OED_Location':
+            output_file_type = 'location'
+        elif value.get('output_format').get('name') == 'OED_Contract':
+            output_file_type = 'account'
+        else:
+            output_file_type = 'other'
+        output_file_path = value.get('loader', {}).get('options', {}).get('path')
+        outputs.append((output_file_path, output_file_type))
+    return outputs

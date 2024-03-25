@@ -97,17 +97,17 @@ def transform(**kwargs):
     """Wrapper function for transform command.
     Transform location and account data to a new format (ex: AIR to OED)"""
     path_to_config_file = kwargs['config_file']
-    output_file_paths, output_file_type = transform_format(path_to_config_file)
-    if not output_file_paths or not output_file_type:
+    transform_result = transform_format(path_to_config_file)
+    if len(transform_result) == 0:
         logger.error("Transformation failed")
     else:
-        for file_path in output_file_paths:
-            logger.info(f"Transformation completed successfully. Output file: {file_path}")
-            # Run the exposure check on the output file
-            if output_file_type == 'loc':
-                check(location=file_path, **kwargs)
-            elif output_file_type == 'acc':
-                check(account=file_path, **kwargs)
+        if not kwargs.get('nocheck'):
+            for output_file in transform_result:
+                logger.info(f"Transformation completed successfully. Output file: {output_file}")
+                if output_file[1] == 'location':
+                    check(location=output_file[0])
+                elif output_file[1] == 'account':
+                    check(account=output_file[0])
 
 
 command_action = {
@@ -177,6 +177,7 @@ transform_command = command_parser.add_parser('transform', description=transform
 transform_command.add_argument('--config-file', help='Path to the config file', required=True)
 transform_command.add_argument('-v', '--logging-level', help='logging level (debug:10, info:20, warning:30, error:40, critical:50)',
                                default=30, type=int)
+transform_command.add_argument('--nocheck', help='if True, OED file will not be checked after transformation', default=False)
 
 
 def main():
