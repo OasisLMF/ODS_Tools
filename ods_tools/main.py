@@ -101,7 +101,6 @@ def transform(**kwargs):
         transform_result = transform_format(path_to_config_file)
         if not kwargs.get('nocheck'):
             for output_file in transform_result:
-                logger.info(f"Transformation completed successfully. Output file: {output_file}")
                 if output_file[1] == 'location':
                     check(location=output_file[0])
                 elif output_file[1] == 'account':

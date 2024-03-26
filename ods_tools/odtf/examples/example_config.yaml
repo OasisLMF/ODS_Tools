@@ -1,0 +1,35 @@
+transformations:
+  loc: # Transformation name
+    input_format:
+      name: Cede_Location
+      version: 10.0.0
+    output_format:
+      name: OED_Location
+      version: 3.0.2
+    runner:
+      batch_size: 150000 # Number of rows to process in a single batch
+    extractor:
+      options:
+        path: /home/oasis-user/coderoot/ods-odtf/ods_tools/odtf/examples/cede_location_1000.csv # Path to the input file
+        quoting: minimal
+    loader:
+      options:
+        path: /home/oasis-user/coderoot/ods-odtf/ods_tools/odtf/examples/oed_location_1000.csv # Path to the output file
+        quoting: minimal
+  acc: # Transformation name
+    input_format:
+      name: Cede_Contract
+      version: 10.0.0
+    output_format:
+      name: OED_Contract
+      version: 3.0.2
+    runner:
+      batch_size: 10000
+    extractor:
+      options:
+        path: /home/oasis-user/coderoot/ods-odtf/ods_tools/odtf/examples/cede_contract_1000.csv
+        quoting: minimal
+    loader:
+      options:
+        path: /home/oasis-user/coderoot/ods-odtf/ods_tools/odtf/examples/oed_contract_1000.csv
+        quoting: minimal
