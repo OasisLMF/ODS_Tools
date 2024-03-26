@@ -97,6 +97,7 @@ setuptools.setup(
     package_data={
         "": ["*.md"],                # Copy in readme
         "ods_tools": ["data/*"]      # Copy spec JSON/CSV
+        "ods_tools": ["odtf/data/*"]      # Copy YAML mappings
     },
     entry_points={
         'console_scripts': [
