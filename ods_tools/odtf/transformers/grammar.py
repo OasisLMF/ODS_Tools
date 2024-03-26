@@ -49,6 +49,7 @@ array: "[" [expression ("," expression)*] "]"
 
 ?string_manip: "join(" string [("," expression)*] ")" -> str_join
              | "replace(" expression [("," pattern "," expression)+] ")" -> str_replace
+             | "transform_loc_perils(" expression [("," STRING)*] ")" -> transform_loc_perils
              | "match(" expression "," pattern ")" -> str_match
              | "search(" expression "," pattern ")" -> str_search
 

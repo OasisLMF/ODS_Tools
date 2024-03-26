@@ -375,6 +375,28 @@ def default_join(row, join, *elements):
     return str(join).join(map(str, elements))
 
 
+def transform_loc_perils(row: RowType, target, *pattern_repl):
+    if isinstance(target, str):
+        perils = [p.strip() for p in target.split(',')]
+        transformed_perils = []
+
+        # Convert the pattern_repl tuple to a list of pairs
+        pattern_repl_list = list(zip(pattern_repl[::2], pattern_repl[1::2]))
+
+        for peril in perils:
+            for pattern, repl in pattern_repl_list:
+                if peril == pattern.strip("'"):
+                    transformed_perils.append(repl.strip("'"))
+                    break
+            else:
+                transformed_perils.append(peril)
+
+        # Join the transformed perils using a comma and space
+        return ', '.join(transformed_perils)
+    else:
+        return target
+
+
 @v_args(inline=True)
 class BaseTreeTransformer(_LarkTransformer):
     """
@@ -507,6 +529,7 @@ def create_transformer_class(row, transformer_mapping):
         "str_replace": default_replace,
         "str_match": default_match,
         "str_search": default_search,
+        "transform_loc_perils": transform_loc_perils,
         **(transformer_mapping or {}),
     }
 

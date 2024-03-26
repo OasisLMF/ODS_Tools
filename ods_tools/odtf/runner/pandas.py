@@ -25,6 +25,7 @@ from ..transformers.transform import (
     default_match,
     default_replace,
     default_search,
+    transform_loc_perils
 )
 from ..notset import NotSet, NotSetType
 from ..validator_pandas import PandasValidator
@@ -108,23 +109,6 @@ def not_in_transformer(row, lhs, rhs):
 #
 
 
-# class StrReplace:
-#     def __init__(self, series_type):
-#         self.series_type = series_type
-
-#     def __call__(self, row: RowType, target, *pattern_repl):
-#         result = target
-#         patterns = (p for i, p in enumerate(pattern_repl) if i % 2 == 0)
-#         repls = (r for i, r in enumerate(pattern_repl) if i % 2 != 0)
-
-#         for pattern, repl in zip(patterns, repls):
-#             if isinstance(result, self.series_type):
-#                 result = result.astype(str).str.replace(pattern, repl)
-#             else:
-#                 result = default_replace(row, result, pattern, repl)
-
-#         return result
-    
 class StrReplace:
     def __init__(self, series_type):
         self.series_type = series_type
@@ -404,6 +388,7 @@ class PandasRunner(BaseRunner):
             "str_match": StrMatch(self.series_type),
             "str_search": StrSearch(self.series_type),
             "str_join": StrJoin(self.series_type),
+            "transform_loc_perils": transform_loc_perils,
         }
 
         # process the when clause to get a filter series
