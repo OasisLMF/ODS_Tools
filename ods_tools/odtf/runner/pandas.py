@@ -441,12 +441,6 @@ class PandasRunner(BaseRunner):
         else:
             return self.create_series(input_df.index, result)
 
-    def extract_column_name(self, transformation_tree):
-        if isinstance(transformation_tree, Tree):
-            if transformation_tree.data == 'lookup':
-                return transformation_tree.children[0].value
-        return ""
-
     def transform(
         self, extractor: BaseConnector, mapping: BaseMapping
     ) -> Iterable[Dict[str, Any]]:
