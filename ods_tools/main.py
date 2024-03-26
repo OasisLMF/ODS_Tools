@@ -101,9 +101,9 @@ def transform(**kwargs):
         transform_result = transform_format(path_to_config_file)
         if not kwargs.get('nocheck'):
             for output_file in transform_result:
-                if output_file[1] == 'location':
+                if output_file[1] == 'location' and os.path.isfile(output_file[0]):
                     check(location=output_file[0])
-                elif output_file[1] == 'account':
+                elif output_file[1] == 'account' and os.path.isfile(output_file[0]):
                     check(account=output_file[0])
     except OdsException as e:
         logger.error("Transformation failed:")

@@ -4,7 +4,6 @@ import os
 import re
 from functools import reduce
 from operator import and_, or_
-from lark import Tree
 from typing import Any, Dict, Iterable, Union
 
 import pandas as pd
@@ -23,7 +22,6 @@ from ..transformers.transform import (
     RowType,
     TransformerMapping,
     default_match,
-    default_replace,
     default_search,
     transform_loc_perils
 )
@@ -434,7 +432,7 @@ class PandasRunner(BaseRunner):
         runner_config = self.config.config.get('runner', None)
         batch_size = runner_config.get('batch_size', 10000)
 
-        for batch in pd.read_csv(extractor.file_path, chunksize=batch_size, low_memory=False): # Ideally, we should be able to take the types from the mapping yaml?
+        for batch in pd.read_csv(extractor.file_path, chunksize=batch_size, low_memory=False):
             # Check if all the columns necessary for the transformations are present. If not, drop the transformations we can't run
             missing_columns = set(transformations[0].types.keys()) - set(batch.columns)
             updated_transformations = [
