@@ -111,23 +111,6 @@ def not_in_transformer(row, lhs, rhs):
 #
 
 
-# class StrReplace:
-#     def __init__(self, series_type):
-#         self.series_type = series_type
-
-#     def __call__(self, row: RowType, target, *pattern_repl):
-#         result = target
-#         patterns = (p for i, p in enumerate(pattern_repl) if i % 2 == 0)
-#         repls = (r for i, r in enumerate(pattern_repl) if i % 2 != 0)
-
-#         for pattern, repl in zip(patterns, repls):
-#             if isinstance(result, self.series_type):
-#                 result = result.astype(str).str.replace(pattern, repl)
-#             else:
-#                 result = default_replace(row, result, pattern, repl)
-
-#         return result
-    
 class StrReplace:
     def __init__(self, series_type):
         self.series_type = series_type
