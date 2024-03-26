@@ -437,12 +437,6 @@ class PandasRunner(BaseRunner):
         else:
             return self.create_series(input_df.index, result)
 
-    def extract_column_name(self, transformation_tree):
-        if isinstance(transformation_tree, Tree):
-            if transformation_tree.data == 'lookup':
-                return transformation_tree.children[0].value
-        return ""
-
     def transform(
         self, extractor: BaseConnector, mapping: BaseMapping
     ) -> Iterable[Dict[str, Any]]:
@@ -453,19 +447,11 @@ class PandasRunner(BaseRunner):
         logger.info(f"Running transformation set {transformations[0].input_format} -> {transformations[-1].output_format}")
         total_rows = 0
         runner_config = self.config.config.get('runner', None)
-        batch_size = runner_config.get('batch_size', 25)
+        batch_size = runner_config.get('batch_size', 10000)
 
-        for batch in pd.read_csv(extractor.file_path, chunksize=batch_size, low_memory=False): # Ideally, we should be able to take the filetypes from the mapping yaml?
-
-            required_columns = set()
-            for entries in transformations[0].transformation_set.values():
-                for entry in entries:
-                    column_name = self.extract_column_name(entry.transformation_tree)
-                    if column_name:
-                        required_columns.add(column_name)
-
-            missing_columns = required_columns - set(batch.columns)
-
+        for batch in pd.read_csv(extractor.file_path, chunksize=batch_size, low_memory=False): # Ideally, we should be able to take the types from the mapping yaml?
+            # Check if all the columns necessary for the transformations are present. If not, drop the transformations we can't run
+            missing_columns = set(transformations[0].types.keys()) - set(batch.columns)
             updated_transformations = [
                 DirectionalMapping(
                     input_format=t.input_format,
@@ -489,40 +475,3 @@ class PandasRunner(BaseRunner):
             logger.info(f"Processed {len(batch)} rows in the current batch (total: {total_rows})")
 
             yield from (r.to_dict() for idx, r in transformed.iterrows())
-
-        # df = self.get_dataframe(extractor)
-        # logger.info(f"Loaded {len(df)} rows from {extractor.name}")
-
-        # validator = PandasValidator(
-        #     search_paths=(
-        #         [os.path.dirname(self.config.path)] if self.config.path else []
-        #     ),
-        # )
-
-        # validator.run(
-        #     self.coerce_row_types(df, transformations[0].types),
-        #     mapping.input_format.name,
-        #     mapping.input_format.version,
-        #     mapping.file_type,
-        # )
-
-        # # transformed = reduce(
-        # #     self.apply_transformation_set,
-        # #     transformations,
-        # #     df,
-        # # )
-        # transformed = df
-        # for i, transformation in enumerate(transformations, start=1):
-        #     transformed = self.apply_transformation_set(transformed, transformation)
-        #     progress = (i / len(transformations)) * 100
-        #     if progress % 10 == 0:  # Log progress every 10%
-        #         logger.info(f"Progress: {progress:.0f}% ({i}/{len(transformations)} transformations)")
-
-        # validator.run(
-        #     transformed,
-        #     mapping.output_format.name,
-        #     mapping.output_format.version,
-        #     mapping.file_type,
-        # )
-
-        # return (r.to_dict() for idx, r in transformed.iterrows())

@@ -90,7 +90,7 @@ class Controller:
 
             loader_class: Type[BaseConnector] = self._load_from_module(
                 config.get(
-                    "loader.path", fallback="odtf.connector.CsvConnector"
+                    "loader.path", fallback="ods_tools.odtf.connector.CsvConnector"
                 )
             )
             loader: BaseConnector = loader_class(
@@ -98,7 +98,7 @@ class Controller:
             )
 
             runner_class: Type[BaseRunner] = self._load_from_module(
-                config.get("runner.path", fallback=".runner.PandasRunner")
+                config.get("runner.path", fallback="ods_tools.odtf.runner.PandasRunner")
             )
             runner: BaseRunner = runner_class(
                 config, **config.get("runner.options", fallback={})
