@@ -4,7 +4,6 @@ import os
 import re
 from functools import reduce
 from operator import and_, or_
-from lark import Tree
 from typing import Any, Dict, Iterable, Union
 
 import pandas as pd
