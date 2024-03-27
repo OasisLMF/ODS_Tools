@@ -1,0 +1,477 @@
+# MAPPING VERSION: CEDEDB_OED_Test
+# CREATOR: Ben Hayes
+# MODEL VERSIONS: OED 3.0.2 | AIR CEDE (database) v10.0.0
+# MAP FILETYPE: SQL Server DB extract file to Flat File
+# LICENSE: BSD 3 clause license
+# SOURCE: https://github.com/OasisLMF/OpenDataTransform/
+# COMMENTS: Full example to demonstrate Sql Server DB extract to Flat File
+
+file_type: acc
+input_format:
+  name: Cede_Contract
+  version: "10.0.0"
+output_format:
+  name: OED_Contract
+  version: "3.0.2"
+forward:
+  types:
+    ContractID: 
+      type: string
+    InsuredName: 
+      type: string
+    Producer: 
+      type: string
+    Underwriter: 
+      type: string
+    Branch: 
+      type: string
+    ExpiringContract:
+      type: string
+    Status: 
+      type: string
+    InceptionDate:
+      type: string
+    ExpirationDate: 
+      type: string
+    Perils: 
+      type: int
+    LOB: 
+      type: string
+    Form: 
+      type: string
+    Currency: 
+      type: string
+    UDF1: 
+      type: string
+    UDF2: 
+      type: string
+    UDF3: 
+      type: string
+    UDF4: 
+      type: string
+    UDF5: 
+      type: string
+    LayerID: 
+      type: string
+    LayerPerils: 
+      type: string
+    LimiType: 
+      type: string
+    Limit1: 
+      type: float
+    LimitA: 
+      type: float
+    LimitB: 
+      type: float
+    LimitC: 
+      type: float
+    LimitD: 
+      type: float
+    Limit2: 
+      type: float
+    DedAmt1: 
+      type: float
+    DedAmt2: 
+      type: float
+    DedAmt3: 
+      type: float
+    DedAmt4: 
+      type: float
+    AttachmentAmt: 
+      type: float
+    AttachmentPtA: 
+      type: float
+    AttachmentPtB: 
+      type: float
+    AttachmentPtC: 
+      type: float
+    AttachmentPtD: 
+      type: float
+    DedType: 
+      type: string
+    Premium: 
+      type: float
+    AggregateLimitType: 
+      type: string
+    AggregateLimit: 
+      type: float
+    AggregateAttachmentPt: 
+      type: float
+    AggregateDedType: 
+      type: string
+    AggregateDedAmt: 
+      type: float
+    SublimitPerils: 
+      type: string
+    SublimitArea: 
+      type: string
+    SubLimitLimitType: 
+      type: string
+    SublimitDedType: 
+      type: string
+    SubLimitOcc: 
+      type: float
+    SublimitPart: 
+      type: float
+    SublimitAttachAmt: 
+      type: float
+    SublimitLimitA: 
+      type: float
+    SublimitLimitB: 
+      type: float
+    SublimitLimitC: 
+      type: float
+    SublimitLimitD: 
+      type: float
+    SublimitAttachA: 
+      type: float
+    SublimitAttachB: 
+      type: float
+    SublimitAttachC: 
+      type: float
+    SublimitAttachD: 
+      type: float
+    SublimitDedAmt1: 
+      type: float
+    SublimitDedAmt2: 
+      type: float
+    SublimitDedAmt3: 
+      type: float
+    SublimitDedAmt4: 
+      type: float
+    SublimitName: 
+      type: string
+    ParentSublimitName: 
+      type: string
+    SublimitAggregateLimitType: 
+      type: string
+    SublimitAggregateLimit: 
+      type: float
+    SublimitAggregateAttachmentPt: 
+      type: float
+    SublimitAggregateDedType: 
+      type: string
+    SublimitAggregateDedAmt: 
+      type: float
+  null_values:
+    - "''"
+    - Null
+    - NULL
+  transform:
+    AccCurrency:
+      - transformation: Currency
+    AccUserDef1:
+      - transformation: UDF1
+    AccUserDef2:
+      - transformation: UDF2
+    AccUserDef3:
+      - transformation: UDF3
+    AccUserDef4:
+      - transformation: UDF4
+    AccUserDef5:
+      - transformation: UDF5
+    AccName:
+      - transformation: InsuredName
+    AccNumber:
+      - transformation: ContractID
+    AccPeril:
+      - transformation: |
+          replace(
+            Perils,
+            'CF','WSS',
+            'CH','XCH',
+            'EQ','QEQ',
+            'FF','QFF',
+            'HL','XHL',
+            'IF','ORF',
+            'LQ','QLF',
+            'LS','QLS',
+            'NC','BFR',
+            'PD','CPD',
+            'PF','OSF',
+            'PN','PNF',
+            'SB','CSB',
+            'SL','QSL',
+            'ST','XLT',
+            'SU','WSS',
+            'SW','XSL',
+            'TC','WTC',
+            'TD','XTD',
+            'TR','MTR',
+            'TS','QTS',
+            'WF','BBF',
+            'WS','ZST',
+            ',', ';'
+          )
+    AccStatus:
+      - transformation: Status
+    BranchName:
+      - transformation: Branch
+    CondDed6All: # No 'C' or 'CB' or 'S' type for Condition deductible - therefore all transform to 6All
+      - transformation: SublimitDedAmt1
+      - transformation: SublimitDedAmt2
+      - transformation: SublimitDedAmt3
+      - transformation: SublimitDedAmt4
+    CondLimit1Building:
+      - transformation: SublimitLimitA
+        when: SubLimitLimitType is 'C'
+    CondLimit2Other:
+      - transformation: SublimitLimitB
+        when: SubLimitLimitType is 'C'
+    CondLimit3Contents:
+      - transformation: SublimitLimitC
+        when: SubLimitLimitType is 'C'
+    CondLimit4BI:
+      - transformation: SublimitLimitD
+        when: SubLimitLimitType is 'C'
+    CondLimit5PD:
+      - transformation: SublimitLimitA
+        when: SubLimitLimitType is 'CB'
+    CondLimit6All: # Most values are E - so all can convert to 6All when above contions aren't met
+      - transformation: SublimitLimitA
+        when: SubLimitLimitType is not in ['C','CB']
+      - transformation: SublimitLimitB
+        when: SubLimitLimitType is not 'C'
+      - transformation: SublimitLimitC
+        when: SubLimitLimitType is not 'C'
+      - transformation: SublimitLimitD
+        when: SubLimitLimitType is not 'C'
+    CondName:
+      - transformation: SublimitName
+    CondPeril:
+      - transformation: |
+          replace(
+            SublimitPerils,
+            'CF','WSS',
+            'CH','XCH',
+            'EQ','QEQ',
+            'FF','QFF',
+            'HL','XHL',
+            'IF','ORF',
+            'LQ','QLF',
+            'LS','QLS',
+            'NC','BFR',
+            'PD','CPD',
+            'PF','OSF',
+            'PN','PNF',
+            'SB','CSB',
+            'SL','QSL',
+            'ST','XLT',
+            'SU','WSS',
+            'SW','XSL',
+            'TC','WTC',
+            'TD','XTD',
+            'TR','MTR',
+            'TS','QTS',
+            'WF','BBF',
+            'WS','ZST',
+            ',', ';'
+          )
+    ExpiringAccNumber:
+      - transformation: ExpiringContract
+    FlexiAccPolicyForm:
+      - transformation: Form
+    LayerAttachment:
+      - transformation: AttachmentAmt
+    LayerNumber:
+      - transformation: LayerID
+    PolPeril:
+      - transformation: |
+          replace(
+            LayerPerils,
+            'CF','WSS',
+            'CH','XCH',
+            'EQ','QEQ',
+            'FF','QFF',
+            'HL','XHL',
+            'IF','ORF',
+            'LQ','QLF',
+            'LS','QLS',
+            'NC','BFR',
+            'PD','CPD',
+            'PF','OSF',
+            'PN','PNF',
+            'SB','CSB',
+            'SL','QSL',
+            'ST','XLT',
+            'SU','WSS',
+            'SW','XSL',
+            'TC','WTC',
+            'TD','XTD',
+            'TR','MTR',
+            'TS','QTS',
+            'WF','BBF',
+            'WS','ZST',
+            ',', ';'
+          )
+    LOB:
+      - transformation: LOB
+    PolDed6All: # No 'C' or 'CB' or 'S' type for Layer (Policy) deductible - therefore all transform to 6All
+      - transformation: DedAmt1
+      - transformation: DedAmt2
+      - transformation: DedAmt3
+      - transformation: DedAmt4
+    PolLimit6All: # Only LimitType's in cede_acc file are 'E' and 'B' - no OED equivalent, therefore map to PolLimit6All
+      - transformation: Limit1
+      - transformation: Limit2
+    PolExpiryDate:
+      - transformation: ExpirationDate
+    PolInceptionDate:
+      - transformation: InceptionDate
+    ProducerName:
+      - transformation: Producer
+    PolNetPremium:
+      - transformation: Premium
+    Underwriter:
+      - transformation: Underwriter
+reverse:
+  types:
+    AccCurrency:
+      type: string
+    AccName:
+      type: string
+    AccNumber:
+      type: string
+    AccPeril:
+      type: string
+    AccStatus:
+      type: string
+    AccUserDef1:
+      type: string
+    AccUserDef2:
+      type: string
+    AccUserDef3:
+      type: string
+    AccUserDef4:
+      type: string
+    AccUserDef5:
+      type: string
+    BranchName:
+      type: string
+    CondDed1Building:
+      type: float
+    CondDed2Other:
+      type: float
+    CondDed3Contents:
+      type: float
+    CondDed4BI:
+      type: float
+    CondDed5PD:
+      type: float
+    CondDed6All:
+      type: float
+    CondName:
+      type: string
+    CondPeril:
+      type: string
+    ExpiringAccNumber:
+      type: string
+    FlexiAccPolicyForm:
+      type: string
+    LayerAttachment:
+      type: float
+    LayerNumber:
+      type: int
+    LOB:
+      type: string
+    PolDed1Building:
+      type: float
+    PolDed2Other:
+      type: float
+    PolDed3Contents:
+      type: float
+    PolDed4BI:
+      type: float
+    PolDed5PD:
+      type: float
+    PolDed6All:
+      type: float
+    PolExpiryDate:
+      type: string
+    PolInceptionDate:
+      type: string
+    ProducerName:
+      type: string
+    PolNetPremium:
+      type: float
+    Underwriter:
+      type: string
+  null_values:
+    - "''"
+    - Null
+    - NULL
+  transform:
+    AttachmentPoint:
+      - transformation: LayerAttachment
+    Branch:
+      - transformation: BranchName
+    ContractID:
+      - transformation: AccNumber
+    CurrencyCode:
+      - transformation: AccCurrency
+    ExpirationDate:
+      - transformation: PolExpiryDate
+    ExpiringContractID:
+      - transformation: ExpiringAccNumber
+    InsuredName:
+      - transformation: AccName
+    InceptionDate:
+      - transformation: PolInceptionDate
+    LayerConditionName:
+      - transformation: CondName
+    LayerID:
+      - transformation: LayerNumber
+    LayerPerils:
+      - transformation: AccPeril
+    Perils:
+      - transformation: AccPeril
+    PolicyForm:
+      - transformation: FlexiAccPolicyForm
+    Premium:
+      - transformation: PolNetPremium
+    ProducerName:
+      - transformation: ProducerName
+    StatusCode:
+      - transformation: AccStatus
+    SublimitLimitA:
+      #- transformation: CondLimit1Building
+      # when: CondLimit1Building gt 0
+      #- transformation: CondLimit5PD
+      # when: CondLimit5PD gt 0
+      #- transformation: CondLimit6All
+      #  when: CondLimit6All gt 0
+      - transformation: "''"
+    SublimitLimitB:
+      - transformation: CondLimit2Other
+    SublimitLimitC:
+      - transformation: CondLimit3Contents
+    SublimitLimitD:
+      - transformation: CondLimit4BI
+    SubLimitLimitType:
+      #- transformation: "'C'"
+      #  when: CondLimit1Building gt 0 and CondLimit2Other lte 0 and CondLimit3Contents lte 0 and CondLimit4BI lte 0 and CondLimit5PD lte 0 and CondLimit6All lte 0
+      #- transformation: "'C'"
+      #  when: CondLimit2Other gt 0 and CondLimit1Building lte 0 and CondLimit3Contents lte 0 and CondLimit4BI lte 0 and CondLimit5PD lte 0 and CondLimit6All lte 0
+      #- transformation: "'C'"
+      #  when: CondLimitContents gt 0 and CondLimit1Building lte 0 and CondLimit2Other lte 0 and CondLimit4BI lte 0 and CondLimit5PD lte 0 and CondLimit6All lte 0
+      #- transformation: "'C'"
+      #  when: CondLimit4BI gt 0 and CondLimit1Building lte 0 and CondLimit2Other lte 0 and CondLimit3Contents lte 0 and CondLimit5PD lte 0 and CondLimit6All lte 0
+      #- transformation: "'CB'"
+      #  when: CondLimit5PD gt 0 and CondLimit1Building lte 0 and CondLimit2Other lte 0 and CondLimit3Contents lte 0 and CondLimit4BI lte 0 and CondLimit6All lte 0
+      - transformation: "''"
+    SublimitPerils:
+      - transformation: CondPeril
+    UserDefined1:
+      - transformation: AccUserDef1
+    UserDefined2:
+      - transformation: AccUserDef2
+    UserDefined3:
+      - transformation: AccUserDef3
+    UserDefined4:
+      - transformation: AccUserDef4
+    UserDefined5:
+      - transformation: AccUserDef5
+    Underwriter:
+      - transformation: Underwriter
+    UserLineOfBusiness:
+      - transformation: LOB
