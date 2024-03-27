@@ -200,7 +200,7 @@ class SettingSchema:
         validator = jsonschema.Draft4Validator(self.schema)
         validation_errors = [e for e in validator.iter_errors(setting_data)]
         exception_msgs = self.check_unique_summary_ids(setting_data)
-        is_valid = validator.is_valid(setting_data) and bool(exception_msgs)
+        is_valid = validator.is_valid(setting_data) and not exception_msgs
 
         if validation_errors:
             for err in validation_errors:
