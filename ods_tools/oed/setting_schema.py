@@ -36,6 +36,7 @@ class SettingSchema:
         from_json(cls, setting_json): Creates a new instance of the `SettingSchema` class by loading a JSON file.
         compatibility(self, settings_data): Updates the loaded JSON data to account for deprecated keys.
         load(self, settings_fp): Loads the JSON data from a file path.
+        check_unique_summary_ids(self, setting_data): Ensures that the JSON data contains unique summary IDs for each runtype.
         validate(self, setting_data): Validates the loaded JSON data against the schema.
         get(self, settings_fp, key=None, validate=True): Gets a value from the loaded JSON data.
 
@@ -159,6 +160,30 @@ class SettingSchema:
             raise OdsException(f'Invalid {self.settings_type} file or file path: {settings_fp}')
         return settings_data
 
+    def check_unique_summary_ids(self, setting_data):
+        """
+        Ensures that the JSON data contains unique summary IDs for each
+        runtype.
+
+        Args:
+            setting_data (dict): The loaded JSON data.
+
+        Returns:
+            dict: Exception messages. Will be empty if there are no unique
+            summary IDs.
+
+        """
+        exception_msgs = {}
+        runtype_summaries = [f'{runtype}_summaries' for runtype in ['gul', 'il', 'ri']]
+        for runtype_summary in runtype_summaries:
+            summary_ids = [summary.get('id', []) for summary in setting_data.get(runtype_summary, [])]
+            duplicate_ids = set(summary_id for summary_id in summary_ids if summary_ids.count(summary_id) > 1)
+            if duplicate_ids:
+                error_msgs = [f'id {summary_id} is duplicated' for summary_id in duplicate_ids]
+                exception_msgs[runtype_summary] = error_msgs
+
+        return exception_msgs
+
     def validate(self, setting_data, raise_error=True):
         """
         Validates the loaded JSON data against the schema.
@@ -174,8 +199,8 @@ class SettingSchema:
         """
         validator = jsonschema.Draft4Validator(self.schema)
         validation_errors = [e for e in validator.iter_errors(setting_data)]
-        exception_msgs = {}
-        is_valid = validator.is_valid(setting_data)
+        exception_msgs = self.check_unique_summary_ids(setting_data)
+        is_valid = validator.is_valid(setting_data) and bool(exception_msgs)
 
         if validation_errors:
             for err in validation_errors:
