@@ -7,6 +7,7 @@ import shutil
 import urllib
 
 import sys
+import yaml
 
 import pandas as pd
 import numpy as np
@@ -19,6 +20,7 @@ sys.path.append(sys.path.pop(0))
 
 from ods_tools.main import convert
 from ods_tools.oed import OedExposure, OedSchema, OdsException, ModelSettingSchema, AnalysisSettingSchema, OED_TYPE_TO_NAME, UnknownColumnSaveOption
+from ods_tools.odtf.controller import transform_format
 
 logger = logging.getLogger(__file__)
 
@@ -650,7 +652,7 @@ class OdsPackageTests(TestCase):
         # Convert
         oed_exposure.to_version("1.9")
 
-        # # Assert the OccupancyCode is as expected
+        # Assert the OccupancyCode is as expected
         assert oed_exposure.location.dataframe.loc[0, "OccupancyCode"] == 9998
 
     def test_versioning_fallback_not_exact(self):
@@ -850,3 +852,114 @@ class OdsPackageTests(TestCase):
 
         self.assertEqual(expected_list, global__valid_output_metrics)
         self.assertEqual(expected_list, event_set__valid_metrics)
+
+    def test_transformation_as_expected_loc(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+
+            # Prepare the necessary files for the test
+            config_file_path = pathlib.Path(tmp_dir, 'config.yaml')
+            with open(config_file_path, 'w') as config_file:
+                yaml.dump({
+                    'transformations': {
+                        'loc': {
+                            'input_format': {
+                                'name': 'Cede_Location',
+                                'version': '10.0.0'
+                            },
+                            'output_format': {
+                                'name': 'OED_Location',
+                                'version': '3.0.2'
+                            },
+                            'runner': {
+                                'batch_size': 10000
+                            },
+                            'extractor': {
+                                'options': {
+                                    'path': str(pathlib.Path(base_test_path, 'loctest_transform_input.csv')),
+                                    'quoting': 'minimal'
+                                }
+                            },
+                            'loader': {
+                                'options': {
+                                    'path': str(pathlib.Path(tmp_dir, 'oed_location_output.csv')),
+                                    'quoting': 'minimal'
+                                }
+                            }
+                        }
+                    }
+                }, config_file)
+
+            # Run the transformation
+            transform_result = transform_format(str(config_file_path))
+
+            # Assert the transformation result
+            assert len(transform_result) == 1
+            assert transform_result[0][0] == str(pathlib.Path(tmp_dir, 'oed_location_output.csv'))
+            assert transform_result[0][1] == 'location'
+
+            output_df = pd.read_csv(transform_result[0][0])
+            expected_output = pd.read_csv(str(pathlib.Path(base_test_path, 'loctest_transform_output.csv')))
+            pd.testing.assert_frame_equal(output_df, expected_output)
+
+    def test_transformation_as_expected_acc(self):
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            # Create a temporary CSV file with the input data for 'acc'
+            input_acc_path = pathlib.Path(tmp_dir, 'input_acc.csv')
+            with open(input_acc_path, 'w') as input_acc_file:
+                input_acc_file.write(
+                    "ContractID,InceptionDate,ExpirationDate,Perils,LayerID,LayerPerils,DedAmt1,AttachmentAmt,SublimitPerils\n"
+                    "1253900,2021-11-29,2022-11-28,4334220,2349611,4334220,25000,50000000,CF\n"
+                    "1253900,2021-11-29,2022-11-28,4334220,2349611,4334220,25000,50000000,CH\n"
+                    "1253901,2021-11-01,2022-10-31,4334220,2349615,4334220,500000,225000000,EQ\n"
+                )
+
+            # Prepare the necessary files for the test
+            config_file_path = pathlib.Path(tmp_dir, 'config.yaml')
+            with open(config_file_path, 'w') as config_file:
+                yaml.dump({
+                    'transformations': {
+                        'acc': {
+                            'input_format': {
+                                'name': 'Cede_Contract',
+                                'version': '10.0.0'
+                            },
+                            'output_format': {
+                                'name': 'OED_Contract',
+                                'version': '3.0.2'
+                            },
+                            'runner': {
+                                'batch_size': 10000
+                            },
+                            'extractor': {
+                                'options': {
+                                    'path': str(input_acc_path),
+                                    'quoting': 'minimal'
+                                }
+                            },
+                            'loader': {
+                                'options': {
+                                    'path': str(pathlib.Path(tmp_dir, 'oed_account_output.csv')),
+                                    'quoting': 'minimal'
+                                }
+                            }
+                        }
+                    }
+                }, config_file)
+
+            # Run the transformation
+            transform_result = transform_format(str(config_file_path))
+
+            # Assert the transformation result
+            assert len(transform_result) == 1
+            assert transform_result[0][0] == str(pathlib.Path(tmp_dir, 'oed_account_output.csv'))
+            assert transform_result[0][1] == 'account'
+
+            # Perform assertions on specific columns in the output file
+            output_df = pd.read_csv(transform_result[0][0])
+            expected_output = pd.DataFrame({
+                'AccNumber': ['1253900', '1253900', '1253901'],
+                'AccPeril': ['4334220', '4334220', '4334220'],
+                'CondPeril': ['WSS', 'XCH', 'QEQ'],
+                'LayerAttachment': ['50000000.0', '50000000.0', '225000000.0']
+            })
+            pd.testing.assert_frame_equal(output_df[expected_output.columns].astype(str), expected_output.astype(str))
