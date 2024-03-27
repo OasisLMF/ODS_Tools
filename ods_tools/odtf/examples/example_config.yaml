@@ -10,11 +10,11 @@ transformations:
       batch_size: 150000 # Number of rows to process in a single batch
     extractor:
       options:
-        path: ./ods_tools/odtf/examples/cede_location_1000.csv # Path to the input file
+        path: ./cede_location_1000.csv # Path to the input file
         quoting: minimal
     loader:
       options:
-        path: ./ods_tools/odtf/examples/oed_location_1000.csv # Path to the output file
+        path: ./oed_location_1000.csv # Path to the output file
         quoting: minimal
   acc: # Transformation name
     input_format:
@@ -27,9 +27,9 @@ transformations:
       batch_size: 10000
     extractor:
       options:
-        path: ./ods_tools/odtf/examples/cede_contract_1000.csv
+        path: ./cede_contract_1000.csv
         quoting: minimal
     loader:
       options:
-        path: ./ods_tools/odtf/examples/oed_contract_1000.csv
+        path: ./oed_contract_1000.csv
         quoting: minimal
