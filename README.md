@@ -238,4 +238,55 @@ oed_exposure.currency_conversion = ods_tools.oed.forex.create_currency_rates(
 oed_exposure.reporting_currency = 'EUR' # this line will trigger currency conversion
 ```
 
+### Format Conversions
+
+The `transform` command can be used to convert between OED and other formats.
+
+`ods_tools transform` requires a configuration file, passed with the option `--config-file`. It must contain:
+
+- type of file to transform (location or account)
+- input format
+- output format
+- batch size
+- input file
+- output file
+
+For example:
+
+```
+transformations:
+  loc: # type of file to transform, can be "acc" or "loc"
+    input_format:
+      name: Cede_Location
+      version: 10.0.0
+    output_format:
+      name: OED_Location
+      version: 3.0.2
+    runner:
+      batch_size: 150000 # Number of rows to process in a single batch
+    extractor:
+      options:
+        path: /path/to/input.csv # Path to the input file
+        quoting: minimal
+    loader:
+      options:
+        path: /path/to/output.csv # Path to the output file
+        quoting: minimal
+```
+
+
+In order for a transformation to be run, the folder `./ods_tools/odtf/data/mappings` must contain the appropriate yaml configuration file that describes the transformations to perform on the input file to obtain the output (and, potentially, vice versa). Currently, only [mapping_loc_Cede-OED.yaml](./ods_tools/odtf/data/mappings/mapping_loc_Cede-OED.yaml) and
+[mapping_acc_Cede-OED.yaml](./ods_tools/odtf/data/mappings/mapping_acc_Cede-OED.yaml) are provided; they describe the transformation between AIR Cede v10.0.0 and OED 3.0.2 for location and account files respectively.
+
+The transformation can be run using:
+
+```
+ods_tools transform --config-file configuration.yaml
+```
+
+The following options can be used to adjust the process:
+
+`--nocheck` to skip the oed validation at the end of the conversion
+
+`-v` to adjust the logging level (debug:10, info:20, warning:30, error:40, critical:50)
 
