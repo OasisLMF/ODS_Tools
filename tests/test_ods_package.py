@@ -512,11 +512,13 @@ class OdsPackageTests(TestCase):
             settings_dict['gul_summarie'] = settings_dict['gul_summaries']
             del settings_dict['gul_summaries']
             settings_dict['gul_output'] = "True"  # should be a bool
+            settings_dict['ri_summaries'].append(settings_dict['ri_summaries'][0])   # Duplicate summary ID
 
             valid, errors = ods_analysis_setting.validate(settings_dict, raise_error=False)
             self.assertFalse(valid)
             self.assertEqual({'gul_output': ["'True' is not of type 'boolean'"],
-                              'required': ["'gul_summaries' is a required property"]}, errors)
+                              'required': ["'gul_summaries' is a required property"],
+                              'ri_summaries': ['id 1 is duplicated']}, errors)
 
             with self.assertRaises(OdsException):
                 ods_analysis_setting.validate(settings_dict)
