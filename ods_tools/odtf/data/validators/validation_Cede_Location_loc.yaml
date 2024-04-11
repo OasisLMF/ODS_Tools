@@ -4,11 +4,11 @@ entries:
       - BuildingValue
       - ContentsValue
     operator: sum
-  TotalByPeril:
+  TotalByContractID:
     fields:
       - BuildingValue
     operator: sum
     group_by:
-      - LocPerils
+      - ContractID
   NumRows:
     operator: count

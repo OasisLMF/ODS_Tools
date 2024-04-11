@@ -1,6 +1,5 @@
 from lark import lark
 
-
 _grammar = r"""
 ?start: expression
 
@@ -49,7 +48,7 @@ array: "[" [expression ("," expression)*] "]"
 
 ?string_manip: "join(" string [("," expression)*] ")" -> str_join
              | "replace(" expression [("," pattern "," expression)+] ")" -> str_replace
-             | "transform_loc_perils(" expression [("," STRING)*] ")" -> transform_loc_perils
+             | "replace_multiple(" expression "," string "," string ("," string "," string)* ")" -> replace_multiple
              | "match(" expression "," pattern ")" -> str_match
              | "search(" expression "," pattern ")" -> str_search
 
@@ -60,6 +59,7 @@ array: "[" [expression ("," expression)*] "]"
       | "ire" string -> iregex
 
 ?string: "'" STRING "'" -> string
+       | "'''" STRING "'''" -> string
        | "''"  -> string
 
 IDENT: /[a-zA-Z][a-zA-Z0-9_]*/

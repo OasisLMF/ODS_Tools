@@ -1,0 +1,11 @@
+entries:
+  Total:
+    fields:
+      - AttachmentAmt
+    operator: sum
+  UniqueContractID:
+    fields:
+      - ContractID
+    operator: count_unique
+  NumRows:
+    operator: count
