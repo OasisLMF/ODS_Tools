@@ -1,3 +1,4 @@
+import logging
 import re
 from functools import partial
 from operator import add, mul, sub
@@ -8,12 +9,14 @@ from lark import Transformer as _LarkTransformer
 from lark import Tree
 from lark import exceptions as lark_exceptions
 from lark import v_args
+from ..transformers.transform_utils import replace_multiple
 
 from .errors import UnexpectedCharacters
 from .grammar import parser
 
 
 RowType = Any
+logger = logging.getLogger(__name__)
 
 
 class TransformerMapping(TypedDict, total=False):
@@ -375,28 +378,6 @@ def default_join(row, join, *elements):
     return str(join).join(map(str, elements))
 
 
-def transform_loc_perils(row: RowType, target, *pattern_repl):
-    if isinstance(target, str):
-        perils = [p.strip() for p in target.split(',')]
-        transformed_perils = []
-
-        # Convert the pattern_repl tuple to a list of pairs
-        pattern_repl_list = list(zip(pattern_repl[::2], pattern_repl[1::2]))
-
-        for peril in perils:
-            for pattern, repl in pattern_repl_list:
-                if peril == pattern.strip("'"):
-                    transformed_perils.append(repl.strip("'"))
-                    break
-            else:
-                transformed_perils.append(peril)
-
-        # Join the transformed perils using a comma and space
-        return ', '.join(transformed_perils)
-    else:
-        return target
-
-
 @v_args(inline=True)
 class BaseTreeTransformer(_LarkTransformer):
     """
@@ -425,6 +406,7 @@ class BaseTreeTransformer(_LarkTransformer):
     str_replace: Callable[[RowType, Any, Pattern, Any], Any]
     str_match: Callable[[RowType, Any, Pattern, Any], Any]
     str_search: Callable[[RowType, Any, Pattern, Any], Any]
+    replace_multiple: Callable[..., Any]
 
     array = v_args(inline=False)(list)
     string_escape_re = re.compile(r"`([`'])")
@@ -529,7 +511,7 @@ def create_transformer_class(row, transformer_mapping):
         "str_replace": default_replace,
         "str_match": default_match,
         "str_search": default_search,
-        "transform_loc_perils": transform_loc_perils,
+        "replace_multiple": replace_multiple,
         **(transformer_mapping or {}),
     }
 
@@ -560,7 +542,7 @@ def create_transformer_class(row, transformer_mapping):
         str_replace = partial(mapped_function, "str_replace")
         str_match = partial(mapped_function, "str_match")
         str_search = partial(mapped_function, "str_search")
-
+        replace_multiple = partial(mapped_function, "replace_multiple")
     return TreeTransformer
 
 

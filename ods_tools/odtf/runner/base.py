@@ -11,7 +11,6 @@ from typing import (
     List,
     TypedDict,
     Union,
-    Set
 )
 
 from ..config import TransformationConfig
@@ -171,7 +170,6 @@ class _BaseRunner:
         self,
         row: RowType,
         entry_list: List[TransformationEntry],
-        missing_columns: Set[str] = None,
     ):
         """
         Applies all the transformations for a single output column
@@ -182,25 +180,21 @@ class _BaseRunner:
 
         :return: The transformation result
         """
-        if entry_list[0].transformation in missing_columns:
-            return NotSet
-        else:
-            result = reduce(
-                lambda current_column_value, entry: self.combine_column(
-                    row,
-                    current_column_value,
-                    entry,
-                ),
-                entry_list,
-                NotSet,
-            )
-            return result
+        result = reduce(
+            lambda current_column_value, entry: self.combine_column(
+                row,
+                current_column_value,
+                entry,
+            ),
+            entry_list,
+            NotSet,
+        )
+        return result
 
     def apply_transformation_set(
         self,
         row: RowType,
         transformations: DirectionalMapping,
-        missing_columns: Set[str] = None,
     ) -> RowType:
         """
         Applies all the transformations to produce the output row
@@ -221,7 +215,7 @@ class _BaseRunner:
                 target,
                 **{
                     col_transforms[0]: self.apply_column_transformation(
-                        coerced_row, col_transforms[1], missing_columns=missing_columns
+                        coerced_row, col_transforms[1]
                     )
                 },
             ),

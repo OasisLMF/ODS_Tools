@@ -69,9 +69,13 @@ class CsvConnector(BaseConnector):
         }.get(options.get("quoting", "nonnumeric"))
 
     def _data_serializer(self, row):
+
         return {
-            k: v if v is not None and not isinstance(v, NotSetType) else ""
+
+            k: f'"{v}"' if isinstance(v, str) and any(d in v for d in [',', ';', '\t', '\n', '"']) else (v if v is not None and not isinstance(v, NotSetType) else "")
+
             for k, v in row.items()
+
         }
 
     def load(self, data: Iterable[Dict[str, Any]]):
