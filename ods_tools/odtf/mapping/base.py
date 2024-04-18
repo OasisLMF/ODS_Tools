@@ -277,8 +277,10 @@ class BaseMapping:
                 valid_transforms = []
                 for transform in transform_list:
                     transform.parse()
-                    if (transform.transformation_tree is None or not self.has_missing_columns(transform.transformation_tree, missing_columns)) and \
-                    (transform.when_tree is None or not self.has_missing_columns(transform.when_tree, missing_columns)):
+                    if ((transform.transformation_tree is None or
+                        not self.has_missing_columns(transform.transformation_tree, missing_columns)) and
+                        (transform.when_tree is None or
+                         not self.has_missing_columns(transform.when_tree, missing_columns))):
                         valid_transforms.append(transform)
                 if valid_transforms:
                     doable_transformation_set[col] = valid_transforms
