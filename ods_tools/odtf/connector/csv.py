@@ -72,7 +72,8 @@ class CsvConnector(BaseConnector):
 
         return {
 
-            k: f'"{v}"' if isinstance(v, str) and any(d in v for d in [',', ';', '\t', '\n', '"']) else (v if v is not None and not isinstance(v, NotSetType) else "")
+            k: f'"{v}"' if isinstance(v, str) and any(d in v for d in [',', ';', '\t', '\n', '"']) else (
+                v if v is not None and not isinstance(v, NotSetType) else "")
 
             for k, v in row.items()
 

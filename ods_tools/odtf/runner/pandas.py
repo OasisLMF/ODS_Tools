@@ -12,7 +12,6 @@ from numpy import nan
 from ..connector.base import BaseConnector
 from ..mapping.base import (
     BaseMapping,
-    DirectionalMapping,
     ColumnConversions,
     TransformationEntry
 )
