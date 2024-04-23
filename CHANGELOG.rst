@@ -1,6 +1,17 @@
 ODS_Tools Changelog
 ===================
 
+`3.2.2`_
+ ---------
+* [#92](https://github.com/OasisLMF/ODS_Tools/pull/92) - Release 3.2.1
+* [#93](https://github.com/OasisLMF/ODS_Tools/pull/93) - include peril group as valid when doing peril filtering
+* [#94](https://github.com/OasisLMF/ODS_Tools/pull/94) - CI update - replace py3.7 with py3.11
+* [#90](https://github.com/OasisLMF/ODS_Tools/pull/95) - Incorporate odtf in ods_tools
+.. _`3.2.2`:  https://github.com/OasisLMF/ODS_Tools/compare/3.2.1...3.2.2
+
+* [#91](https://github.com/OasisLMF/ODS_Tools/pull/91) - Add ri_inuring_priorities field to analysis settings schema for outputs at intermediate inuring priorities
+.. _`3.2.1`:  https://github.com/OasisLMF/ODS_Tools/compare/3.2.0...3.2.1
+
 `3.2.0`_
  ---------
 * [#78](https://github.com/OasisLMF/ODS_Tools/pull/78) - Release 3.1.4
