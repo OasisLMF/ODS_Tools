@@ -433,7 +433,7 @@ class PandasRunner(BaseRunner):
         logger.info(f"Running transformation set {transformations[0].input_format} -> {transformations[-1].output_format}")
         total_rows = 0
         runner_config = self.config.config.get('runner', None)
-        batch_size = runner_config.get('batch_size', 10000)
+        batch_size = runner_config.get('batch_size', 50000)
 
         for batch in pd.read_csv(extractor.file_path, chunksize=batch_size, low_memory=False):
 
