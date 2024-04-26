@@ -3251,9 +3251,10 @@ reverse:
       - transformation: LocName
     LocPerils:
       - transformation: |
-          replace(
+          replace_multiple(
             LocPeril,
             'WSS','CF',
+            ';',','
             'XCH','CH',
             'QEQ','EQ',
             'QFF','FF',
@@ -3274,13 +3275,13 @@ reverse:
             'MTR','TR',
             'QTS','TS',
             'BBF','WF',
-            'ZST','WS',
-            ';',','
+            'ZST','WS'
           )
     PerilSetCode:
       - transformation: |
-          replace(
+          replace_multiple(
           LocPeril,
+          ';','+',
           'AA1','PAL',
           'QQ1','PEA',
           'BBF;QFF','PEF',
@@ -3301,8 +3302,7 @@ reverse:
           'WTC','PWH',
           'XSL;XTD;XHL','PWT',
           'ZZ1','PWW',
-          'XZ1','PWX',
-          ';','+'
+          'XZ1','PWX'
           )
     Longitude:
       - transformation: Longitude
