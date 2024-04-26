@@ -70,7 +70,8 @@ class CsvConnector(BaseConnector):
 
     def _data_serializer(self, row):
         return {
-            k: v if v is not None and not isinstance(v, NotSetType) else ""
+            k: f'"{v}"'.strip() if isinstance(v, str) and any(d in v for d in [',', ';', '\t', '\n', '"']) else (
+                v if v is not None and not isinstance(v, NotSetType) else "")
             for k, v in row.items()
         }
 
@@ -83,7 +84,9 @@ class CsvConnector(BaseConnector):
 
         with open(self.file_path, "w", newline="") as f:
             writer = csv.DictWriter(
-                f, fieldnames=list(first_row.keys()), quoting=self.quoting
+                f,
+                fieldnames=list(first_row.keys()),
+                quoting=self.quoting
             )
 
             if self.write_header:

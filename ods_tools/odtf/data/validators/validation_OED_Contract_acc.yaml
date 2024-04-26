@@ -1,15 +1,12 @@
 entries:
   Total:
     fields:
-      - BuildingTIV
-      - ContentsTIV
+      - LayerAttachment
     operator: sum
-  TotalByAccNumber:
+  UniqueAccNumbers:
     fields:
-      - BuildingTIV
-    operator: sum
-    group_by:
       - AccNumber
+    operator: count_unique
   NumRows:
     operator: count
   
