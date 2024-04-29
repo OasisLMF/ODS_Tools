@@ -1,6 +1,14 @@
 ODS_Tools Changelog
 ===================
 
+`3.2.3`_
+ ---------
+* [#98](https://github.com/OasisLMF/ODS_Tools/pull/104) - odtf outstanding issues
+* [#97](https://github.com/OasisLMF/ODS_Tools/pull/97) - Release 3.2.2
+* [#105](https://github.com/OasisLMF/ODS_Tools/pull/106) - Correlation Settings in Model settings
+* [#96](https://github.com/OasisLMF/ODS_Tools/pull/99) - Verify that summary IDs are unique
+.. _`3.2.3`:  https://github.com/OasisLMF/ODS_Tools/compare/3.2.2...3.2.3
+
 `3.2.2`_
  ---------
 * [#92](https://github.com/OasisLMF/ODS_Tools/pull/92) - Release 3.2.1
