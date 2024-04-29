@@ -11,7 +11,7 @@ from typing import (
 )
 
 import networkx as nx
-from lark import Tree
+from lark import Tree, Token
 
 from ..config import TransformationConfig
 from .errors import NoConversionPathError
@@ -234,23 +234,65 @@ class BaseMapping:
             )
         )
 
-    def get_transformations(self) -> List[DirectionalMapping]:
+    @staticmethod
+    def has_missing_columns(node: Union[Tree, Token, int, None], missing_columns: List[str]) -> bool:
+        """
+        Recursively checks if a node in the transformation tree contains any missing columns.
+
+        Args:
+            node (Union[Tree, Token, int, None]): The node to check for missing columns.
+            missing_columns (List[str]): A list of missing column names.
+
+        Returns:
+            bool: True if the node contains any missing columns, False otherwise.
+        """
+        if node is None or isinstance(node, int):
+            return False
+        if isinstance(node, Token):
+            return node.type == 'IDENT' and node.value in missing_columns
+        if node.data == 'lookup' and BaseMapping.has_missing_columns(node.children[0], missing_columns):
+            return True
+        return any(BaseMapping.has_missing_columns(child, missing_columns) for child in node.children)
+
+    def get_transformations(self, available_columns: List[str]) -> List[DirectionalMapping]:
         """
         Gets a column transformations and full transformation set for the
-        provided input and output paths.
+        provided input and output paths, filtered based on the available columns.
 
-        :return: The mappings along the conversion path.
+        :param available_columns: List of available columns in the input data
+        :return: The filtered mappings along the conversion path.
         """
         path = self.path
         logger.info(
             f"Path found {' -> '.join(f'{n.name} v{n.version}' for n in path)}"
         )
-        # parse the trees of the path so that is doesnt need
-        # to be done for every row
         transformations = [edge["transform"] for edge in self.path_edges]
-        for mapping in transformations:
-            for transform in mapping.transformation_set.values():
-                for case in transform:
-                    case.parse()
 
-        return transformations
+        missing_columns = list(set(transformations[0].types.keys()) - set(available_columns))
+
+        doable_transformations = []
+        for mapping in transformations:
+            doable_transformation_set = {}
+            for col, transform_list in mapping.transformation_set.items():
+                valid_transforms = []
+                for transform in transform_list:
+                    transform.parse()
+                    if ((transform.transformation_tree is None or
+                        not self.has_missing_columns(transform.transformation_tree, missing_columns)) and
+                        (transform.when_tree is None or
+                         not self.has_missing_columns(transform.when_tree, missing_columns))):
+                        valid_transforms.append(transform)
+                if valid_transforms:
+                    doable_transformation_set[col] = valid_transforms
+            if doable_transformation_set:
+                doable_transformations.append(
+                    DirectionalMapping(
+                        input_format=mapping.input_format,
+                        output_format=mapping.output_format,
+                        transformation_set=doable_transformation_set,
+                        types=mapping.types,
+                        null_values=mapping.null_values,
+                    )
+                )
+
+        return doable_transformations

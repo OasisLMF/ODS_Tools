@@ -538,6 +538,27 @@
                   ]
                }
             },
+            "correlation_settings": {
+               "type": "array",
+               "title": "Correlation Settings",
+               "description": "The Legacy Correlation Settings.",
+               "items": {
+                  "type": "object",
+                  "properties": {
+                     "peril_correlation_group": {
+                        "type": "integer",
+                        "title": "Peril Correlation Group",
+                        "description": "The Peril Correlation Group",
+                        "minLength": 1
+                     },
+                     "correlation_value": {
+                        "type": "string",
+                        "title": "Correlation Value",
+                        "description": "The Correlation Value"
+                     }
+                  }
+               }
+            },
             "vulnerability_adjustments": {
                "type": "object",
                "title": "Vulnerability Adjustments",
@@ -583,7 +604,7 @@
                    }
                },
                "additionalProperties": false
-           },                          
+            },
             "string_parameters":{
                "title":"Single string paramters",
                "type":"array",
@@ -1219,8 +1240,8 @@
       },
       "correlation_settings": {
          "type": "array",
-         "title": "Correlation Settings",
-         "description": "The Correlation Settings",
+         "title": "Correlation Settings (Legacy)",
+         "description": "Legacy Correlation Settings. Now moved to model_settings",
          "items": {
             "type": "object",
             "properties": {
