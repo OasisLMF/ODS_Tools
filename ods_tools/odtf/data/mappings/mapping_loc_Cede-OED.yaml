@@ -960,8 +960,6 @@ forward:
       - transformation: UserGeocodeMatchLevel
     FlexiLocWallCode:
       - transformation: WallType
-    # FlexiLocWallSidingCode: No description of the cladding code
-    #   - transformation: WallSiding
     FlexiLocWaterHeaterCode:
       - transformation: WaterHeater
     FlexiLocWeldingCode:
