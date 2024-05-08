@@ -187,8 +187,6 @@
                                     "wheatsheaf_mean_aep",
                                     "wheatsheaf_mean_oep",
                                     "wheatsheaf_oep",
-
-                                    "ord_output",
                                     "elt_sample",
                                     "elt_quantile",
                                     "elt_moment",
@@ -514,7 +512,6 @@
                      "wheatsheaf_mean_aep",
                      "wheatsheaf_mean_oep",
                      "wheatsheaf_oep",
-                     "ord_output",
                      "elt_sample",
                      "elt_quantile",
                      "elt_moment",
