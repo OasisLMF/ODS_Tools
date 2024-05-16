@@ -109,6 +109,24 @@ class OdsPackageTests(TestCase):
                 exposure2 = OedExposure(**config)
             self.assertTrue(exposure.location.dataframe.equals(exposure2.location.dataframe))
 
+    def test_categorical_with_default(self):
+        # UseReinsDates is a string column with a non null default, check default setting works
+        with tempfile.TemporaryDirectory() as tmp_run_dir:
+            config = {
+                'ri_info': base_url + '/SourceReinsInfoOEDPiWind.csv',
+                'use_field': True
+            }
+            exposure = OedExposure(**config)
+            exposure.ri_info.dataframe['UseReinsDates'] = None
+            exposure.ri_info.dataframe.to_csv(os.path.join(tmp_run_dir, 'ri_info.csv'), index=False)
+
+            exposure = OedExposure(**{
+                'ri_info': os.path.join(tmp_run_dir, 'ri_info.csv'),
+                'use_field': True
+            })
+            ri_scope = exposure.ri_info.dataframe
+            self.assertTrue(isinstance(ri_scope, pd.DataFrame))
+
     def test_load_oed_from_df(self):
         location_df = pd.DataFrame({
             'PortNumber': [1, 1],
