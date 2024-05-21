@@ -305,7 +305,10 @@ class OedSource:
             if (field_info
                     and field_info['Default'] != 'n/a'
                     and (df[col].isna().any() or (field_info['pd_dtype'] == 'category' and df[col].isnull().any()))):
-                fill_empty(df, col, df[col].dtype.type(field_info['Default']))
+                if df[col].dtype.name == 'category':
+                    fill_empty(df, col, field_info['Default'])
+                else:
+                    fill_empty(df, col, df[col].dtype.type(field_info['Default']))
             elif df[col].dtype.name == 'category':
                 fill_empty(df, col, '')
 
