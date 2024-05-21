@@ -860,7 +860,8 @@ class OdsPackageTests(TestCase):
         self.assertEqual(global__valid_output_metrics, event_set__valid_metrics)
 
         # Build expected list from analysis settings schema.
-        excluded_keys_list = ['id', 'oed_fields', 'lec_output', 'return_period_file', 'parquet_format', 'eltcalc', 'pltcalc', 'leccalc', 'aalcalc']
+        excluded_keys_list = ['id', 'ord_output', 'oed_fields', 'lec_output',
+                              'return_period_file', 'parquet_format', 'eltcalc', 'pltcalc', 'leccalc', 'aalcalc']
         extra_keys_list = ['aal', 'elt', 'plt', 'lec', 'aep', 'oep', 'ept', 'psept']
 
         settings_output_options = {
