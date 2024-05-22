@@ -499,8 +499,20 @@
                 "minimum": 1
             },
             "title": "Outputs at intermediate inuring priorities",
-            "description": "Request output at intervening inuring priorities specified as list of integers '[1, 3, 4 .. etc]'"
+            "description": "Request reinsurance net loss outputs as per specified ri-summaries at intervening inuring priorities specified as list of integers '[1, 3, 4 .. etc]'"
         },
+	"rl_output": {
+            "type": "boolean",
+	    "title": "Produce rl output",
+	    "description": "If true generate reinsurance gross loss outputs at all inuring priorities as per specified rl-summaries.",
+	    "default": false
+	},
+	"rl_summaries": {
+            "type": "array",
+	    "title": "Reinsurance gross loss summary outputs",
+	    "description": "Specified which outputs should be generated for which summary sets, for reinsurance gross losses.",
+	    "$ref": "#/definitions/output_summaries"
+	},
         "full_correlation": {
             "type": "boolean",
             "title": "Produce fully correlated output",
