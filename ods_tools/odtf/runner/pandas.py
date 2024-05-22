@@ -422,9 +422,13 @@ class PandasRunner(BaseRunner):
     def transform(
         self, extractor: BaseConnector, mapping: BaseMapping
     ) -> Iterable[Dict[str, Any]]:
+        # 1 - Available columns to be extracted from the DB or file.
+        # Consider just calling this "runner"
+
         available_columns = set(pd.read_csv(extractor.file_path, nrows=1).columns)
         transformations = mapping.get_transformations(available_columns=available_columns)
 
+        # 2 - validator?
         validator = PandasValidator(search_paths=([os.path.dirname(self.config.path)] if self.config.path else []))
 
         logger.info(f"Running transformation set {transformations[0].input_format} -> {transformations[-1].output_format}")
@@ -432,6 +436,7 @@ class PandasRunner(BaseRunner):
         runner_config = self.config.config.get('runner', None)
         batch_size = runner_config.get('batch_size', 50000)
 
+        # 3 - probably separate csv and db in two different methods
         for batch in pd.read_csv(extractor.file_path, chunksize=batch_size, low_memory=False):
 
             validator.run(self.coerce_row_types(batch, transformations[0].types),
