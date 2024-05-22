@@ -9,6 +9,7 @@ from typing import Any, Dict, Iterable, Union
 import pandas as pd
 from numpy import nan
 
+from ..connector.db.base import BaseDBConnector
 from ..connector.base import BaseConnector
 from ..mapping.base import (
     BaseMapping,

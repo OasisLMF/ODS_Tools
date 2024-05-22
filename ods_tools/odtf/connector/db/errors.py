@@ -1,4 +1,4 @@
-from converter.errors import ConverterError
+from ...errors import ConverterError
 
 
 class DBConnectionError(ConverterError):
