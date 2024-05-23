@@ -151,7 +151,7 @@ def fill_empty(df, columns, value):
         dtype = getattr(df[column], "dtypes", getattr(df[column], "dtype", None))
         if dtype.name == 'category' and value not in {None, np.nan}.union(df[column].cat.categories):
             df[column] = df[column].cat.add_categories(value)
-        df.loc[df[column].isin(BLANK_VALUES), column] = value
+        df.loc[np.isin(df[column].values, BLANK_VALUES), column] = value
 
 
 class UnknownColumnSaveOption(Enum):
