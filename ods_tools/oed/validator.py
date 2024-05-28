@@ -2,7 +2,6 @@ import functools
 import json
 import numpy as np
 import logging
-import pandas as pd
 
 from pathlib import Path
 from collections.abc import Iterable
