@@ -1,12 +1,14 @@
 import functools
 import json
+import numpy as np
 import logging
+import pandas as pd
 
 from pathlib import Path
 from collections.abc import Iterable
 
 from .common import (OdsException, OED_PERIL_COLUMNS, OED_IDENTIFIER_FIELDS, DEFAULT_VALIDATION_CONFIG,
-                     VALIDATOR_ON_ERROR_ACTION, BLANK_VALUES)
+                     VALIDATOR_ON_ERROR_ACTION, BLANK_VALUES, is_empty)
 from .oed_schema import OedSchema
 
 logger = logging.getLogger(__name__)
@@ -134,7 +136,7 @@ class Validator:
                     columns = [columns]
                 for column in columns:
                     if field_info.get("Allow blanks?").upper() == 'NO':
-                        missing_value_df = oed_source.dataframe[oed_source.dataframe[column].isin(BLANK_VALUES)]
+                        missing_value_df = oed_source.dataframe[is_empty(oed_source.dataframe, column)]
                         if not missing_value_df.empty:
                             invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                                  'msg': f"column '{column}' has missing values in \n"
@@ -222,8 +224,9 @@ class Validator:
             if occupancy_code_column is None:
                 continue
             identifier_field = self.identifier_field_maps[oed_source]
-            invalid_occupancy_code = oed_source.dataframe[~oed_source.dataframe[occupancy_code_column].astype(str).isin(
-                set(self.exposure.oed_schema.schema['occupancy']) | BLANK_VALUES)]
+            invalid_occupancy_code = oed_source.dataframe[~(np.isin(oed_source.dataframe[occupancy_code_column].astype(str),
+                                                                    list(self.exposure.oed_schema.schema['occupancy']))
+                                                            | is_empty(oed_source.dataframe, occupancy_code_column))]
             if not invalid_occupancy_code.empty:
                 invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                      'msg': f"invalid OccupancyCode.\n"
@@ -242,8 +245,9 @@ class Validator:
             if construction_code_column is None:
                 continue
             identifier_field = self.identifier_field_maps[oed_source]
-            invalid_construction_code = oed_source.dataframe[~oed_source.dataframe[construction_code_column].astype(str).isin(
-                set(self.exposure.oed_schema.schema['construction']) | BLANK_VALUES)]
+            invalid_construction_code = oed_source.dataframe[~(np.isin(oed_source.dataframe[construction_code_column].astype(str),
+                                                                       list(self.exposure.oed_schema.schema['construction']))
+                                                               | is_empty(oed_source.dataframe, construction_code_column))]
             if not invalid_construction_code.empty:
                 invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                      'msg': f"invalid ConstructionCode.\n"
@@ -265,8 +269,9 @@ class Validator:
             identifier_field = self.identifier_field_maps[oed_source]
             area_code_column = self.field_to_column_maps[oed_source].get('AreaCode')
             if area_code_column is not None:
-                country_only_df = oed_source.dataframe[oed_source.dataframe[area_code_column].isin(BLANK_VALUES)]
-                country_area_df = oed_source.dataframe[~oed_source.dataframe[area_code_column].isin(BLANK_VALUES)]
+                country_only_df = oed_source.dataframe[is_empty(oed_source.dataframe, area_code_column)]
+                country_area_df = oed_source.dataframe[~is_empty(oed_source.dataframe, area_code_column)]
+
                 invalid_country_area = (country_area_df[
                     ~(country_area_df[[country_code_column, area_code_column]]
                       .apply(tuple, axis=1)
@@ -279,8 +284,9 @@ class Validator:
                                                 f"{invalid_country_area[identifier_field + [country_code_column, area_code_column]]}"})
             else:
                 country_only_df = oed_source.dataframe
-            invalid_country = (country_only_df[~country_only_df[country_code_column]
-                                               .isin(set(self.exposure.oed_schema.schema['country']) | BLANK_VALUES)])
+            invalid_country = (country_only_df[~(np.isin(country_only_df[country_code_column],
+                                                         list(self.exposure.oed_schema.schema['country']))
+                                                 | is_empty(country_only_df, country_code_column))])
             if not invalid_country.empty:
                 invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                      'msg': f"invalid CountryCode.\n"
