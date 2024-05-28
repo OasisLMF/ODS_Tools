@@ -7,7 +7,7 @@ from oasis_data_manager.df_reader.config import get_df_reader
 import numpy as np
 from chardet.universaldetector import UniversalDetector
 
-from .common import (OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, BLANK_VALUES, fill_empty,
+from .common import (OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, fill_empty,
                      UnknownColumnSaveOption, cached_property, is_empty)
 from .forex import convert_currency
 from .oed_schema import OedSchema
