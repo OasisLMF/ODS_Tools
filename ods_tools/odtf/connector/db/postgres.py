@@ -47,6 +47,6 @@ class PostgresConnector(BaseDBConnector):
 
         with self._create_connection(database) as conn:
             with self._get_cursor(conn) as cur:
-                cur.execute(f"SELECT column_name FROM information_schema.columns WHERE table_name = 'test_table';")
+                cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'test_table';")
                 columns = [row[0] for row in cur.fetchall()]
         return columns

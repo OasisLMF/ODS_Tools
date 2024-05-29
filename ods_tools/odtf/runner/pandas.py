@@ -430,7 +430,8 @@ class PandasRunner(BaseRunner):
 
         with extractor._create_connection(extractor.database) as conn:
             with extractor._get_cursor(conn) as cur:
-                cur.execute(f"SELECT * FROM information_schema.columns WHERE table_name = 'test_table';")
+                # NOTE - hardcoded string, for testing purposes only
+                cur.execute("SELECT * FROM information_schema.columns WHERE table_name = 'test_table';")
                 total_rows = 0
 
                 while True:
@@ -441,7 +442,7 @@ class PandasRunner(BaseRunner):
                     batch = pd.DataFrame(rows, columns=[desc[0] for desc in cur.description])
 
                     validator.run(self.coerce_row_types(batch, transformations[0].types),
-                                mapping.input_format.name, mapping.input_format.version, mapping.file_type)
+                                  mapping.input_format.name, mapping.input_format.version, mapping.file_type)
 
                     transformed = batch
                     for transformation in transformations:
@@ -481,7 +482,7 @@ class PandasRunner(BaseRunner):
             for batch in pd.read_csv(extractor.file_path, chunksize=batch_size, low_memory=False):
 
                 validator.run(self.coerce_row_types(batch, transformations[0].types),
-                            mapping.input_format.name, mapping.input_format.version, mapping.file_type)
+                              mapping.input_format.name, mapping.input_format.version, mapping.file_type)
 
                 transformed = batch
                 for transformation in transformations:
