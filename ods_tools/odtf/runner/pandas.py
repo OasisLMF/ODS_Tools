@@ -9,6 +9,7 @@ from typing import Any, Dict, Iterable, Union
 import pandas as pd
 from numpy import nan
 
+from ..connector.csv import CsvConnector
 from ..connector.db.base import BaseDBConnector
 from ..connector.base import BaseConnector
 from ..mapping.base import (
@@ -420,13 +421,49 @@ class PandasRunner(BaseRunner):
         else:
             return self.create_series(input_df.index, result)
 
+    def process_db_in_batches(self, extractor, mapping, transformations):
+        validator = PandasValidator(search_paths=([os.path.dirname(self.config.path)] if self.config.path else []))
+        runner_config = self.config.config.get('runner', None)
+        batch_size = runner_config.get('batch_size', 50000)
+
+        # NOTE: Add batch size
+
+        with extractor._create_connection(extractor.database) as conn:
+            with extractor._get_cursor(conn) as cur:
+                cur.execute(f"SELECT * FROM information_schema.columns WHERE table_name = 'test_table';")
+                total_rows = 0
+
+                while True:
+                    rows = cur.fetchmany(batch_size)
+                    if not rows:
+                        break
+
+                    batch = pd.DataFrame(rows, columns=[desc[0] for desc in cur.description])
+
+                    validator.run(self.coerce_row_types(batch, transformations[0].types),
+                                mapping.input_format.name, mapping.input_format.version, mapping.file_type)
+
+                    transformed = batch
+                    for transformation in transformations:
+                        transformed = self.apply_transformation_set(transformed, transformation)
+
+                    validator.run(transformed, mapping.output_format.name, mapping.output_format.version, mapping.file_type)
+                    total_rows += len(batch)
+                    logger.info(f"Processed {len(batch)} rows in the current batch (total: {total_rows})")
+
+                    yield from (r.to_dict() for idx, r in transformed.iterrows())
+
     def transform(
         self, extractor: BaseConnector, mapping: BaseMapping
     ) -> Iterable[Dict[str, Any]]:
         # 1 - Available columns to be extracted from the DB or file.
         # Consider just calling this "runner"
+        # Add "get_columns" method to the extractors
 
-        available_columns = set(pd.read_csv(extractor.file_path, nrows=1).columns)
+        if isinstance(extractor, BaseDBConnector):
+            available_columns = extractor.get_columns(extractor.database)
+        else:
+            available_columns = set(pd.read_csv(extractor.file_path, nrows=1).columns)
         transformations = mapping.get_transformations(available_columns=available_columns)
 
         # 2 - validator?
@@ -438,17 +475,20 @@ class PandasRunner(BaseRunner):
         batch_size = runner_config.get('batch_size', 50000)
 
         # 3 - probably separate csv and db in two different methods
-        for batch in pd.read_csv(extractor.file_path, chunksize=batch_size, low_memory=False):
+        if isinstance(extractor, BaseDBConnector):
+            yield from self.process_db_in_batches(extractor, mapping, transformations)
+        elif isinstance(extractor, CsvConnector):
+            for batch in pd.read_csv(extractor.file_path, chunksize=batch_size, low_memory=False):
 
-            validator.run(self.coerce_row_types(batch, transformations[0].types),
-                          mapping.input_format.name, mapping.input_format.version, mapping.file_type)
+                validator.run(self.coerce_row_types(batch, transformations[0].types),
+                            mapping.input_format.name, mapping.input_format.version, mapping.file_type)
 
-            transformed = batch
-            for transformation in transformations:
-                transformed = self.apply_transformation_set(transformed, transformation)
+                transformed = batch
+                for transformation in transformations:
+                    transformed = self.apply_transformation_set(transformed, transformation)
 
-            validator.run(transformed, mapping.output_format.name, mapping.output_format.version, mapping.file_type)
-            total_rows += len(batch)
-            logger.info(f"Processed {len(batch)} rows in the current batch (total: {total_rows})")
+                validator.run(transformed, mapping.output_format.name, mapping.output_format.version, mapping.file_type)
+                total_rows += len(batch)
+                logger.info(f"Processed {len(batch)} rows in the current batch (total: {total_rows})")
 
-            yield from (r.to_dict() for idx, r in transformed.iterrows())
+                yield from (r.to_dict() for idx, r in transformed.iterrows())

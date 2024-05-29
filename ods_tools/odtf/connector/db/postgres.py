@@ -32,3 +32,21 @@ class PostgresConnector(BaseDBConnector):
     def _get_cursor(self, conn):
         cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
         return cur
+
+    def get_columns(self, database: Dict[str, str]):
+        """
+        Get the column names from a specific table in the database.
+
+        :param table_name: The name of the table to get the columns from.
+
+        :return: A list of column names.
+        """
+
+        # NOTE: add get_columns method to the other connectors
+        # NOTE: for test only, update to use sql query selected in config file
+
+        with self._create_connection(database) as conn:
+            with self._get_cursor(conn) as cur:
+                cur.execute(f"SELECT column_name FROM information_schema.columns WHERE table_name = 'test_table';")
+                columns = [row[0] for row in cur.fetchall()]
+        return columns
