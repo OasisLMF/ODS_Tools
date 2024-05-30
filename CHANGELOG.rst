@@ -1,6 +1,14 @@
 ODS_Tools Changelog
 ===================
 
+`3.1.5`_
+ ---------
+* [#80](https://github.com/OasisLMF/ODS_Tools/pull/80) - Added fields to analysis settings schema
+* [#115](https://github.com/OasisLMF/ODS_Tools/pull/115) - fix issue when categorical column have a default value
+* [#117](https://github.com/OasisLMF/ODS_Tools/pull/117) - Fix/fill empty
+* [#78](https://github.com/OasisLMF/ODS_Tools/pull/78) - Release 3.1.4
+.. _`3.1.5`:  https://github.com/OasisLMF/ODS_Tools/compare/3.1.4...3.1.5
+
 .. _`3.1.4`:  https://github.com/OasisLMF/ODS_Tools/compare/3.1.3...3.1.4
 
 `3.1.3`_
