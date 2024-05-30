@@ -7,7 +7,6 @@ This package manage:
 
 import json
 import logging
-import numpy as np
 from packaging import version
 from pathlib import Path
 
