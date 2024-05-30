@@ -143,6 +143,19 @@ OED_PERIL_COLUMNS = ['AccPeril', 'PolPerilsCovered', 'PolPeril', 'CondPeril', 'L
 
 BLANK_VALUES = {np.nan, '', None, pd.NA, pd.NaT}
 
+dtype_to_python = {
+    'Int8': int,
+    'Int32': int,
+    'Int64': int,
+    'bytes': lambda x: bytes(x, 'utf-8'),
+    'float64': float,
+    'category': str
+}
+
+
+def is_empty(df, columns):
+    return (df[columns].isnull()) | (df[columns] == '')
+
 
 def fill_empty(df, columns, value):
     if isinstance(columns, str):
@@ -150,7 +163,7 @@ def fill_empty(df, columns, value):
     for column in columns:
         if df[column].dtypes.name == 'category' and value not in {None, np.nan}.union(df[column].cat.categories):
             df[column] = df[column].cat.add_categories(value)
-        df.loc[df[column].isin(BLANK_VALUES), column] = value
+        df.loc[is_empty(df, column), column] = value
 
 
 class UnknownColumnSaveOption(Enum):
