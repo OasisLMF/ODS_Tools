@@ -6,8 +6,8 @@ import pandas as pd
 import numpy as np
 from chardet.universaldetector import UniversalDetector
 
-from .common import (OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, BLANK_VALUES, fill_empty,
-                     UnknownColumnSaveOption, cached_property)
+from .common import (OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, fill_empty,
+                     UnknownColumnSaveOption, cached_property, is_empty)
 from .forex import convert_currency
 from .oed_schema import OedSchema
 
@@ -267,7 +267,7 @@ class OedSource:
                 if oed_df[column].dtype.name == 'category' and '' not in oed_df[column].dtype.categories:
                     oed_df[column] = oed_df[column].cat.add_categories('')
                 oed_df[column] = oed_df[column]  # make a copy f the col in case it is read_only
-                oed_df.loc[oed_df[column].isin(BLANK_VALUES), column] = ''
+                oed_df.loc[is_empty(oed_df, column), column] = ''
             elif pd_dtype[column].startswith('Int'):
                 to_tmp_dtype[column] = 'float'
 
@@ -287,12 +287,7 @@ class OedSource:
         """
         # set default values
         for col, field_info in column_to_field.items():
-            if (field_info
-                    and field_info['Default'] != 'n/a'
-                    and (df[col].isna().any() or (field_info['pd_dtype'] == 'category' and df[col].isnull().any()))):
-                fill_empty(df, col, df[col].dtype.type(field_info['Default']))
-            elif df[col].dtype.name == 'category':
-                fill_empty(df, col, '')
+            fill_empty(df, col, OedSchema.get_default_from_ods_fields(ods_fields, col))
 
         # add required columns that allow blank values if missing
         present_field = set(field_info['Input Field Name'] for field_info in column_to_field.values())

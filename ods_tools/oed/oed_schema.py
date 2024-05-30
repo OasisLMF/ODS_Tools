@@ -4,7 +4,7 @@ from pathlib import Path
 import numba as nb
 import numpy as np
 
-from .common import OdsException, BLANK_VALUES, cached_property
+from .common import OdsException, BLANK_VALUES, cached_property, dtype_to_python
 
 ENV_ODS_SCHEMA_PATH = os.getenv('ODS_SCHEMA_PATH')
 
@@ -120,6 +120,25 @@ class OedSchema:
             np.array of True and False
         """
         return jit_peril_filtering(peril_ids.to_numpy().astype('str'), peril_filters.to_numpy().astype('str'), self.nb_perils_dict)
+
+    @staticmethod
+    def get_default_from_ods_fields(ods_fields, field_name):
+        field_info = ods_fields.get(field_name.lower())
+        if field_info is None:
+            return ''
+        if field_info['pd_dtype'] == 'category':
+            if field_info['Default'] != 'n/a':
+                return field_info['Default']
+            else:
+                return ''
+        else:
+            if field_info['Default'] != 'n/a':
+                return dtype_to_python[field_info['pd_dtype']](field_info['Default'])
+            else:
+                return np.nan
+
+    def get_default(self, field_name, oed_type='null'):
+        return self.get_default_from_ods_fields(self.schema['input_fields'][oed_type], field_name)
 
     @staticmethod
     def to_universal_field_name(column: str):
