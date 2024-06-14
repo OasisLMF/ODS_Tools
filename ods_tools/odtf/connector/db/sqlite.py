@@ -1,6 +1,8 @@
+from typing import Dict
+
+import pandas as pd
 import sqlite3
 from sqlite3 import Error
-from typing import Dict
 
 from .base import BaseDBConnector
 from .errors import DBConnectionError
@@ -53,3 +55,20 @@ class SQLiteConnector(BaseDBConnector):
 
         conn.row_factory = sqlite3.Row
         return conn
+
+    def fetch_data(self, sql_file_path, database: Dict[str, str], batch_size=50000):
+        """
+        Fetch data from the database in batches.
+
+        :param sql_file_path: Path to the SQL file containing the query
+        :param batch_size: Number of rows per batch
+
+        :yield: Data batches as pandas DataFrames
+        """
+
+        with open(self.sql_statement_path, 'r') as file:
+            sql_query = file.read()
+
+        with self._create_connection(self.database) as conn:
+            for batch in pd.read_sql(sql_query, conn, chunksize=batch_size):
+                yield batch

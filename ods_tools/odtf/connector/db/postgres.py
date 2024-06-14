@@ -1,5 +1,6 @@
 from typing import Dict
 
+import pandas as pd
 import psycopg2
 import psycopg2.extras
 
@@ -24,29 +25,24 @@ class PostgresConnector(BaseDBConnector):
         """
         try:
             conn = psycopg2.connect(**database)
-        except Exception:
-            raise DBConnectionError()
+        except Exception as e:
+            raise DBConnectionError(e)
 
         return conn
 
-    def _get_cursor(self, conn):
-        cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        return cur
-
-    def get_columns(self, database: Dict[str, str]):
+    def fetch_data(self, batch_size=50000):
         """
-        Get the column names from a specific table in the database.
+        Fetch data from the database in batches.
 
-        :param table_name: The name of the table to get the columns from.
+        :param sql_file_path: Path to the SQL file containing the query
+        :param batch_size: Number of rows per batch
 
-        :return: A list of column names.
+        :yield: Data batches as pandas DataFrames
         """
 
-        # NOTE: add get_columns method to the other connectors
-        # NOTE: for test only, update to use sql query selected in config file
+        with open(self.sql_statement_path, 'r') as file:
+            sql_query = file.read()
 
-        with self._create_connection(database) as conn:
-            with self._get_cursor(conn) as cur:
-                cur.execute("SELECT column_name FROM information_schema.columns WHERE table_name = 'test_table';")
-                columns = [row[0] for row in cur.fetchall()]
-        return columns
+        with self._create_connection(self.database) as conn:
+            for batch in pd.read_sql(sql_query, conn, chunksize=batch_size):
+                yield batch
