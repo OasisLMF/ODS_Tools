@@ -5,3 +5,10 @@ click
 pytest
 requests
 chardet
+PyYAML
+lark
+networkx
+pyodbc
+sqlparams
+sqlparse
+psycopg2
