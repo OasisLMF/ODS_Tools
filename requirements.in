@@ -5,10 +5,10 @@ jsonschema
 jsonref
 oasis-data-manager
 packaging
-PyYAML
-lark
-networkx
-pyodbc
-sqlparams
-sqlparse
-psycopg2
+PyYAML[odtf]
+lark[odtf]
+networkx[odtf]
+pyodbc[odtf]
+sqlparams[odtf]
+sqlparse[odtf]
+psycopg2[odtf]

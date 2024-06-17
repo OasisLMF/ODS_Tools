@@ -39,7 +39,7 @@ class SQLServerConnector(BaseDBConnector):
 
         return conn
 
-    def fetch_data(self, sql_file_path, database: Dict[str, str], batch_size=50000):
+    def fetch_data(self, batch_size=50000):
         """
         Fetch data from the database in batches.
 
