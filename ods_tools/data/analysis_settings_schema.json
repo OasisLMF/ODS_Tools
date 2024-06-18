@@ -401,10 +401,15 @@
                                "description": "The Peril Correlation Group",
                                "minLength": 1
                             },
-                            "correlation_value": {
+                            "hazard_correlation_value": {
                                "type": "string",
-                               "title": "Correlation Value",
-                               "description": "The Correlation Value"
+                               "title": "Hazard Correlation Value",
+                               "description": "The Correlation Value for harard sampling"
+                            },
+                            "damage_correlation_value": {
+                               "type": "string",
+                               "title": "Damage Correlation Value",
+                               "description": "The Correlation Value for vulnerability sampling"
                             }
                          }
                     }
