@@ -424,7 +424,7 @@ class PandasRunner(BaseRunner):
         """
         validator = PandasValidator(search_paths=([os.path.dirname(self.config.path)] if self.config.path else []))
         runner_config = self.config.config.get('runner', None)
-        batch_size = runner_config.get('batch_size', 50000)
+        batch_size = runner_config.get('batch_size', 100000)
         total_rows = 0
         transformations = []
 

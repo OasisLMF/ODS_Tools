@@ -97,7 +97,7 @@ class CsvConnector(BaseConnector):
             writer.writerow(self._data_serializer(first_row))
             writer.writerows(map(self._data_serializer, data))
 
-    def fetch_data(self, chunksize: int = 50000) -> Iterable[pd.DataFrame]:
+    def fetch_data(self, chunksize: int) -> Iterable[pd.DataFrame]:
         """
         Fetch data from the csv file in batches.
 

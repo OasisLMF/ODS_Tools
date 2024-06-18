@@ -30,11 +30,10 @@ class PostgresConnector(BaseDBConnector):
 
         return conn
 
-    def fetch_data(self, batch_size=50000):
+    def fetch_data(self, batch_size: int):
         """
         Fetch data from the database in batches.
 
-        :param sql_file_path: Path to the SQL file containing the query
         :param batch_size: Number of rows per batch
 
         :yield: Data batches as pandas DataFrames
