@@ -18,8 +18,10 @@ from ods_tools.oed import (
     ModelSettingSchema,
     AnalysisSettingSchema,
 )
-from ods_tools.odtf.controller import transform_format
-
+try:
+    from ods_tools.odtf.controller import transform_format
+except ImportError:
+    logger.info("Data transformation package requirements not intalled.")
 
 def get_oed_exposure(config_json=None, oed_dir=None, **kwargs):
     if config_json:
@@ -107,6 +109,9 @@ def transform(**kwargs):
                     check(account=output_file[0])
     except OdsException as e:
         logger.error("Transformation failed:")
+        logger.error(e)
+    except NameError as e:
+        logger.error("Data transformation package requirements not intalled.")
         logger.error(e)
 
 
