@@ -23,6 +23,7 @@ try:
 except ImportError:
     logger.info("Data transformation package requirements not intalled.")
 
+
 def get_oed_exposure(config_json=None, oed_dir=None, **kwargs):
     if config_json:
         return OedExposure.from_config(config_json, **kwargs)
