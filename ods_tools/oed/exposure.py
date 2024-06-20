@@ -8,6 +8,7 @@ This package manage:
 import json
 from copy import deepcopy
 import logging
+import numpy as np
 from packaging import version
 from pathlib import Path
 
@@ -80,7 +81,7 @@ class OedExposure:
                 if column not in df.columns or not values:
                     return df
 
-                return df[df[column].isin(values)]
+                return df[np.isin(df[column], values)]
             return fn
 
         loc_filters = [

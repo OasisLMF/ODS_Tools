@@ -1,6 +1,17 @@
 ODS_Tools Changelog
 ===================
 
+`3.2.4`_
+ ---------
+* [#103](https://github.com/OasisLMF/ODS_Tools/pull/103) - Release 3.2.3
+* [#107](https://github.com/OasisLMF/ODS_Tools/pull/108) - update odtf mappings
+* [#109](https://github.com/OasisLMF/ODS_Tools/pull/109) - Update OED spec to 3.2.0
+* [#3](https://github.com/OasisLMF/ODS_Tools/pull/111) - model schema ord metrics
+* [#112](https://github.com/OasisLMF/ODS_Tools/pull/113) - Update analysis settings schema to allow more than 9 summary groups
+* [#115](https://github.com/OasisLMF/ODS_Tools/pull/115) - fix issue when categorical column have a default value
+* [#117](https://github.com/OasisLMF/ODS_Tools/pull/117) - Fix/fill empty
+.. _`3.2.4`:  https://github.com/OasisLMF/ODS_Tools/compare/3.2.3...3.2.4
+
 `3.2.3`_
  ---------
 * [#98](https://github.com/OasisLMF/ODS_Tools/pull/104) - odtf outstanding issues
