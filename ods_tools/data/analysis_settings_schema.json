@@ -324,6 +324,11 @@
             "title": "User set event ids",
             "description": "List of event ids as integers '[1, 5, 123 .. etc]'"
         },
+        "event_ranges": {
+            "type": "string",
+            "title": "User set event id ranges",
+            "description": "Comma separated ist of event id ranges using hyphens as string '1-4,8,89-94 .. etc'"
+        },
         "peril_filter": {
             "type": "array",
             "minItems": 1,
