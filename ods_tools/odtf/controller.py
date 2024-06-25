@@ -11,6 +11,39 @@ from .connector import BaseConnector
 from .mapping import BaseMapping
 from .runner import BaseRunner
 
+OED_VERSION = "2.0"
+AIR_VERSION = "1.0"
+
+BASE_CONFIG = {
+    "transformations": {
+        "loc": {
+            "input_format": {
+                "name": "",
+                "version": ""
+            },
+            "output_format": {
+                "name": "",
+                "version": ""
+            },
+            "runner": {
+                "batch_size": 150000
+            },
+            "extractor": {
+                "options": {
+                    "path": "",
+                    "quoting": "minimal"
+                }
+            },
+            "loader": {
+                "options": {
+                    "path": "",
+                    "quoting": "minimal"
+                }
+            }
+        }
+    }
+}
+
 logger = logging.getLogger(__name__)
 
 
@@ -114,9 +147,33 @@ class Controller:
             return None
 
 
-def transform_format(path_to_config_file):
-    with open(path_to_config_file, 'r') as file:
-        config_dict = yaml.safe_load(file)
+def generate_config(input_file, output_file, transformation_type):
+    config_dict = BASE_CONFIG
+    if transformation_type == 'oed-air':
+        config_dict['transformations']['loc']['input_format']['name'] = 'OED_Location'
+        config_dict['transformations']['loc']['input_format']['version'] = OED_VERSION
+        config_dict['transformations']['loc']['output_format']['name'] = 'AIR_Location'
+        config_dict['transformations']['loc']['output_format']['version'] = AIR_VERSION
+        config_dict['transformations']['loc']['extractor']['options']['path'] = input_file
+        config_dict['transformations']['loc']['loader']['options']['path'] = output_file
+    elif transformation_type == 'air-oed':
+        config_dict['transformations']['loc']['input_format']['name'] = 'AIR_Location'
+        config_dict['transformations']['loc']['input_format']['version'] = AIR_VERSION
+        config_dict['transformations']['loc']['output_format']['name'] = 'OED_Location'
+        config_dict['transformations']['loc']['output_format']['version'] = OED_VERSION
+        config_dict['transformations']['loc']['extractor']['options']['path'] = input_file
+        config_dict['transformations']['loc']['loader']['options']['path'] = output_file
+    else:
+        raise ValueError('Invalid transformation type')
+    return config_dict
+
+
+def transform_format(path_to_config_file=None, input_file=None, output_file=None, transformation_type=None):
+    if path_to_config_file:
+        with open(path_to_config_file, 'r') as file:
+            config_dict = yaml.safe_load(file)
+    else:
+        config_dict = generate_config(input_file, output_file, transformation_type)
     config = Config(config_dict)
     controller = Controller(config)
     controller.run()

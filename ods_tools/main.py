@@ -174,10 +174,14 @@ Transform data format to/from OED.
 """
 transform_command = command_parser.add_parser('transform', description=transform_description,
                                               formatter_class=argparse.RawTextHelpFormatter)
-transform_command.add_argument('--config-file', help='Path to the config file', required=True)
+transform_command.add_argument('--config-file', help='Path to the config file')
+transform_command.add_argument('--oed-air', help='directly transforms OED to AIR format', action='store_true')
+transform_command.add_argument('--air-oed', help='directly transforms AIR to OED format', action='store_true')
+transform_command.add_argument('--input-file', help='Path to the input file', default=None)
+transform_command.add_argument('--output-file', help='Path to the output file', default=None)
 transform_command.add_argument('-v', '--logging-level', help='logging level (debug:10, info:20, warning:30, error:40, critical:50)',
                                default=30, type=int)
-transform_command.add_argument('--nocheck', help='if True, OED file will not be checked after transformation', default=False)
+transform_command.add_argument('--nocheck', help='if True, OED file will not be checked after transformation', default=False, action='store_true')
 
 
 def main():
