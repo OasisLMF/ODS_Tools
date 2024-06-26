@@ -98,7 +98,7 @@ def transform(**kwargs):
     Transform location and account data to a new format (ex: AIR to OED)"""
     try:
         transform_result = transform_format(path_to_config_file=kwargs.get('config_file'), input_file=kwargs.get('input_file'),
-                                           output_file=kwargs.get('output_file'), transformation_type='oed-air' if kwargs.get('oed_air') else 'air-oed')
+                                            output_file=kwargs.get('output_file'), transformation_type='oed-air' if kwargs.get('oed_air') else 'air-oed')
         if not kwargs.get('nocheck'):
             for output_file in transform_result:
                 if output_file[1] == 'location' and os.path.isfile(output_file[0]):
