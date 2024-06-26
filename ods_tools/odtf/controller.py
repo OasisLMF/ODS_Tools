@@ -11,9 +11,11 @@ from .connector import BaseConnector
 from .mapping import BaseMapping
 from .runner import BaseRunner
 
+# Default versions for OED and AIR when running without a config file
 OED_VERSION = "3.0.2"
 AIR_VERSION = "10.0.0"
 
+# Default config when running without a config file
 BASE_CONFIG = {
     "transformations": {
         "loc": {
@@ -148,6 +150,21 @@ class Controller:
 
 
 def generate_config(input_file, output_file, transformation_type):
+    """
+    This function generates a config dictionary based on the input parameters.
+    When running without a config file, this will generate the config dict.
+
+    Args:
+        input_file (str): path to the input file
+        output_file (str): path to the output file
+        transformation_type (str): either 'oed-air' or 'air-oed'
+
+    Raises:
+        ValueError: if transformation_type is not 'oed-air' or 'air-oed'
+
+    Returns:
+        dict: the generated config dictionary
+    """
     config_dict = BASE_CONFIG
     if transformation_type == 'oed-air':
         config_dict['transformations']['loc']['input_format']['name'] = 'OED_Location'
@@ -164,11 +181,25 @@ def generate_config(input_file, output_file, transformation_type):
         config_dict['transformations']['loc']['extractor']['options']['path'] = input_file
         config_dict['transformations']['loc']['loader']['options']['path'] = output_file
     else:
-        raise ValueError('Invalid transformation type')
+        raise ValueError('Invalid transformation type. Only "oed-air" and "air-oed" are supported.')
     return config_dict
 
 
 def transform_format(path_to_config_file=None, input_file=None, output_file=None, transformation_type=None):
+    """This function takes the input parameters when called from ods_tools
+    and starts the transformation process. Either path_to_config_file or
+    all three input_file, output_file, and transformation_type must be provided.
+
+    Args:
+        path_to_config_file (str): path to the config file. Defaults to None.
+        input_file (str: path to the input file. Defaults to None.
+        output_file (str): path to the output file. Defaults to None.
+        transformation_type (str): Either 'oed-air' or 'air-oed'. Defaults to None.
+
+    Returns:
+        list: a list of tuples containing the output file path and the file type.
+        Used for checking the output files.
+    """
     if path_to_config_file:
         with open(path_to_config_file, 'r') as file:
             config_dict = yaml.safe_load(file)
