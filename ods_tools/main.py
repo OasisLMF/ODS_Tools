@@ -96,9 +96,9 @@ def convert(**kwargs):
 def transform(**kwargs):
     """Wrapper function for transform command.
     Transform location and account data to a new format (ex: AIR to OED)"""
-    path_to_config_file = kwargs['config_file']
     try:
-        transform_result = transform_format(path_to_config_file)
+        transform_result = transform_format(path_to_config_file=kwargs.get('config_file'), input_file=kwargs.get('input_file'),
+                                           output_file=kwargs.get('output_file'), transformation_type='oed-air' if kwargs.get('oed_air') else 'air-oed')
         if not kwargs.get('nocheck'):
             for output_file in transform_result:
                 if output_file[1] == 'location' and os.path.isfile(output_file[0]):
@@ -171,6 +171,11 @@ check_command.add_argument('-v', '--logging-level', help='logging level (debug:1
 
 transform_description = """
 Transform data format to/from OED.
+This transformation can be done either by providing a config file or directly by specifying the input and output files.
+If input and output files are provided, either --oed-air or --air-oed must be specified to indicate the transformation direction.
+
+If a config file is provided, the transformation will be done according to the config file.
+Please note that the config file allows for more options (batch size, file format, database connection, etc.)
 """
 transform_command = command_parser.add_parser('transform', description=transform_description,
                                               formatter_class=argparse.RawTextHelpFormatter)

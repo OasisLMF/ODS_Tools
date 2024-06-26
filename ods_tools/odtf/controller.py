@@ -11,8 +11,8 @@ from .connector import BaseConnector
 from .mapping import BaseMapping
 from .runner import BaseRunner
 
-OED_VERSION = "2.0"
-AIR_VERSION = "1.0"
+OED_VERSION = "3.0.2"
+AIR_VERSION = "10.0.0"
 
 BASE_CONFIG = {
     "transformations": {
@@ -152,12 +152,12 @@ def generate_config(input_file, output_file, transformation_type):
     if transformation_type == 'oed-air':
         config_dict['transformations']['loc']['input_format']['name'] = 'OED_Location'
         config_dict['transformations']['loc']['input_format']['version'] = OED_VERSION
-        config_dict['transformations']['loc']['output_format']['name'] = 'AIR_Location'
+        config_dict['transformations']['loc']['output_format']['name'] = 'Cede_Location'
         config_dict['transformations']['loc']['output_format']['version'] = AIR_VERSION
         config_dict['transformations']['loc']['extractor']['options']['path'] = input_file
         config_dict['transformations']['loc']['loader']['options']['path'] = output_file
     elif transformation_type == 'air-oed':
-        config_dict['transformations']['loc']['input_format']['name'] = 'AIR_Location'
+        config_dict['transformations']['loc']['input_format']['name'] = 'Cede_Location'
         config_dict['transformations']['loc']['input_format']['version'] = AIR_VERSION
         config_dict['transformations']['loc']['output_format']['name'] = 'OED_Location'
         config_dict['transformations']['loc']['output_format']['version'] = OED_VERSION
