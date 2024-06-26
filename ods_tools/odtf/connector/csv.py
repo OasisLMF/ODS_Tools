@@ -1,6 +1,8 @@
 import csv
 from typing import Any, Dict, Iterable
 
+import pandas as pd
+
 from .base import BaseConnector
 from ..notset import NotSetType
 
@@ -95,6 +97,12 @@ class CsvConnector(BaseConnector):
             writer.writerow(self._data_serializer(first_row))
             writer.writerows(map(self._data_serializer, data))
 
-    def extract(self) -> Iterable[Dict[str, Any]]:
-        with open(self.file_path, "r") as f:
-            yield from csv.DictReader(f, quoting=self.quoting)
+    def fetch_data(self, chunksize: int) -> Iterable[pd.DataFrame]:
+        """
+        Fetch data from the csv file in batches.
+
+        :param chunksize: Number of rows per batch
+        :return: Iterable of data batches as pandas DataFrames
+        """
+        for batch in pd.read_csv(self.file_path, chunksize=chunksize, low_memory=False):
+            yield batch

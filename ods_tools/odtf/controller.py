@@ -13,6 +13,13 @@ from .runner import BaseRunner
 
 logger = logging.getLogger(__name__)
 
+CONNECTOR_MAPPINGS = {
+    "csv": "ods_tools.odtf.connector.CsvConnector",
+    "mssql": "ods_tools.odtf.connector.db.mssql.SQLServerConnector",
+    "postgres": "ods_tools.odtf.connector.db.postgres.PostgresConnector",
+    "sqlite": "ods_tools.odtf.connector.db.sqlite.SQLiteConnector",
+}
+
 
 class Controller:
     """
@@ -79,11 +86,11 @@ class Controller:
                 **config.get("mapping.options", fallback={}),
             )
 
-            extractor_class: Type[BaseConnector] = self._load_from_module(
-                config.get(
-                    "extractor.path", fallback="ods_tools.odtf.connector.CsvConnector"
+            extractor_type = config.get("extractor.type", fallback="csv")
+            if extractor_type in CONNECTOR_MAPPINGS:
+                extractor_class: Type[BaseConnector] = self._load_from_module(
+                    CONNECTOR_MAPPINGS[extractor_type]
                 )
-            )
             extractor: BaseConnector = extractor_class(
                 config, **config.get("extractor.options", fallback={})
             )
