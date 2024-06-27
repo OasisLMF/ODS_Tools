@@ -97,8 +97,12 @@ def transform(**kwargs):
     """Wrapper function for transform command.
     Transform location and account data to a new format (ex: AIR to OED)"""
     try:
+        if kwargs.get('config_file') is None:
+            if kwargs.get('format') is None or kwargs.get('input_file') is None or kwargs.get('output_file') is None:
+                raise ValueError("When --config-file is not provided, --format, --input-file, and --output-file are required.")
+
         transform_result = transform_format(path_to_config_file=kwargs.get('config_file'), input_file=kwargs.get('input_file'),
-                                            output_file=kwargs.get('output_file'), transformation_type='oed-air' if kwargs.get('oed_air') else 'air-oed')
+                                            output_file=kwargs.get('output_file'), transformation=kwargs.get('format'))
         if not kwargs.get('nocheck'):
             for output_file in transform_result:
                 if output_file[1] == 'location' and os.path.isfile(output_file[0]):
@@ -181,7 +185,7 @@ transform_command = command_parser.add_parser('transform', description=transform
                                               formatter_class=argparse.RawTextHelpFormatter)
 transform_command.add_argument('--config-file', help='Path to the config file')
 transform_command.add_argument('--oed-air', help='directly transforms OED to AIR format', action='store_true')
-transform_command.add_argument('--air-oed', help='directly transforms AIR to OED format', action='store_true')
+transform_command.add_argument('-f', "--format", help='Specify which transformation to use (currently oed-air or air-oed)', default=None)
 transform_command.add_argument('--input-file', help='Path to the input file', default=None)
 transform_command.add_argument('--output-file', help='Path to the output file', default=None)
 transform_command.add_argument('-v', '--logging-level', help='logging level (debug:10, info:20, warning:30, error:40, critical:50)',

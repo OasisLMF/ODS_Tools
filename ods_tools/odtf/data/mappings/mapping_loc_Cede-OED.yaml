@@ -2613,10 +2613,10 @@ reverse:
       - transformation: Chimney
     City:
       - transformation: City
-    Cladding:
+    WallSidingCode:
       - transformation: |
           replace(
-          WallSidingCode,
+          Cladding,
           '0','0',
           '1','1',
           '2','2',

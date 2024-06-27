@@ -15,6 +15,17 @@ from .runner import BaseRunner
 OED_VERSION = "3.0.2"
 AIR_VERSION = "10.0.0"
 
+FORMAT_MAPPINGS = {
+    'oed-air': {
+        'input_format': {'name': 'OED_Location', 'version': OED_VERSION},
+        'output_format': {'name': 'Cede_Location', 'version': AIR_VERSION}
+    },
+    'air-oed': {
+        'input_format': {'name': 'Cede_Location', 'version': AIR_VERSION},
+        'output_format': {'name': 'OED_Location', 'version': OED_VERSION}
+    }
+}
+
 # Default config when running without a config file
 BASE_CONFIG = {
     "transformations": {
@@ -165,27 +176,21 @@ def generate_config(input_file, output_file, transformation_type):
     Returns:
         dict: the generated config dictionary
     """
-    config_dict = BASE_CONFIG
-    if transformation_type == 'oed-air':
-        config_dict['transformations']['loc']['input_format']['name'] = 'OED_Location'
-        config_dict['transformations']['loc']['input_format']['version'] = OED_VERSION
-        config_dict['transformations']['loc']['output_format']['name'] = 'Cede_Location'
-        config_dict['transformations']['loc']['output_format']['version'] = AIR_VERSION
-        config_dict['transformations']['loc']['extractor']['options']['path'] = input_file
-        config_dict['transformations']['loc']['loader']['options']['path'] = output_file
-    elif transformation_type == 'air-oed':
-        config_dict['transformations']['loc']['input_format']['name'] = 'Cede_Location'
-        config_dict['transformations']['loc']['input_format']['version'] = AIR_VERSION
-        config_dict['transformations']['loc']['output_format']['name'] = 'OED_Location'
-        config_dict['transformations']['loc']['output_format']['version'] = OED_VERSION
-        config_dict['transformations']['loc']['extractor']['options']['path'] = input_file
-        config_dict['transformations']['loc']['loader']['options']['path'] = output_file
-    else:
-        raise ValueError('Invalid transformation type. Only "oed-air" and "air-oed" are supported.')
+    if transformation_type not in FORMAT_MAPPINGS:
+        raise ValueError(
+            f'Invalid transformation type. Only {list(FORMAT_MAPPINGS.keys())} are supported.'
+        )
+
+    config_dict = BASE_CONFIG.copy()
+    config_dict['transformations']['loc']['input_format'] = FORMAT_MAPPINGS[transformation_type]['input_format']
+    config_dict['transformations']['loc']['output_format'] = FORMAT_MAPPINGS[transformation_type]['output_format']
+    config_dict['transformations']['loc']['extractor']['options']['path'] = input_file
+    config_dict['transformations']['loc']['loader']['options']['path'] = output_file
+
     return config_dict
 
 
-def transform_format(path_to_config_file=None, input_file=None, output_file=None, transformation_type=None):
+def transform_format(path_to_config_file=None, input_file=None, output_file=None, transformation=None):
     """This function takes the input parameters when called from ods_tools
     and starts the transformation process. Either path_to_config_file or
     all three input_file, output_file, and transformation_type must be provided.
@@ -204,7 +209,7 @@ def transform_format(path_to_config_file=None, input_file=None, output_file=None
         with open(path_to_config_file, 'r') as file:
             config_dict = yaml.safe_load(file)
     else:
-        config_dict = generate_config(input_file, output_file, transformation_type)
+        config_dict = generate_config(input_file, output_file, transformation)
     config = Config(config_dict)
     controller = Controller(config)
     controller.run()
