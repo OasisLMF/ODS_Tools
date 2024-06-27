@@ -99,7 +99,7 @@ def transform(**kwargs):
     try:
         if kwargs.get('config_file') is None:
             if kwargs.get('format') is None or kwargs.get('input_file') is None or kwargs.get('output_file') is None:
-                raise ValueError("When --config-file is not provided, --format, --input-file, and --output-file are required.")
+                raise OdsException("When --config-file is not provided, --format, --input-file, and --output-file are required.")
 
         transform_result = transform_format(path_to_config_file=kwargs.get('config_file'), input_file=kwargs.get('input_file'),
                                             output_file=kwargs.get('output_file'), transformation=kwargs.get('format'))
@@ -110,7 +110,6 @@ def transform(**kwargs):
                 elif output_file[1] == 'account' and os.path.isfile(output_file[0]):
                     check(account=output_file[0])
     except OdsException as e:
-        logger.error("Transformation failed:")
         logger.error(e)
 
 
