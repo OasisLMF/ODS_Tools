@@ -183,7 +183,6 @@ Please note that the config file allows for more options (batch size, file forma
 transform_command = command_parser.add_parser('transform', description=transform_description,
                                               formatter_class=argparse.RawTextHelpFormatter)
 transform_command.add_argument('--config-file', help='Path to the config file')
-transform_command.add_argument('--oed-air', help='directly transforms OED to AIR format', action='store_true')
 transform_command.add_argument('-f', "--format", help='Specify which transformation to use (currently oed-air or air-oed)', default=None)
 transform_command.add_argument('--input-file', help='Path to the input file', default=None)
 transform_command.add_argument('--output-file', help='Path to the output file', default=None)
