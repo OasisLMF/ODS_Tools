@@ -1,6 +1,17 @@
 ODS_Tools Changelog
 ===================
 
+`3.2.5`_
+ ---------
+* [#110](https://github.com/OasisLMF/ODS_Tools/pull/110) - Release 3.2.4 (30th May 2024)
+* [#117](https://github.com/OasisLMF/ODS_Tools/pull/117) - Fix/fill empty
+* [#114](https://github.com/OasisLMF/ODS_Tools/pull/119) - Add ODBC Connection support to ODTF
+* [#120](https://github.com/OasisLMF/ODS_Tools/pull/120) - event ranges
+* [#118](https://github.com/OasisLMF/ODS_Tools/pull/122) - Realign model and analys settings schema with actual options for correlation settings
+* [#125](https://github.com/OasisLMF/ODS_Tools/pull/124) - Run transformation without config file
+* [#126](https://github.com/OasisLMF/ODS_Tools/pull/126) - Set OED schema to 3.4.0
+.. _`3.2.5`:  https://github.com/OasisLMF/ODS_Tools/compare/3.2.4...3.2.5
+
 `3.2.4`_
  ---------
 * [#103](https://github.com/OasisLMF/ODS_Tools/pull/103) - Release 3.2.3
