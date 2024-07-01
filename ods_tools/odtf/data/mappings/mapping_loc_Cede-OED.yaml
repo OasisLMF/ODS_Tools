@@ -2613,10 +2613,10 @@ reverse:
       - transformation: Chimney
     City:
       - transformation: City
-    Cladding:
+    WallSidingCode:
       - transformation: |
           replace(
-          WallSidingCode,
+          Cladding,
           '0','0',
           '1','1',
           '2','2',
@@ -2626,7 +2626,7 @@ reverse:
           '6','6',
           '7','7',
           '8','0',
-          '9','0'
+          '9','0',
           '10','0',
           '11','0',
           '12','0',
@@ -3282,8 +3282,8 @@ reverse:
       - transformation: |
           replace_multiple(
             LocPeril,
+            ';',',',
             'WSS','CF',
-            ';',','
             'XCH','CH',
             'QEQ','EQ',
             'QFF','FF',
