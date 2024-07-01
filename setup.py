@@ -12,7 +12,7 @@ import json
 
 SCRIPT_DIR = os.path.abspath(os.path.dirname(__file__))
 
-OED_VERSION = '3.2.0'
+OED_VERSION = '3.4.0'
 # ORD_VERSION =
 
 
@@ -32,6 +32,11 @@ def get_version():
 def get_install_requirements():
     with io.open(os.path.join(SCRIPT_DIR, 'requirements.in'), encoding='utf-8') as reqs:
         return reqs.readlines()
+
+
+def get_extra_requirements():
+    with io.open(os.path.join(SCRIPT_DIR, 'requirements-extra.in'), encoding='utf-8') as extrareqs:
+        return extrareqs.readlines()
 
 
 class DownloadSpecODS(orig.install):
@@ -89,6 +94,7 @@ class DownloadSpecODS(orig.install):
 version = get_version()
 readme = get_readme()
 reqs = get_install_requirements()
+extra_reqs = get_extra_requirements()
 
 setuptools.setup(
     name="ods_tools",
@@ -109,6 +115,9 @@ setuptools.setup(
     package_dir={'ods_tools': 'ods_tools'},
     python_requires='>=3.7',
     install_requires=reqs,
+    extras_require={
+        'extra': extra_reqs,
+    },
     description='Tools to manage ODS files',
     long_description=readme,
     long_description_content_type='text/markdown',

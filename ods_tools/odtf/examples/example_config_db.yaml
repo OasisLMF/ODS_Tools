@@ -1,0 +1,23 @@
+transformations:
+  loc: # Transformation name
+    input_format:
+      name: Cede_Location
+      version: 10.0.0
+    output_format:
+      name: OED_Location
+      version: 3.0.2
+    runner:
+      batch_size: 750000 # Number of rows to process in a single batch
+    extractor:
+      type: mssql # Path to the DB connection file. Other options are 'postgres' and 'sqlite'. Defaults to 'csv', when not present.
+      options:
+        host: localhost
+        port: 1433
+        database: AIRExposure_CEDE
+        user: username
+        password: password
+        sql_statement: ./sql/cede_location.sql # SQL statement to extract data
+    loader:
+      options:
+        path: ./oed_location_1000.csv # Path to the output file
+        quoting: minimal

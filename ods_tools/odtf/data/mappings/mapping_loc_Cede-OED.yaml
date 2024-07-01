@@ -2613,10 +2613,10 @@ reverse:
       - transformation: Chimney
     City:
       - transformation: City
-    Cladding:
+    WallSidingCode:
       - transformation: |
           replace(
-          WallSidingCode,
+          Cladding,
           '0','0',
           '1','1',
           '2','2',
@@ -2626,7 +2626,7 @@ reverse:
           '6','6',
           '7','7',
           '8','0',
-          '9','0'
+          '9','0',
           '10','0',
           '11','0',
           '12','0',
@@ -3057,6 +3057,8 @@ reverse:
       - transformation: CustomFloodZone
     DamageFunctionID:
       - transformation: VulnerabilitySetID
+    DaysCovered:
+      - transformation: BIPOI
     Deductible1:
       #- transformation: LocDed1Building
         #when: LocDed1Building gt 0 and LocDed5PD lte 0 and LocDed6All lte 0
@@ -3280,8 +3282,8 @@ reverse:
       - transformation: |
           replace_multiple(
             LocPeril,
+            ';',',',
             'WSS','CF',
-            ';',','
             'XCH','CH',
             'QEQ','EQ',
             'QFF','FF',
@@ -3399,6 +3401,8 @@ reverse:
       - transformation: NonCATGroundUpLoss
     OrnamentationCode:
       - transformation: Ornamentation
+    OtherValue:
+      - transformation: OtherTIV
     Participation1:
       - transformation: LocParticipation
     Participation2:
@@ -3417,16 +3421,16 @@ reverse:
       - transformation: FlexiLocProjectPhaseCode
     RedundancyCode:
       - transformation: Redundancy
-    ReplacementValueA:
-      - transformation: BuildingTIV
-    ReplacementValueB:
-      - transformation: OtherTIV
-    ReplacementValueC:
-      - transformation: ContentsTIV
-    ReplacementValueD:
-      - transformation: BITIV
-    ReplacementValueDaysCovered:
-      - transformation: BIPOI
+    # ReplacementValueA:
+    #   - transformation: BuildingTIV
+    # ReplacementValueB:
+    #   - transformation: OtherTIV
+    # ReplacementValueC:
+    #   - transformation: ContentsTIV
+    # ReplacementValueD:
+    #   - transformation: BITIV
+    # ReplacementValueDaysCovered:
+    #   - transformation: BIPOI
     RetrofitCode:
       - transformation: Retrofit
     RiskCount:
@@ -3573,6 +3577,8 @@ reverse:
       - transformation: FlexiLocTerritory
     TerrainRoughnessCode:
       - transformation: TerrainRoughness
+    TimeElementValue:
+      - transformation: BITIV
     TorsionCode:
       - transformation: Torsion
     TransitionInSRCCode:

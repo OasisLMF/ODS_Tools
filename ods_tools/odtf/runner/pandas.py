@@ -277,16 +277,6 @@ class PandasRunner(BaseRunner):
     def create_series(self, index, value):
         return self.series_type(value, index=index)
 
-    def get_dataframe(self, extractor: BaseConnector) -> pd.DataFrame:
-        """
-        Builds a dataframe from the extractors data
-
-        :param extractor: The extractor providing the input data
-
-        :return: The created dataframe
-        """
-        return pd.DataFrame(extractor.extract(), dtype="object")
-
     def combine_column(
         self,
         row,
@@ -422,27 +412,38 @@ class PandasRunner(BaseRunner):
     def transform(
         self, extractor: BaseConnector, mapping: BaseMapping
     ) -> Iterable[Dict[str, Any]]:
-        available_columns = set(pd.read_csv(extractor.file_path, nrows=1).columns)
-        transformations = mapping.get_transformations(available_columns=available_columns)
+        """
+        Transforms the data.
+        It receives it in batches from the extractor, calculates which
+        transformations can be applied to it, applies them, and yields the
+        transformed rows.
 
+        :param extractor: The data extractor object (e.g., CSV or database connector).
+        :param mapping: The mapping object defining transformations.
+        :return: An iterable of dictionaries, each representing a transformed row.
+        """
         validator = PandasValidator(search_paths=([os.path.dirname(self.config.path)] if self.config.path else []))
-
-        logger.info(f"Running transformation set {transformations[0].input_format} -> {transformations[-1].output_format}")
-        total_rows = 0
         runner_config = self.config.config.get('runner', None)
-        batch_size = runner_config.get('batch_size', 50000)
+        batch_size = runner_config.get('batch_size', 100000)
+        total_rows = 0
+        transformations = []
 
-        for batch in pd.read_csv(extractor.file_path, chunksize=batch_size, low_memory=False):
+        for batch in extractor.fetch_data(batch_size):
+            # Calculates the set of transformations from the columns in the
+            # first batch (to avoid double-querying)
+            if not transformations:
+                available_columns = set(batch.columns)
+                transformations = mapping.get_transformations(available_columns=available_columns)
+                logger.info(f"Running transformation set {transformations[0].input_format} -> {transformations[-1].output_format} [{extractor.name}]")
 
             validator.run(self.coerce_row_types(batch, transformations[0].types),
                           mapping.input_format.name, mapping.input_format.version, mapping.file_type)
 
-            transformed = batch
             for transformation in transformations:
-                transformed = self.apply_transformation_set(transformed, transformation)
+                batch = self.apply_transformation_set(batch, transformation)
 
-            validator.run(transformed, mapping.output_format.name, mapping.output_format.version, mapping.file_type)
+            validator.run(batch, mapping.output_format.name, mapping.output_format.version, mapping.file_type)
             total_rows += len(batch)
             logger.info(f"Processed {len(batch)} rows in the current batch (total: {total_rows})")
 
-            yield from (r.to_dict() for idx, r in transformed.iterrows())
+            yield from (r.to_dict() for idx, r in batch.iterrows())

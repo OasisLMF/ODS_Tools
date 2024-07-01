@@ -18,7 +18,10 @@ from ods_tools.oed import (
     ModelSettingSchema,
     AnalysisSettingSchema,
 )
-from ods_tools.odtf.controller import transform_format
+try:
+    from ods_tools.odtf.controller import transform_format
+except ImportError:
+    logger.info("Data transformation package requirements not intalled.")
 
 
 def get_oed_exposure(config_json=None, oed_dir=None, **kwargs):
@@ -96,9 +99,13 @@ def convert(**kwargs):
 def transform(**kwargs):
     """Wrapper function for transform command.
     Transform location and account data to a new format (ex: AIR to OED)"""
-    path_to_config_file = kwargs['config_file']
     try:
-        transform_result = transform_format(path_to_config_file)
+        if kwargs.get('config_file') is None:
+            if kwargs.get('format') is None or kwargs.get('input_file') is None or kwargs.get('output_file') is None:
+                raise OdsException("When --config-file is not provided, --format, --input-file, and --output-file are required.")
+
+        transform_result = transform_format(path_to_config_file=kwargs.get('config_file'), input_file=kwargs.get('input_file'),
+                                            output_file=kwargs.get('output_file'), transformation=kwargs.get('format'))
         if not kwargs.get('nocheck'):
             for output_file in transform_result:
                 if output_file[1] == 'location' and os.path.isfile(output_file[0]):
@@ -106,7 +113,9 @@ def transform(**kwargs):
                 elif output_file[1] == 'account' and os.path.isfile(output_file[0]):
                     check(account=output_file[0])
     except OdsException as e:
-        logger.error("Transformation failed:")
+        logger.error(e)
+    except NameError as e:
+        logger.error("Data transformation package requirements not intalled.")
         logger.error(e)
 
 
@@ -171,13 +180,21 @@ check_command.add_argument('-v', '--logging-level', help='logging level (debug:1
 
 transform_description = """
 Transform data format to/from OED.
+This transformation can be done either by providing a config file or directly by specifying the input and output files.
+If input and output files are provided, either --oed-air or --air-oed must be specified to indicate the transformation direction.
+
+If a config file is provided, the transformation will be done according to the config file.
+Please note that the config file allows for more options (batch size, file format, database connection, etc.)
 """
 transform_command = command_parser.add_parser('transform', description=transform_description,
                                               formatter_class=argparse.RawTextHelpFormatter)
-transform_command.add_argument('--config-file', help='Path to the config file', required=True)
+transform_command.add_argument('--config-file', help='Path to the config file')
+transform_command.add_argument('-f', "--format", help='Specify which transformation to use (currently oed-air or air-oed)', default=None)
+transform_command.add_argument('--input-file', help='Path to the input file', default=None)
+transform_command.add_argument('--output-file', help='Path to the output file', default=None)
 transform_command.add_argument('-v', '--logging-level', help='logging level (debug:10, info:20, warning:30, error:40, critical:50)',
                                default=30, type=int)
-transform_command.add_argument('--nocheck', help='if True, OED file will not be checked after transformation', default=False)
+transform_command.add_argument('--nocheck', help='if True, OED file will not be checked after transformation', default=False, action='store_true')
 
 
 def main():
