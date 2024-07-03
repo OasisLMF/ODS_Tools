@@ -19,6 +19,7 @@ ODS_Tools can be installed via pip by running the following command:
 pip install ods-tools
 ```
 
+If using the `transform` command, use instead `pip install ods-tools[extra]`, which will install some extra packages.
 
 ## command line interface
 
@@ -241,8 +242,14 @@ oed_exposure.reporting_currency = 'EUR' # this line will trigger currency conver
 ### Format Conversions
 
 The `transform` command can be used to convert between OED and other formats.
+To run transformations, and extra set of packages must be installed. This can be done using `pip install ods-tools[extra]` (or `pip install --upgrade ods-tools[extra]` if already installed).
 
-`ods_tools transform` requires a configuration file, passed with the option `--config-file`. It must contain:
+A simple csv-to-csv transformation can be run from the command line with `ods_tools transform -f air-oed --input-file source.csv --output-file output.csv`.
+The flag -f instructs the tool on which are the origin and destination formats (currently air and oed).
+
+More complex transformations run with `ods_tools transform` requires a configuration file, passed with the option `--config-file`. Please see the docs [here](https://oasislmf.github.io/sections/ODTF.html)
+
+A configuration file must contain:
 
 - type of file to transform (location or account)
 - input format
