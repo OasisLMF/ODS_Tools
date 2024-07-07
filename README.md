@@ -250,12 +250,16 @@ oed_exposure.reporting_currency = 'EUR' # this line will trigger currency conver
 The `transform` command can be used to convert between OED and other formats.
 To run transformations, and extra set of packages must be installed. This can be done using `pip install ods-tools[extra]` (or `pip install --upgrade ods-tools[extra]` if already installed).
 
+**Basic csv conversion**
+
 A simple csv-to-csv transformation can be run from the command line with 
 ```
 ods_tools transform -f air-oed --input-file source.csv --output-file output.csv
 ```
 
 The flag -f instructs the tool on which are the origin and destination formats (currently air and oed).
+
+**Complex conversions**
 
 More complex transformations run with `ods_tools transform` requires a configuration file, passed with the option `--config-file`. Please see the docs [here](https://oasislmf.github.io/sections/ODTF.html)
 
@@ -292,7 +296,7 @@ transformations:
 ```
 
 
-In order for a transformation to be run, the folder `./ods_tools/odtf/data/mappings` must contain the appropriate yaml configuration file that describes the transformations to perform on the input file to obtain the output (and, potentially, vice versa). Currently, only [mapping_loc_Cede-OED.yaml](./ods_tools/odtf/data/mappings/mapping_loc_Cede-OED.yaml) and
+For a transformation to be run, the folder `./ods_tools/odtf/data/mappings` must contain the appropriate yaml configuration file that describes the transformations to perform on the input file to obtain the output (and, potentially, vice versa). Currently, only [mapping_loc_Cede-OED.yaml](./ods_tools/odtf/data/mappings/mapping_loc_Cede-OED.yaml) and
 [mapping_acc_Cede-OED.yaml](./ods_tools/odtf/data/mappings/mapping_acc_Cede-OED.yaml) are provided; they describe the transformation between AIR Cede v10.0.0 and OED 3.0.2 for location and account files respectively.
 
 The transformation can be run using:
@@ -301,9 +305,10 @@ The transformation can be run using:
 ods_tools transform --config-file configuration.yaml
 ```
 
+**Options**
+
 The following options can be used to adjust the process:
 
 `--nocheck` to skip the oed validation at the end of the conversion
 
 `-v` to adjust the logging level (debug:10, info:20, warning:30, error:40, critical:50)
-
