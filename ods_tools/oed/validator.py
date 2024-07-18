@@ -138,7 +138,7 @@ class Validator:
                 for column in columns:
                     blanks_not_allowed = any([
                         field_info.get("Allow blanks?", '').upper() == 'NO',       # OED v3
-                        field_info.get('Property field status', '').upper() == 'R' # OED v4
+                        field_info.get('Property field status', '').upper() == 'R'  # OED v4
                     ])
                     if blanks_not_allowed:
                         missing_value_df = oed_source.dataframe[is_empty(oed_source.dataframe, column)]
@@ -178,9 +178,8 @@ class Validator:
                 valid_ranges = field_info['Valid value range']
                 blanks_allowed = any([
                     field_info.get('Allow blanks?', '').lower() == 'yes',       # OED v3
-                    field_info.get('Property field status', '').upper() != 'R', # OED v4
+                    field_info.get('Property field status', '').upper() != 'R',  # OED v4
                 ])
-
 
                 if valid_ranges != 'n/a':
                     is_valid_value = functools.partial(OedSchema.is_valid_value,
