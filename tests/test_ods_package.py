@@ -888,15 +888,20 @@ class OdsPackageTests(TestCase):
                     'transformations': {
                         'loc': {
                             'input_format': {
-                                'name': 'Cede_Location',
-                                'version': '10.0.0'
+                                'name': 'Test_input',
+                                'version': '1.0.0'
                             },
                             'output_format': {
-                                'name': 'OED_Location',
-                                'version': '3.0.2'
+                                'name': 'Test_output',
+                                'version': '1.2.3'
                             },
                             'runner': {
                                 'batch_size': 10000
+                            },
+                            'mapping': {
+                                'options': {
+                                    'search_paths': str(pathlib.Path(base_test_path))
+                                }
                             },
                             'extractor': {
                                 'options': {
