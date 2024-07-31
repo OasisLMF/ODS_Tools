@@ -938,12 +938,13 @@ class OdsPackageTests(TestCase):
                 'Output_int_1': [110, 120, 111, 113, 117, 155, 201, 1099, 877, 101],
                 'Output_int_2': [20, 30, 21, 23, 27, 65, 111, 1009, 787, 11],
                 'Output_string_1': ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', ''],
-                'Output_float_1': [1.57, 4.71, 7.85, 11.304, 15.072, 16.328, 24.806, 348.8854,0.00314, np.nan],
+                'Output_float_1': [1.57, 4.71, 7.85, 11.304, 15.072, 16.328, 24.806, 348.8854, 0.00314, np.nan],
                 'Output_float_2': [0.159235668789809, 0.477707006369427, 0.796178343949045, 1.14649681528662,
-                                   1.52866242038217, 1.65605095541401, 2.51592356687898, 35.3853503184713, 0.000318471337579618, np.nan],
+                                   1.52866242038217, 1.65605095541401, 2.51592356687898, 35.3853503184713,
+                                   0.000318471337579618, np.nan],
                 'Output_multistring_1': ["A;B;C", "A;J", "E;C", 'H', '', "C;I;A", "B;E;E", "J;I;I", "G;I;G", "B;A;G"],
                 'Output_multistring_2': ["United Kingdom;Italy", "Germany;Brasil", "France;France", "Sweden",
-                                         "Spain;Sweden","Argentina", '', "United States;United Kingdom", "Null",
+                                         "Spain;Sweden", "Argentina", '', "United States;United Kingdom", "Null",
                                          "Argentina;Brasil;United States"]
             }
         for column, values in expected_values.items():
