@@ -612,6 +612,12 @@
                },
                "additionalProperties": false
             },
+            "pla": {
+               "type": "boolean",
+               "title": "Apply Post Loss Amplification",
+               "description": "If true apply post loss amplification/reduction to losses by default.",
+               "default": false
+           },
             "string_parameters":{
                "title":"Single string paramters",
                "type":"array",
