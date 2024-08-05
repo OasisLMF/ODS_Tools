@@ -126,7 +126,9 @@ class Validator:
 
             for field_info in input_fields.values():
                 if field_info['Input Field Name'] not in field_to_columns:
-                    if field_info.get('Required Field') == 'R':
+                    # OED v4 = 'Property field status' and OED v3 = 'Required Field'
+                    requ_field_ref = 'Property field status' if 'Property field status' in field_info else 'Required Field'
+                    if field_info.get(requ_field_ref) == 'R':
                         invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                              'msg': f"missing required column {field_info['Input Field Name']}"})
                     continue
@@ -134,7 +136,11 @@ class Validator:
                 if isinstance(columns, str):
                     columns = [columns]
                 for column in columns:
-                    if field_info.get("Allow blanks?").upper() == 'NO':
+                    blanks_not_allowed = any([
+                        field_info.get("Allow blanks?", '').upper() == 'NO',       # OED v3
+                        field_info.get('Property field status', '').upper() == 'R'  # OED v4
+                    ])
+                    if blanks_not_allowed:
                         missing_value_df = oed_source.dataframe[is_empty(oed_source.dataframe, column)]
                         if not missing_value_df.empty:
                             invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
@@ -170,10 +176,15 @@ class Validator:
             identifier_field = self.identifier_field_maps[oed_source]
             for column, field_info in column_to_field.items():
                 valid_ranges = field_info['Valid value range']
+                blanks_allowed = any([
+                    field_info.get('Allow blanks?', '').lower() == 'yes',       # OED v3
+                    field_info.get('Property field status', '').upper() != 'R',  # OED v4
+                ])
+
                 if valid_ranges != 'n/a':
                     is_valid_value = functools.partial(OedSchema.is_valid_value,
                                                        valid_ranges=valid_ranges,
-                                                       allow_blanks=field_info['Allow blanks?'].lower() == 'yes')
+                                                       allow_blanks=blanks_allowed)
                     invalid_range_data = oed_source.dataframe[~oed_source.dataframe[column].apply(is_valid_value)]
                     if not invalid_range_data.empty:
                         invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
