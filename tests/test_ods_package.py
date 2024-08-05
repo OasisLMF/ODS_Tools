@@ -55,6 +55,10 @@ def _is_non_empty_file(fp):
     return os.path.getsize(fp) > 0
 
 
+def strip_quotes(s):
+    return s.strip('"') if isinstance(s, str) else s
+
+
 class OdsPackageTests(TestCase):
     @pytest.fixture(autouse=True)
     def logging_fixtures(self, caplog):
@@ -878,35 +882,41 @@ class OdsPackageTests(TestCase):
         self.assertEqual(expected_list, global__valid_output_metrics)
         self.assertEqual(expected_list, event_set__valid_metrics)
 
-    def test_transformation_as_expected_loc(self):
+    def test_transformation_as_expected(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
 
             # Prepare the necessary files for the test
             config_file_path = pathlib.Path(tmp_dir, 'config.yaml')
+
             with open(config_file_path, 'w') as config_file:
                 yaml.dump({
                     'transformations': {
                         'loc': {
                             'input_format': {
-                                'name': 'Cede_Location',
-                                'version': '10.0.0'
+                                'name': 'Test_input',
+                                'version': '1.0.0'
                             },
                             'output_format': {
-                                'name': 'OED_Location',
-                                'version': '3.0.2'
+                                'name': 'Test_output',
+                                'version': '1.2.3'
                             },
                             'runner': {
                                 'batch_size': 10000
                             },
+                            'mapping': {
+                                'options': {
+                                    'search_paths': str(pathlib.Path(base_test_path))
+                                }
+                            },
                             'extractor': {
                                 'options': {
-                                    'path': str(pathlib.Path(base_test_path, 'loctest_transform_input.csv')),
+                                    'path': str(pathlib.Path(base_test_path, 't_input.csv')),
                                     'quoting': 'minimal'
                                 }
                             },
                             'loader': {
                                 'options': {
-                                    'path': str(pathlib.Path(tmp_dir, 'oed_location_output.csv')),
+                                    'path': str(pathlib.Path(tmp_dir, 't_output.csv')),
                                     'quoting': 'minimal'
                                 }
                             }
@@ -919,81 +929,28 @@ class OdsPackageTests(TestCase):
 
             # Assert the transformation result
             assert len(transform_result) == 1
-            assert transform_result[0][0] == str(pathlib.Path(tmp_dir, 'oed_location_output.csv'))
-            assert transform_result[0][1] == 'location'
+            assert transform_result[0][0] == str(pathlib.Path(tmp_dir, 't_output.csv'))
+            assert transform_result[0][1] == 'other'
 
             output_df = pd.read_csv(transform_result[0][0])
-            # expected_output = pd.read_csv(str(pathlib.Path(base_test_path, 'loctest_transform_output.csv')))
-            # pd.testing.assert_frame_equal(output_df, expected_output)
+
             expected_values = {
-                'AccNumber': [1, 2, 3, 4],
-                'ContentsTIV': [4502825, 409903, 5980828, 5219727],
-                'FloorArea': [10, 20, 30, 40],
-                'LocPeril': ['"XHL;XLT;XSL;WTC;XTD;ZST"', '"XSL;WTC"', '"XTD;ZST"', '"XHL;XLT"'],
-                'OccupancyCode': [1104, 1104, 1104, 1104]
+                'Output_int_1': [110, 120, 111, 113, 117, 155, 201, 1099, 877, 101],
+                'Output_int_2': [20, 30, 21, 23, 27, 65, 111, 1009, 787, 11],
+                'Output_string_1': ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', ''],
+                'Output_float_1': [1.57, 4.71, 7.85, 11.304, 15.072, 16.328, 24.806, 348.8854, 0.00314, np.nan],
+                'Output_float_2': [0.159235668789809, 0.477707006369427, 0.796178343949045, 1.14649681528662,
+                                   1.52866242038217, 1.65605095541401, 2.51592356687898, 35.3853503184713,
+                                   0.000318471337579618, np.nan],
+                'Output_multistring_1': ["A;B;C", "A;J", "E;C", 'H', '', "C;I;A", "B;E;E", "J;I;I", "G;I;G", "B;A;G"],
+                'Output_multistring_2': ["United Kingdom;Italy", "Germany;Brasil", "France;France", "Sweden",
+                                         "Spain;Sweden", "Argentina", '', "United States;United Kingdom", "Null",
+                                         "Argentina;Brasil;United States"]
             }
         for column, values in expected_values.items():
-            assert output_df[column].tolist() == values
-
-    def test_transformation_as_expected_acc(self):
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            # Create a temporary CSV file with the input data for 'acc'
-            input_acc_path = pathlib.Path(tmp_dir, 'input_acc.csv')
-            with open(input_acc_path, 'w') as input_acc_file:
-                input_acc_file.write(
-                    "ContractID,InceptionDate,ExpirationDate,Perils,LayerID,LayerPerils,DedAmt1,AttachmentAmt,SublimitPerils\n"
-                    "1253900,2021-11-29,2022-11-28,4334220,2349611,4334220,25000,50000000,CF\n"
-                    "1253900,2021-11-29,2022-11-28,4334220,2349611,4334220,25000,50000000,CH\n"
-                    "1253901,2021-11-01,2022-10-31,4334220,2349615,4334220,500000,225000000,EQ\n"
-                )
-
-            # Prepare the necessary files for the test
-            config_file_path = pathlib.Path(tmp_dir, 'config.yaml')
-            with open(config_file_path, 'w') as config_file:
-                yaml.dump({
-                    'transformations': {
-                        'acc': {
-                            'input_format': {
-                                'name': 'Cede_Contract',
-                                'version': '10.0.0'
-                            },
-                            'output_format': {
-                                'name': 'OED_Contract',
-                                'version': '3.0.2'
-                            },
-                            'runner': {
-                                'batch_size': 10000
-                            },
-                            'extractor': {
-                                'options': {
-                                    'path': str(input_acc_path),
-                                    'quoting': 'minimal'
-                                }
-                            },
-                            'loader': {
-                                'options': {
-                                    'path': str(pathlib.Path(tmp_dir, 'oed_account_output.csv')),
-                                    'quoting': 'minimal'
-                                }
-                            }
-                        }
-                    }
-                }, config_file)
-
-            # Run the transformation
-            transform_result = transform_format(str(config_file_path))
-
-            # Assert the transformation result
-            assert len(transform_result) == 1
-            assert transform_result[0][0] == str(pathlib.Path(tmp_dir, 'oed_account_output.csv'))
-            assert transform_result[0][1] == 'account'
-
-            # Perform assertions on specific columns in the output file
-            output_df = pd.read_csv(transform_result[0][0])
-            expected_output = pd.DataFrame({
-                'AccNumber': ['1253900', '1253900', '1253901'],
-                'AccPeril': ['4334220', '4334220', '4334220'],
-                'CondPeril': ['WSS', 'XCH', 'QEQ'],
-                'LayerAttachment': ['50000000.0', '50000000.0', '225000000.0']
-            })
-            pd.testing.assert_frame_equal(output_df[expected_output.columns].astype(str), expected_output.astype(str))
+            if 'float' in column.lower():
+                assert np.allclose(output_df[column].tolist(), values, equal_nan=True, rtol=1e-5, atol=1e-5)
+            elif 'string' in column.lower():
+                assert [strip_quotes(s) for s in output_df[column].fillna('').tolist()] == values
+            else:
+                assert output_df[column].tolist() == values
