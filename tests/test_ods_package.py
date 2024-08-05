@@ -411,12 +411,16 @@ class OdsPackageTests(TestCase):
             'use_field': True})
 
         original_exposure.location.dataframe.drop(columns=['ContentsTIV'], inplace=True)
+        original_exposure.location.dataframe['ContentsTIV'] = pd.NA
+
         original_exposure.location.dataframe['BITIV'] = pd.NA
         original_exposure.location.dataframe.loc[[1], 'BITIV'] = np.nan
         original_exposure.location.dataframe.loc[[2], 'BITIV'] = None
         original_exposure.location.dataframe.loc[[3], 'BITIV'] = pd.NaT
         original_exposure.location.dataframe.loc[[4], 'BITIV'] = ''
+
         original_exposure.ri_info.dataframe.drop(columns='RiskLevel', inplace=True)
+        original_exposure.ri_info.dataframe['RiskLevel'] = pd.NA
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             original_exposure.save(pathlib.Path(tmp_dir, 'oed'), save_config=True)
