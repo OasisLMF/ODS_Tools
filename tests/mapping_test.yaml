@@ -1,0 +1,192 @@
+file_type: loc
+input_format:
+  name: Test_input
+  version: "1.0.0"
+output_format:
+  name: Test_output
+  version: "1.2.3"
+forward:
+  types:
+    Input_int_1:
+      type: int
+    Input_int_2:
+      type: int
+    Input_string_1:
+      type: string
+    Input_string_2:
+      type: string
+    Input_multistring_1:
+      type: string
+    Input_multistring_2:
+      type: string
+    Input_float_1:
+      type: float
+    Input_float_2:
+      type: float
+    Line:
+      type: int
+  null_values:
+    - "''"
+    - Null
+    - NULL
+  transform:
+    Line:
+      - transformation: Line
+    Output_int_1:
+     - transformation: Input_int_1 + 100
+    Output_int_2:
+      - transformation: Input_int_2 + 10
+    Output_int_s:
+      - transformation: Input_int_1
+    Output_string_1:
+      - transformation: |
+          replace(
+            Input_string_1,
+            'letter_A','A',
+            'letter_B','B',
+            'letter_C','C',
+            'letter_D','D',
+            'letter_E','E',
+            'letter_F', 'F',
+            'letter_G', 'G',
+            'letter_H', 'H',
+            'letter_I', 'I',
+            'letter_J', 'J'
+          )
+        when: Input_string_1 is not in [Null, 'NULL']
+      - transformation: "'THIS WAS NULL'"
+    Output_string_2:
+      - transformation: Input_string_2
+    Output_multistring_1:
+      - transformation: |
+          replace_multiple(
+            Input_multistring_1,
+            ',', ';',
+            'letter_A','A',
+            'letter_B','B',
+            'letter_C','C',
+            'letter_D','D',
+            'letter_E','E',
+            'letter_F', 'F',
+            'letter_G', 'G',
+            'letter_H', 'H',
+            'letter_I', 'I',
+            'letter_J', 'J'
+          )
+        when: Input_multistring_1 is not in [Null, 'NULL']
+      - transformation: "'THIS WAS NULL'"
+    Output_multistring_1s:
+      - transformation: Input_multistring_1
+    Output_multistring_2:
+      - transformation:
+          replace_multiple(
+            Input_multistring_2,
+            ',', ';',
+            'UK','United Kingdom',
+            'ITA','Italy',
+            'FRA','France',
+            'DEU','Germany',
+            'USA','United States',
+            'BRA', 'Brasil',
+            'SWE', 'Sweden',
+            'ESP', 'Spain',
+            'SWI', 'Switzerland',
+            'ARG', 'Argentina'
+          )
+        when: Input_multistring_2 is not in [Null, 'NULL']
+    Output_multistring_2s:
+      - transformation: Input_multistring_2
+    Output_float_1:
+      - transformation: Input_float_1 * 3.14
+    Output_float_2:
+      - transformation: Input_float_2 / 3.14
+    Output_float_s:
+      - transformation: Input_float_1
+reverse:
+  types:
+    Line:
+      type: int
+    Output_int_1:
+      type: int
+    Output_int_2:
+      type: int
+    Output_string_1:
+      type: string
+    Output_string_2:
+      type: string
+    Output_multistring_1:
+      type: string
+    Output_multistring_2:
+      type: string
+    Output_float_1:
+      type: float
+    Output_float_2:
+      type: float
+  null_values:
+    - "''"
+    - Null
+    - NULL
+  transform:
+    Line:
+      - transformation: Line
+    Input_int_1:
+      - transformation: Output_int_1 - 100
+    Input_int_2:
+      - transformation: Output_int_2 - 10
+    Input_string_1:
+      - transformation: |
+          replace(
+            Output_string_1,
+            'letter_A','A',
+            'letter_B','B',
+            'letter_C','C',
+            'letter_D','D',
+            'letter_E','E',
+            'letter_F', 'F',
+            'letter_G', 'G',
+            'letter_H', 'H',
+            'letter_I', 'I',
+            'letter_J', 'J'
+          )
+        when: Output_string_1 is not in [Null, 'NULL']
+    Input_string_2:
+      - transformation: Output_string_2
+    Input_multistring_1:
+      - transformation: |
+          replace_multiple(
+            Output_multistring_1,
+            ';', ',',
+            'letter_A','A',
+            'letter_B','B',
+            'letter_C','C',
+            'letter_D','D',
+            'letter_E','E',
+            'letter_F', 'F',
+            'letter_G', 'G',
+            'letter_H', 'H',
+            'letter_I', 'I',
+            'letter_J', 'J'
+          )
+        when: Output_multistring_1 is not in [Null, 'NULL']
+    Input_multistring_2:
+      - transformation:
+          replace_multiple(
+            Output_multistring_2,
+            ';', ',',
+            'United Kingdom','UK',
+            'Italy','ITA',
+            'France','FRA',
+            'Germany','DEU',
+            'United
+            States','USA',
+            'Brasil', 'BRA',
+            'Sweden', 'SWE',
+            'Spain', 'ESP',
+            'Switzerland', 'SWI',
+            'Argentina', 'ARG'
+          )
+        when: Output_multistring_2 is not in [Null, 'NULL']
+    Input_float_1:
+      - transformation: Output_float_1 / 3.14
+    Input_float_2:
+      - transformation: Output_float_2 * 3.14
