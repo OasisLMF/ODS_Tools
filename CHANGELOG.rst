@@ -1,6 +1,17 @@
 ODS_Tools Changelog
 ===================
 
+`3.2.6`_
+ ---------
+* [#128](https://github.com/OasisLMF/ODS_Tools/pull/128) - Fix allow blank errors with OED v4 spec
+* [#105](https://github.com/OasisLMF/ODS_Tools/pull/130) - Correlation Settings in Model settings
+* [#129](https://github.com/OasisLMF/ODS_Tools/pull/132) - Explicitly select mapping file to be used (ODTF)
+* [#133](https://github.com/OasisLMF/ODS_Tools/pull/133) - pla update
+* [#134](https://github.com/OasisLMF/ODS_Tools/pull/134) - Update test for OED4 - test_field_required_allow_blank
+* [#123](https://github.com/OasisLMF/ODS_Tools/pull/123) - Release 3.2.5
+* [#127](https://github.com/OasisLMF/ODS_Tools/pull/127) - Update readme
+.. _`3.2.6`:  https://github.com/OasisLMF/ODS_Tools/compare/3.2.5...3.2.6
+
 `3.2.5`_
  ---------
 * [#110](https://github.com/OasisLMF/ODS_Tools/pull/110) - Release 3.2.4 (30th May 2024)
