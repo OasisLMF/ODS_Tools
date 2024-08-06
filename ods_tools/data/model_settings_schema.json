@@ -551,7 +551,17 @@
                      "correlation_value": {
                         "type": "string",
                         "title": "Correlation Value",
-                        "description": "The Correlation Value"
+                        "description": "The Legacy Correlation Value, retained for backward compatibility"
+                     },
+                     "hazard_correlation_value": {
+                        "type": "string",
+                        "title": "Hazard Correlation Value",
+                        "description": "The Correlation Value for harard sampling"
+                     },
+                     "damage_correlation_value": {
+                        "type": "string",
+                        "title": "Damage Correlation Value",
+                        "description": "The Correlation Value for vulnerability sampling"
                      }
                   }
                }
@@ -602,6 +612,12 @@
                },
                "additionalProperties": false
             },
+            "pla": {
+               "type": "boolean",
+               "title": "Apply Post Loss Amplification",
+               "description": "If true apply post loss amplification/reduction to losses by default.",
+               "default": false
+           },
             "string_parameters":{
                "title":"Single string paramters",
                "type":"array",

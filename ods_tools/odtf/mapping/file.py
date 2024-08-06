@@ -434,6 +434,8 @@ class FileMapping(BaseMapping):
 
         self._raw_configs: Union[None, Dict[str, RawMappingConfig]] = None
         self._hydrated_configs: Union[None, Dict[str, FileMappingSpec]] = None
+        if isinstance(search_paths, str):
+            search_paths = [search_paths]
         self.search_paths = [
             *(os.path.abspath(p) for p in (search_paths or [])),
             os.path.abspath(standard_search_path),

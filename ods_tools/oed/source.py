@@ -309,7 +309,7 @@ class OedSource:
         for field_info in ods_fields.values():
             col = field_info['Input Field Name']
             if col not in present_field:
-                if field_info.get('Required Field') == 'R' and field_info.get("Allow blanks?").upper() == "YES":
+                if field_info.get('Required Field') == 'R' and field_info.get("Allow blanks?", '').upper() == "YES":
                     if field_info['pd_dtype'] == 'category':
                         df[col] = '' if field_info['Default'] == 'n/a' else field_info['Default']
                         df[col] = df[col].astype('category')
