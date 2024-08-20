@@ -1,6 +1,6 @@
-import csv
 from typing import Any, Dict, Iterable
 
+import numpy as np
 import pandas as pd
 
 from .base import BaseConnector
@@ -63,19 +63,17 @@ class CsvConnector(BaseConnector):
 
         self.file_path = config.absolute_path(options["path"])
         self.write_header = options.get("write_header", True)
-        self.quoting = {
-            "all": csv.QUOTE_ALL,
-            "minimal": csv.QUOTE_MINIMAL,
-            "none": csv.QUOTE_NONE,
-            "nonnumeric": csv.QUOTE_NONNUMERIC,
-        }.get(options.get("quoting", "nonnumeric"))
 
     def _data_serializer(self, row):
-        return {
-            k: f'"{v}"'.strip() if isinstance(v, str) and any(d in v for d in [',', ';', '\t', '\n', '"']) else (
-                v if v is not None and not isinstance(v, NotSetType) else "")
-            for k, v in row.items()
-        }
+        def process_value(v):
+            if v is None or isinstance(v, NotSetType):
+                return ""
+            # add quotes to values that contain special characters
+            if isinstance(v, str) and any(d in v for d in [',', ';', '\t', '\n', '"']):
+                return f'"{v}"'
+            return str(v)
+
+        return [process_value(v) for v in row.values()]
 
     def load(self, data: Iterable[Dict[str, Any]]):
         try:
@@ -84,18 +82,27 @@ class CsvConnector(BaseConnector):
         except StopIteration:
             return
 
-        with open(self.file_path, "w", newline="") as f:
-            writer = csv.DictWriter(
-                f,
-                fieldnames=list(first_row.keys()),
-                quoting=self.quoting
-            )
+        fieldnames = list(first_row.keys())
 
-            if self.write_header:
-                writer.writeheader()
+        # Convert data to a list of lists
+        rows = [self._data_serializer(first_row)]
+        rows.extend(map(self._data_serializer, data))
 
-            writer.writerow(self._data_serializer(first_row))
-            writer.writerows(map(self._data_serializer, data))
+        # Convert to numpy array
+        arr = np.array(rows)
+
+        # Prepare the header
+        header = ','.join(fieldnames) if self.write_header else ''
+
+        np.savetxt(
+            self.file_path,
+            arr,
+            fmt='%s',
+            delimiter=',',
+            header=header,
+            comments='',
+            encoding='utf-8'
+        )
 
     def fetch_data(self, chunksize: int) -> Iterable[pd.DataFrame]:
         """
