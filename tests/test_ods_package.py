@@ -951,10 +951,10 @@ class OdsPackageTests(TestCase):
                                          "Spain;Sweden", "Argentina", '', "United States;United Kingdom", "Null",
                                          "Argentina;Brasil;United States"]
             }
-        for column, values in expected_values.items():
-            if 'float' in column.lower():
-                assert np.allclose(output_df[column].tolist(), values, equal_nan=True, rtol=1e-5, atol=1e-5)
-            elif 'string' in column.lower():
-                assert [strip_quotes(s) for s in output_df[column].fillna('').tolist()] == values
-            else:
-                assert output_df[column].tolist() == values
+            for column, values in expected_values.items():
+                if 'float' in column.lower():
+                    assert np.allclose(output_df[column].tolist(), values, equal_nan=True, rtol=1e-5, atol=1e-5)
+                elif 'string' in column.lower():
+                    assert [strip_quotes(s) for s in output_df[column].fillna('').tolist()] == values
+                else:
+                    assert output_df[column].tolist() == values
