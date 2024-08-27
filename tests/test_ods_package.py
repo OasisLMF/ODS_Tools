@@ -936,10 +936,6 @@ class OdsPackageTests(TestCase):
             assert transform_result[0][0] == str(pathlib.Path(tmp_dir, 't_output.csv'))
             assert transform_result[0][1] == 'other'
 
-            logger.warning(transform_result)
-            logger.warning(os.listdir(tmp_dir))
-            logger.warning(os.listdir(base_test_path))
-
             output_df = pd.read_csv(transform_result[0][0])
 
             expected_values = {

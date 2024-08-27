@@ -76,33 +76,20 @@ class CsvConnector(BaseConnector):
         return [process_value(v) for v in row.values()]
 
     def load(self, data: Iterable[Dict[str, Any]]):
-        try:
-            data = iter(data)
-            first_row = next(data)
-        except StopIteration:
-            return
+        first_batch = True
 
-        fieldnames = list(first_row.keys())
+        with open(self.file_path, "a", newline="") as f:
+            for batch in data:
+                fieldnames = list(batch.keys())
 
-        # Convert data to a list of lists
-        rows = [self._data_serializer(first_row)]
-        rows.extend(map(self._data_serializer, data))
+                rows = np.array([self._data_serializer(batch)])
 
-        # Convert to numpy array
-        arr = np.array(rows)
+                if first_batch and self.write_header:
+                    header = ','.join(fieldnames)
+                    np.savetxt(f, [], fmt='%s', delimiter=',', header=header, comments='')
+                    first_batch = False
 
-        # Prepare the header
-        header = ','.join(fieldnames) if self.write_header else ''
-
-        np.savetxt(
-            self.file_path,
-            arr,
-            fmt='%s',
-            delimiter=',',
-            header=header,
-            comments='',
-            encoding='utf-8'
-        )
+                np.savetxt(f, rows, fmt='%s', delimiter=',', comments='')
 
     def fetch_data(self, chunksize: int) -> Iterable[pd.DataFrame]:
         """
