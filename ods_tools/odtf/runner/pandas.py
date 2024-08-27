@@ -435,10 +435,11 @@ class PandasRunner(BaseRunner):
                 if not transformations:
                     available_columns = set(batch.columns)
                     transformations = mapping.get_transformations(available_columns=available_columns)
-                    logger.info(f"Running transformation set {transformations[0].input_format} -> {transformations[-1].output_format} [{extractor.name}]")
+                    logger.info(
+                        f"Running transformation set {transformations[0].input_format} -> {transformations[-1].output_format} [{extractor.name}]")
 
                 validator.run(self.coerce_row_types(batch, transformations[0].types),
-                            mapping.input_format.name, mapping.input_format.version, mapping.file_type)
+                              mapping.input_format.name, mapping.input_format.version, mapping.file_type)
 
                 for transformation in transformations:
                     batch = self.apply_transformation_set(batch, transformation)
