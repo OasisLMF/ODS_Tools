@@ -422,7 +422,17 @@ class PandasRunner(BaseRunner):
         :param mapping: The mapping object defining transformations.
         :return: An iterable of dictionaries, each representing a transformed row.
         """
-        validator = PandasValidator(search_paths=([os.path.dirname(self.config.path)] if self.config.path else []))
+        # Initial search paths
+        search_paths = [os.path.dirname(self.config.path)] if self.config.path else []
+
+        # Add search paths from the config, if provided
+        config_search_paths = self.config.get('mapping', {}).get('options', {}).get('search_paths', [])
+        if isinstance(config_search_paths, str):
+            config_search_paths = [config_search_paths]
+        search_paths.extend(config_search_paths)
+
+        # Instantiate the validator with the updated search paths
+        validator = PandasValidator(search_paths=search_paths)
         runner_config = self.config.config.get('runner', None)
         batch_size = runner_config.get('batch_size', 100000)
         total_rows = 0
