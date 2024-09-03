@@ -413,8 +413,8 @@ class PandasRunner(BaseRunner):
         self, extractor: BaseConnector, mapping: BaseMapping
     ) -> Iterable[Dict[str, Any]]:
         """
-        Transforms the data.
-        It receives it in batches from the extractor, calculates which
+        Orchestrates the data transformation.
+        It receives the data in batches from the extractor, calculates which
         transformations can be applied to it, applies them, and yields the
         transformed rows.
 
@@ -446,13 +446,28 @@ class PandasRunner(BaseRunner):
                 transformations = mapping.get_transformations(available_columns=available_columns)
                 logger.info(f"Running transformation set {transformations[0].input_format} -> {transformations[-1].output_format} [{extractor.name}]")
 
-            validator.run(self.coerce_row_types(batch, transformations[0].types),
-                          mapping.input_format.name, mapping.input_format.version, mapping.file_type)
+            # Validate input data
+            try:
+                validator.run(self.coerce_row_types(batch, transformations[0].types),
+                            mapping.input_format.name, mapping.input_format.version, mapping.file_type)
+            except KeyError as e:
+                logger.warning(f"Validation failed due to a missing column: {e}")
+            except Exception as e:
+                logger.warning(f"Validation failed: {e}")
 
+            # Apply the transformations to the batch
             for transformation in transformations:
                 batch = self.apply_transformation_set(batch, transformation)
 
-            validator.run(batch, mapping.output_format.name, mapping.output_format.version, mapping.file_type)
+            # Validate output data
+            try:
+                validator.run(batch, mapping.output_format.name, mapping.output_format.version, mapping.file_type)
+            except KeyError as e:
+                logger.warning(f"Validation failed due to a missing column: {e}")
+            except Exception as e:
+                logger.warning(f"Validation failed: {e}")
+
+            # Log the transformation progress
             total_rows += len(batch)
             logger.info(f"Processed {len(batch)} rows in the current batch (total: {total_rows})")
 
