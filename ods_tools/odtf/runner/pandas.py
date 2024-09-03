@@ -449,7 +449,7 @@ class PandasRunner(BaseRunner):
             # Validate input data
             try:
                 validator.run(self.coerce_row_types(batch, transformations[0].types),
-                            mapping.input_format.name, mapping.input_format.version, mapping.file_type)
+                              mapping.input_format.name, mapping.input_format.version, mapping.file_type)
             except KeyError as e:
                 logger.warning(f"Validation failed due to a missing column: {e}")
             except Exception as e:
