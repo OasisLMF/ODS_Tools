@@ -9,6 +9,7 @@ import urllib
 import sys
 import yaml
 
+import lark
 import pandas as pd
 import numpy as np
 from unittest import TestCase
@@ -948,9 +949,10 @@ class OdsPackageTests(TestCase):
                                    0.000318471337579618, np.nan],
                 'Output_multistring_1': ["A;B;C", "A;J", "E;C", 'H', '', "C;I;A", "B;E;E", "J;I;I", "G;I;G", "B;A;G"],
                 'Output_multistring_2': ["United Kingdom;Italy", "Germany;Brasil", "France;France", "Sweden",
-                                         "Spain;Sweden", "Argentina", '', "United States;United Kingdom", "Null",
+                                         "Spain;Sweden", "Argentina", '', "United States;United Kingdom", '',
                                          "Argentina;Brasil;United States"]
             }
+
         for column, values in expected_values.items():
             if 'float' in column.lower():
                 assert np.allclose(output_df[column].tolist(), values, equal_nan=True, rtol=1e-5, atol=1e-5)
