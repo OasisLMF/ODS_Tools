@@ -9,7 +9,6 @@ import urllib
 import sys
 import yaml
 
-import lark
 import pandas as pd
 import numpy as np
 from unittest import TestCase
