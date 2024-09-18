@@ -1,5 +1,5 @@
 PyYAML
-lark <=1.1.9
+lark<=1.1.9
 networkx
 pyodbc
 sqlparams
