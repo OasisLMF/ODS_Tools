@@ -428,22 +428,28 @@ class PandasRunner(BaseRunner):
         total_rows = 0
         transformations = []
 
-        for batch in extractor.fetch_data(batch_size):
-            # Calculates the set of transformations from the columns in the
-            # first batch (to avoid double-querying)
-            if not transformations:
-                available_columns = set(batch.columns)
-                transformations = mapping.get_transformations(available_columns=available_columns)
-                logger.info(f"Running transformation set {transformations[0].input_format} -> {transformations[-1].output_format} [{extractor.name}]")
+        try:
+            for batch in extractor.fetch_data(batch_size):
+                # Calculates the set of transformations from the columns in the
+                # first batch (to avoid double-querying)
+                if not transformations:
+                    available_columns = set(batch.columns)
+                    transformations = mapping.get_transformations(available_columns=available_columns)
+                    logger.info(
+                        f"Running transformation set {transformations[0].input_format} -> {transformations[-1].output_format} [{extractor.name}]")
 
-            validator.run(self.coerce_row_types(batch, transformations[0].types),
-                          mapping.input_format.name, mapping.input_format.version, mapping.file_type)
+                validator.run(self.coerce_row_types(batch, transformations[0].types),
+                              mapping.input_format.name, mapping.input_format.version, mapping.file_type)
 
-            for transformation in transformations:
-                batch = self.apply_transformation_set(batch, transformation)
+                for transformation in transformations:
+                    batch = self.apply_transformation_set(batch, transformation)
 
-            validator.run(batch, mapping.output_format.name, mapping.output_format.version, mapping.file_type)
-            total_rows += len(batch)
-            logger.info(f"Processed {len(batch)} rows in the current batch (total: {total_rows})")
+                validator.run(batch, mapping.output_format.name, mapping.output_format.version, mapping.file_type)
+                total_rows += len(batch)
+                logger.info(f"Processed {len(batch)} rows in the current batch (total: {total_rows})")
 
-            yield from (r.to_dict() for idx, r in batch.iterrows())
+                yield from (r.to_dict() for idx, r in batch.iterrows())
+        except FileNotFoundError:
+            logger.error(f"File not found: {extractor.file_path}")
+        except Exception as e:
+            logger.error(f"Error processing batch: {e}")
