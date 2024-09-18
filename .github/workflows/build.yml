@@ -80,7 +80,7 @@ jobs:
 
     - name: Download OED spec
       if: inputs.oed_spec_json != '' || inputs.oed_spec_branch != ''
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: extracted_spec
         path: ${{ github.workspace }}/
@@ -100,14 +100,14 @@ jobs:
         echo "source=$SRC" >> $GITHUB_OUTPUT
 
     - name: Store source package
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: src_package
         path: ./dist/${{ steps.build_package.outputs.source }}
         retention-days: 5
 
     - name: Store Wheel package
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: bin_package
         path: ./dist/${{ steps.build_package.outputs.wheel }}
