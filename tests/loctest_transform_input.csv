@@ -1,5 +1,0 @@
-ContractID,LocationID,LocationName,InceptionDate,ExpirationDate,SubArea2,SubArea,Area,CRESTA,PostalCode,CountryISO,Latitude,Longitude,BuildingValue,ContentsValue,DaysCovered,Currency,ConstructionCodeType,ConstructionCode,OccupancyCodeType,OccupancyCode,YearBuilt,NumberOfStories,GrossArea,GrossAreaUnit,SubareaName,FloorArea,FloorAreaUnitCode,LocPerils
-1,11358392,1,2022-05-01,2023-04-30,SubAreaBelgium2,SubAreaBelgium,AreaBelgium,BEL_3,3001,BE,50.86549,4.67937,0,4502825,365,USD,AIR,100,AIR,315,1912,0,0,SQFT,AreaBelgium,10,SQFT,"HL, ST, SW, TC, TD, WS"
-2,11358401,10,2022-05-01,2023-04-30,SubAreaBelgium2,SubAreaBelgium,AreaBelgium,BEL_3,3001,BE,31.86141,117.27562,206141,409903,365,USD,AIR,100,AIR,315,2022,0,5412.9274,SQFT,AreaBelgium,20,SQFT,"SW, TC"
-3,11358491,100,2022-05-01,2023-04-30,,Queenstown,,Singapore,117556,SG,1.29865,103.77548,0,5980828,365,USD,AIR,100,AIR,315,1999,0,0,SQFT,Queenstown,30,SQFT,"TD, WS"
-4,11358492,101,2022-05-01,2023-04-30,,Queenstown,,Singapore,117684,SG,1.28847,103.779518,0,5219727,365,USD,AIR,100,AIR,315,1985,0,0,SQFT,Queenstown,40,SQFT,"HL, ST"
