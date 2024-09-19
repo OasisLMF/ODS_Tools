@@ -6,7 +6,7 @@ from operator import truediv as div
 from typing import Any, Callable, Iterable, List, Pattern, TypedDict, Union
 
 from lark import Transformer as _LarkTransformer
-from lark import Tree
+from lark import Token, Tree
 from lark import exceptions as lark_exceptions
 from lark import v_args
 from ..transformers.transform_utils import replace_multiple
@@ -452,7 +452,9 @@ class BaseTreeTransformer(_LarkTransformer):
 
         :return: True if the value is "True", False otherwise
         """
-        return value == "True"
+        if isinstance(value, bool):
+            return value
+        return str(value).lower() == "true"
 
     def null(self, value):
         """
@@ -479,6 +481,16 @@ class BaseTreeTransformer(_LarkTransformer):
             return float(value)
 
 
+def safe_lookup(r, name):
+    if isinstance(name, Token):
+        name = name.value
+    if name == 'True':
+        return True
+    elif name == 'False':
+        return False
+    return r.get(name, name)
+
+
 def create_transformer_class(row, transformer_mapping):
     """
     Creates a transformer class from the provided mapping overrides.
@@ -489,7 +501,7 @@ def create_transformer_class(row, transformer_mapping):
     :return: The new transformer class
     """
     transformer_mapping = {
-        "lookup": lambda r, name: r[name],
+        "lookup": safe_lookup,
         "add": lambda r, lhs, rhs: add(lhs, rhs),
         "subtract": lambda r, lhs, rhs: sub(lhs, rhs),
         "multiply": lambda r, lhs, rhs: mul(lhs, rhs),
