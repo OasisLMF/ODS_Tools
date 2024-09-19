@@ -1,6 +1,18 @@
 ODS_Tools Changelog
 ===================
 
+`3.2.7`_
+ ---------
+* [#131](https://github.com/OasisLMF/ODS_Tools/pull/131) - Release 3.2.6 (July 31) 
+* [#135](https://github.com/OasisLMF/ODS_Tools/pull/135) - Only run attach project issues workflow from Our repo - not forks
+* [#136](https://github.com/OasisLMF/ODS_Tools/pull/137) - Triple quoting when saving fields containing multiple entries
+* [#139](https://github.com/OasisLMF/ODS_Tools/pull/138) - Look for validation files in custom paths
+* [#140](https://github.com/OasisLMF/ODS_Tools/pull/141) - Failed ODTF transformation with lark > 1.1.9
+* [#142](https://github.com/OasisLMF/ODS_Tools/pull/142) - Update GH actions artifacts to v4
+* [#143](https://github.com/OasisLMF/ODS_Tools/pull/143) - pin lark version
+* [#145](https://github.com/OasisLMF/ODS_Tools/pull/145) - Add disaggregation-flag
+.. _`3.2.7`:  https://github.com/OasisLMF/ODS_Tools/compare/3.2.6...3.2.7
+
 `3.2.6`_
  ---------
 * [#128](https://github.com/OasisLMF/ODS_Tools/pull/128) - Fix allow blank errors with OED v4 spec
