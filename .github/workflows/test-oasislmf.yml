@@ -47,7 +47,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Download ods-tools package
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: bin_package
           path: ${{ github.workspace }}/

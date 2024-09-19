@@ -618,6 +618,12 @@
                "description": "If true apply post loss amplification/reduction to losses by default.",
                "default": false
            },
+           "do_disaggregation": {
+               "type": "boolean",
+               "title": "Apply Oasis Disaggregation",
+               "description": "Set whether to split terms and conditions for aggregate exposure (optional)",
+               "default": false
+           },
             "string_parameters":{
                "title":"Single string paramters",
                "type":"array",
