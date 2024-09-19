@@ -445,7 +445,8 @@ class PandasRunner(BaseRunner):
                 if not transformations:
                     available_columns = set(batch.columns)
                     transformations = mapping.get_transformations(available_columns=available_columns)
-                    logger.info(f"Running transformation set {transformations[0].input_format} -> {transformations[-1].output_format} [{extractor.name}]")
+                    logger.info(
+                        f"Running transformation set {transformations[0].input_format} -> {transformations[-1].output_format} [{extractor.name}]")
 
                 # Validate input data
                 try:
