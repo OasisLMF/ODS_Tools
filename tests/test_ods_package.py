@@ -462,20 +462,19 @@ class OdsPackageTests(TestCase):
                 'pd_dtype': 'category'}
         }
 
-        for field_name, field_info in  test_fields.items():
+        for field_name, field_info in test_fields.items():
             oed_schema.schema['input_fields']['Loc'][field_name.lower()] = field_info
-
 
         loc_df = pd.DataFrame({
             'PortNumber': [1, 1, 1, 1],
             'AccNumber': [1, 1, 1, 1],
             'LocNumber': [1, 2, 3, 4],
-            'CountryCode': ['UK', 'UK', 'UK', 'UK',],
+            'CountryCode': ['UK', 'UK', 'UK', 'UK', ],
             'LocPerilsCovered': ['WW2', 'WTC;WSS', 'QQ1;WW2', 'WTC'],
             'BuildingTIV': ['1', '1', '1', '1'],
             'ContentsTIV': ['1', '1', '1', '1'],
             'LocCurrency': ['GBP', 'GBP', 'GBP', 'GBP'],
-            'intvalue': [1,'2','',''],
+            'intvalue': [1, '2', '', ''],
             'IntValueMultiple1': [1, '2', '', ''],
             'StringValueMultiple01': [1, '2', '', ''],
         })
@@ -683,7 +682,7 @@ class OdsPackageTests(TestCase):
             'PortNumber': [1, 1, 1, 1],
             'AccNumber': [1, 1, 1, 1],
             'LocNumber': [1, 2, 3, 4],
-            'CountryCode': ['UK', 'UK', 'UK', 'UK',],
+            'CountryCode': ['UK', 'UK', 'UK', 'UK', ],
             'LocPerilsCovered': ['WW2', 'WTC;WSS', 'QQ1;WW2', 'WTC'],
             'BuildingTIV': ['1', '1', '1', '1'],
             'ContentsTIV': ['1', '1', '1', '1'],

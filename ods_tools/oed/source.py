@@ -283,7 +283,7 @@ class OedSource:
                     oed_df[column] = oed_df[column].cat.add_categories('')
                 oed_df[column] = oed_df[column]  # make a copy f the col in case it is read_only
                 oed_df.loc[is_empty(oed_df, column), column] = ''
-            if pd.api.types.is_numeric_dtype(pd_dtype[column]): #  make sure empty string are converted to nan
+            if pd.api.types.is_numeric_dtype(pd_dtype[column]):  # make sure empty string are converted to nan
                 oed_df[column] = pd.to_numeric(oed_df[column], errors='coerce')
 
         return oed_df.astype(to_tmp_dtype).astype(pd_dtype)
