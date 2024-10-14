@@ -1,10 +1,13 @@
 import json
+import logging
 import os
 from pathlib import Path
 import numba as nb
 import numpy as np
 
 from .common import OdsException, BLANK_VALUES, cached_property, dtype_to_python
+
+logger = logging.getLogger(__name__)
 
 ENV_ODS_SCHEMA_PATH = os.getenv('ODS_SCHEMA_PATH')
 
@@ -74,6 +77,7 @@ class OedSchema:
         elif isinstance(oed_schema_info, cls):
             return oed_schema_info
         elif oed_schema_info is None:
+            logger.debug(f"loading default schema {cls.DEFAULT_ODS_SCHEMA_PATH}")
             return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH)
         else:
             raise OdsException(f"{oed_schema_info} is not a supported format to create {cls} object")

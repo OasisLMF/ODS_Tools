@@ -255,6 +255,8 @@ class OedSource:
         oed_df = cls.as_oed_type(oed_df, column_to_field)
         oed_df = cls.prepare_df(oed_df, column_to_field, ods_fields)
 
+        # TODO: here find the class of business and check required column
+
         # apply the filters to the dataframe
         for fn in oed_source.filters:
             oed_df = fn(oed_df)
@@ -304,6 +306,7 @@ class OedSource:
         for col, field_info in column_to_field.items():
             fill_empty(df, col, OedSchema.get_default_from_ods_fields(ods_fields, col))
 
+        # TODO: allow blank is no longer, required column check need to be done differently
         # add required columns that allow blank values if missing
         present_field = set(field_info['Input Field Name'] for field_info in column_to_field.values())
         for field_info in ods_fields.values():

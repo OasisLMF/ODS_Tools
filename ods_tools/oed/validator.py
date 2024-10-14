@@ -6,8 +6,8 @@ import logging
 from pathlib import Path
 from collections.abc import Iterable
 
-from .common import (OdsException, OED_PERIL_COLUMNS, OED_IDENTIFIER_FIELDS, DEFAULT_VALIDATION_CONFIG,
-                     VALIDATOR_ON_ERROR_ACTION, BLANK_VALUES, is_empty)
+from .common import (OdsException, OED_PERIL_COLUMNS, OED_IDENTIFIER_FIELDS, DEFAULT_VALIDATION_CONFIG, CLASS_OF_BUSINESSES,
+                     VALIDATOR_ON_ERROR_ACTION, BLANK_VALUES, is_empty, ClassOfBusiness)
 from .oed_schema import OedSchema
 
 logger = logging.getLogger(__name__)
@@ -92,19 +92,24 @@ class Validator:
     def check_source_coherence(self):
         """"""
         invalid_data = []
-        if not self.exposure.location:
-            invalid_data.append({'name': 'location', 'source': None,
-                                 'msg': f"Exposure needs a Location file, location={self.exposure.location}"})
+        coherence_rules = CLASS_OF_BUSINESSES[self.exposure.class_of_business]['coherence_rules']
+        for coherence_rule in coherence_rules:
+            r_sources = []
+            if coherence_rule["type"] == "CR":
+                c_sources = [getattr(self.exposure, source) for source in coherence_rule[ "c_sources"]]
+                if any(c_sources):
+                    if not all(c_sources):
+                        invalid_data.append(
+                            {'name': coherence_rule['name'], 'source': None,
+                             'msg': f"Exposure needs all {coherence_rule['c_sources']} for {coherence_rule['name']}"
+                                    f" got {c_sources}"})
+                    r_sources = [getattr(self.exposure, source) for source in coherence_rule.get("r_sources", [])]
+            elif coherence_rule["type"] == "R":
+                r_sources = [getattr(self.exposure, source) for source in coherence_rule["r_sources"]]
 
-        if self.exposure.ri_info or self.exposure.ri_scope:
-            if not self.exposure.account:
-                invalid_data.append({'name': 'account', 'source': None,
-                                     'msg': f"Exposure needs account if reinsurance is provided account={self.exposure.account}"})
-
-            if not self.exposure.ri_info and self.exposure.ri_scope:
-                invalid_data.append({'name': 'reinsurance', 'source': None,
-                                     'msg': f"Exposure needs both ri_scope and ri_scope for reinsurance"
-                                            f"ri_info={self.exposure.ri_info} ri_scope={self.exposure.ri_scope}"})
+            if not all(r_sources):
+                invalid_data.append({'name': coherence_rule['name'], 'source': None,
+                                 'msg': f"Exposure needs {coherence_rule['r_sources']}, got={r_sources}"})
 
         return invalid_data
 
@@ -126,8 +131,9 @@ class Validator:
 
             for field_info in input_fields.values():
                 if field_info['Input Field Name'] not in field_to_columns:
-                    # OED v4 = 'Property field status' and OED v3 = 'Required Field'
-                    requ_field_ref = 'Property field status' if 'Property field status' in field_info else 'Required Field'
+                    requ_field_ref = CLASS_OF_BUSINESSES[self.exposure.class_of_business]['field_status_name']
+                    if requ_field_ref not in field_info: # OED v3 only support PROP and used 'Required Field'
+                        requ_field_ref = 'Required Field'
                     if field_info.get(requ_field_ref) == 'R':
                         invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                              'msg': f"missing required column {field_info['Input Field Name']}"})
