@@ -482,6 +482,59 @@ class OdsPackageTests(TestCase):
             assert (modified_exposure.location.dataframe['BITIV'] == 0).all()  # check default is applied
             assert (modified_exposure.ri_info.dataframe['RiskLevel'] == '').all()  # check it works for string
 
+    def test_fill_empty(self):
+        oed_schema = OedSchema.from_oed_schema_info(None)
+        test_fields = {
+            'intvalue': {
+                'Input Field Name': 'IntValue',
+                'Type & Description': 'a single int column with default',
+                'Required Field': 'O',
+                'Data Type': 'int',
+                'Allow blanks?': 'YES',
+                'Default': '0',
+                'Valid value range': 'n/a',
+                'pd_dtype': 'Int32'},
+            'IntValueMultipleXX': {
+                'Input Field Name': 'IntValueMultipleXX',
+                'Type & Description': '',
+                'Required Field': 'O',
+                'Data Type': 'int',
+                'Allow blanks?': 'YES',
+                'Default': '0',
+                'Valid value range': 'n/a',
+                'pd_dtype': 'Int32'},
+            'StringValueMultipleXX': {
+                'Input Field Name': 'StringValueMultipleXX',
+                'Type & Description': '',
+                'Required Field': 'O',
+                'Data Type': 'nvarchar(50)',
+                'Allow blanks?': 'YES',
+                'Default': 'foobar',
+                'Valid value range': 'n/a',
+                'pd_dtype': 'category'}
+        }
+
+        for field_name, field_info in test_fields.items():
+            oed_schema.schema['input_fields']['Loc'][field_name.lower()] = field_info
+
+        loc_df = pd.DataFrame({
+            'PortNumber': [1, 1, 1, 1],
+            'AccNumber': [1, 1, 1, 1],
+            'LocNumber': [1, 2, 3, 4],
+            'CountryCode': ['UK', 'UK', 'UK', 'UK', ],
+            'LocPerilsCovered': ['WW2', 'WTC;WSS', 'QQ1;WW2', 'WTC'],
+            'BuildingTIV': ['1', '1', '1', '1'],
+            'ContentsTIV': ['1', '1', '1', '1'],
+            'LocCurrency': ['GBP', 'GBP', 'GBP', 'GBP'],
+            'intvalue': [1, '2', '', ''],
+            'IntValueMultiple1': [1, '2', '', ''],
+            'StringValueMultiple01': [1, '2', '', ''],
+        })
+        oed = OedExposure(**{'location': loc_df, 'use_field': True, 'oed_schema_info': oed_schema})
+        assert oed.location.dataframe['IntValue'].to_list() == [1, 2, 0, 0]
+        assert oed.location.dataframe['IntValueMultiple1'].to_list() == [1, 2, 0, 0]
+        assert oed.location.dataframe['StringValueMultiple01'].to_list() == ['1', '2', 'foobar', 'foobar']
+
     def test_relative_and_absolute_path(self):
         original_cwd = os.getcwd()
         try:
@@ -681,7 +734,7 @@ class OdsPackageTests(TestCase):
             'PortNumber': [1, 1, 1, 1],
             'AccNumber': [1, 1, 1, 1],
             'LocNumber': [1, 2, 3, 4],
-            'CountryCode': ['UK', 'UK', 'UK', 'UK',],
+            'CountryCode': ['UK', 'UK', 'UK', 'UK', ],
             'LocPerilsCovered': ['WW2', 'WTC;WSS', 'QQ1;WW2', 'WTC'],
             'BuildingTIV': ['1', '1', '1', '1'],
             'ContentsTIV': ['1', '1', '1', '1'],

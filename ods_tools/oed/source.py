@@ -285,8 +285,8 @@ class OedSource:
                     oed_df[column] = oed_df[column].cat.add_categories('')
                 oed_df[column] = oed_df[column]  # make a copy f the col in case it is read_only
                 oed_df.loc[is_empty(oed_df, column), column] = ''
-            elif pd_dtype[column].startswith('Int'):
-                to_tmp_dtype[column] = 'float'
+            if pd.api.types.is_numeric_dtype(pd_dtype[column]):  # make sure empty string are converted to nan
+                oed_df[column] = pd.to_numeric(oed_df[column], errors='coerce')
 
         return oed_df.astype(to_tmp_dtype).astype(pd_dtype)
 
@@ -304,7 +304,7 @@ class OedSource:
         """
         # set default values
         for col, field_info in column_to_field.items():
-            fill_empty(df, col, OedSchema.get_default_from_ods_fields(ods_fields, col))
+            fill_empty(df, col, OedSchema.get_default_from_ods_fields(ods_fields, field_info['Input Field Name']))
 
         # TODO: allow blank is no longer, required column check need to be done differently
         # add required columns that allow blank values if missing
