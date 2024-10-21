@@ -7,5 +7,5 @@ Line,Input_int_1,Input_int_2,Input_string_1,Input_string_2,Input_multistring_1,I
 6,55,55,letter_F,letter_F,"letter_C, letter_I, letter_A",ARG,5.2,5.2
 7,101,101,letter_G,letter_G,"letter_B, letter_E, letter_E",,7.9,7.9
 8,999,999,letter_H,letter_H,"letter_J, letter_I, letter_I","USA, UK",111.11,111.11
-9,777,777,letter_I,letter_I,"letter_G, letter_I, letter_G",Null,0.001,0.001
+9,777,777,letter_I,letter_I,"letter_G, letter_I, letter_G",,0.001,0.001
 10,1,1,,,"letter_B, letter_A, letter_G","ARG, BRA, USA",,

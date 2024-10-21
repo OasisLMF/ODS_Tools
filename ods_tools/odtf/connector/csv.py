@@ -1,6 +1,6 @@
-import csv
 from typing import Any, Dict, Iterable
 
+import numpy as np
 import pandas as pd
 
 from .base import BaseConnector
@@ -63,39 +63,33 @@ class CsvConnector(BaseConnector):
 
         self.file_path = config.absolute_path(options["path"])
         self.write_header = options.get("write_header", True)
-        self.quoting = {
-            "all": csv.QUOTE_ALL,
-            "minimal": csv.QUOTE_MINIMAL,
-            "none": csv.QUOTE_NONE,
-            "nonnumeric": csv.QUOTE_NONNUMERIC,
-        }.get(options.get("quoting", "nonnumeric"))
 
     def _data_serializer(self, row):
-        return {
-            k: f'"{v}"'.strip() if isinstance(v, str) and any(d in v for d in [',', ';', '\t', '\n', '"']) else (
-                v if v is not None and not isinstance(v, NotSetType) else "")
-            for k, v in row.items()
-        }
+        def process_value(v):
+            if v is None or isinstance(v, NotSetType):
+                return ""
+            # add quotes to values that contain special characters
+            if isinstance(v, str) and any(d in v for d in [',', ';', '\t', '\n', '"']):
+                return f'"{v}"'
+            return str(v)
+
+        return [process_value(v) for v in row.values()]
 
     def load(self, data: Iterable[Dict[str, Any]]):
-        try:
-            data = iter(data)
-            first_row = next(data)
-        except StopIteration:
-            return
+        first_batch = True
 
-        with open(self.file_path, "w", newline="") as f:
-            writer = csv.DictWriter(
-                f,
-                fieldnames=list(first_row.keys()),
-                quoting=self.quoting
-            )
+        with open(self.file_path, "a", newline="") as f:
+            for batch in data:
+                fieldnames = list(batch.keys())
 
-            if self.write_header:
-                writer.writeheader()
+                rows = np.array([self._data_serializer(batch)])
 
-            writer.writerow(self._data_serializer(first_row))
-            writer.writerows(map(self._data_serializer, data))
+                if first_batch and self.write_header:
+                    header = ','.join(fieldnames)
+                    np.savetxt(f, [], fmt='%s', delimiter=',', header=header, comments='')
+                    first_batch = False
+
+                np.savetxt(f, rows, fmt='%s', delimiter=',', comments='')
 
     def fetch_data(self, chunksize: int) -> Iterable[pd.DataFrame]:
         """

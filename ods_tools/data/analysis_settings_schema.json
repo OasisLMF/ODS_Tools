@@ -523,6 +523,12 @@
             "description": "If true apply post loss amplification/reduction to losses.",
             "default": false
         },
+        "do_disaggregation": {
+            "type": "boolean",
+            "title": "Apply Oasis Disaggregation",
+            "description": "Set whether to split terms and conditions for aggregate exposure (optional)",
+            "default": false
+        },
         "pla_secondary_factor": {
             "type": "number",
             "title": "Optional secondary factor for Post Loss Amplification",
