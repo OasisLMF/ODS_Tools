@@ -12,7 +12,7 @@ import json
 
 SCRIPT_DIR = os.path.abspath(os.path.dirname(__file__))
 
-OED_VERSION = '3.4.0'
+OED_VERSION = '3.4.1'
 # ORD_VERSION =
 
 
