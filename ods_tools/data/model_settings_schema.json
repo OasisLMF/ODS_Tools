@@ -538,7 +538,7 @@
             "correlation_settings": {
                "type": "array",
                "title": "Correlation Settings",
-               "description": "The Legacy Correlation Settings.",
+               "description": "The Correlation Settings.",
                "items": {
                   "type": "object",
                   "properties": {
