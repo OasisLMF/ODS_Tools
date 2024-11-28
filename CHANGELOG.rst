@@ -1,6 +1,12 @@
 ODS_Tools Changelog
 ===================
 
+`3.2.9`_
+ ---------
+* [#148](https://github.com/OasisLMF/ODS_Tools/pull/162) - PLA options to be added into MS/AS schemas explicitly
+* [#151](https://github.com/OasisLMF/ODS_Tools/pull/165) - Package does not include the validation files
+.. _`3.2.9`:  https://github.com/OasisLMF/ODS_Tools/compare/3.2.8...3.2.9
+
 `3.2.8`_
  ---------
 * [#144](https://github.com/OasisLMF/ODS_Tools/pull/144) - Release 3.2.7
