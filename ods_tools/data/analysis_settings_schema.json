@@ -393,6 +393,12 @@
                     "description": "Identifier for the vulnerability files that are used for output calculations.",
                     "default": 1
                 },
+                "pla_loss_factors_set": {
+                    "type": "string",
+                    "title": "Lossfactor set file ID.",
+                    "description": "Identifier for the Lossfactor file used for PLA (Post Loss amplification).",
+                    "default": 1
+                },
                 "correlation_settings": {
                     "type": "array",
                     "title": "Correlation Settings",
@@ -466,7 +472,7 @@
                 }
             },
             "additionalProperties": false
-        },    
+        },
         "gul_output": {
             "type": "boolean",
             "title": "Produce GUL output",
@@ -501,7 +507,7 @@
             "description": "Specified which outputs should be generated for which summary sets, for reinsurance net losses.",
             "$ref": "#/definitions/output_summaries"
         },
-	"ri_inuring_priorities": {
+        "ri_inuring_priorities": {
             "type": "array",
             "minItems": 1,
             "items": {
