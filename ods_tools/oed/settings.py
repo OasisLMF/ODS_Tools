@@ -1,7 +1,51 @@
+from pathlib import Path
+import json
+import jsonschema
+import jsonref
+import os
+
+from ods_tools.oed.common import OdsException
+
 import logging
-logger = logging.getLogger(__name__)
+settings_logger = logging.getLogger(__name__)
 
 ROOT_USER_ROLE = {'admin'}
+DATA_PATH = Path(Path(__file__).parent.parent, 'data')
+
+
+def json_dict_walk(json_dict, key_path):
+    """
+    Yield all the object present under a certain path for a json like dict going through each element
+
+    >>> test_dict = {'a' : [{'b': 1}, {'b': [2, 3]}], 'c': [{'b': 4}, {'b': 5}]}
+    >>> list(json_dict_walk(test_dict, ['a', 'b']))
+    [1, 2, 3]
+
+    >>> test_dict = {'a' : [{'b': 1}, {'b': [2, 3]}], 'c': [{'b': 4}, {'b': 5}]}
+    >>> list(json_dict_walk(test_dict, ['a']))
+    [{'b': 1}, {'b': [2, 3]}]
+
+    >>> test_dict = {'a' : [{'b': 1}, {'b': [2, 3]}], 'c': [{'b': 4}, {'b': 5}]}
+    >>> list(json_dict_walk(test_dict, ['d']))
+    []
+
+    """
+    dict_stack = [(json_dict, 0)]  # where 0 is the key index in key_path
+    while dict_stack:
+        sub_config, key_i = dict_stack.pop()
+        while True:
+            if isinstance(sub_config, list):
+                for elm in reversed(sub_config):
+                    dict_stack.append((elm, key_i))
+                break
+            if key_i >= len(key_path):  # we are at the end of the key_path we yield the object we found
+                yield sub_config
+                break
+            else:
+                sub_config = sub_config.get(key_path[key_i], {})
+                key_i += 1
+                if not sub_config:  # dead end, no object for this key_path
+                    break
 
 
 class Settings:
@@ -17,6 +61,10 @@ class Settings:
     sub_settings are also merge in the same way.
     """
 
+    def __init__(self):
+        self._settings = {}
+        self._sub_parts = set()
+
     @classmethod
     def is_sub_settings(cls, key, key_info):
         return key.endswith('_settings') and isinstance(key_info, dict) and not cls.is_key_info(key_info)
@@ -29,7 +77,7 @@ class Settings:
     @classmethod
     def is_parameter_grouping(cls, key, key_info):
         """check if key, key_info pair is describing how to group parameters (for UI purpose for example)"""
-        return key == "parameter_groups"
+        return key == "parameter_groups" or key == "multi_parameter_options"
 
     @classmethod
     def is_valid_value(cls, key_info, value):
@@ -74,10 +122,6 @@ class Settings:
         restricted = key_info.get('restricted', set())
         return bool((not restricted) or ROOT_USER_ROLE.union(restricted).intersection(user_role))
 
-    def __init__(self):
-        self._settings = {}
-        self._sub_parts = set()
-
     @classmethod
     def update_key(cls, settings, key, key_info, user_role):
         """update the value of a key with enrich key_info"""
@@ -87,9 +131,9 @@ class Settings:
             if cls.is_valid_value(current_info, key_info["default"]):
                 settings[key] = key_info
             else:
-                logger.info(f"Value {key_info['default']} for {key} is not valid {current_info}")
+                settings_logger.info(f"Value {key_info['default']} for {key} is not valid {current_info}")
         else:
-            logger.info(f"user_role {user_role} cannot overwrite {key}, role {current_info['restricted']} required")
+            settings_logger.info(f"user_role {user_role} cannot overwrite {key}, role {current_info['restricted']} required")
 
     def add_key(self, key, key_info, user_role=None):
         user_role = self.to_user_role(user_role)
@@ -123,9 +167,57 @@ class Settings:
                 settings_dict[key] = cls.to_dict(key_info)
             else:
                 if cls.is_parameter_grouping(key, key_info):
-                    pass
+                    continue
                 settings_dict[key] = key_info['default']
         return settings_dict
+
+    def to_json_schema(self, setting_names):
+        parameters_mapping = {
+            "string_parameters": ("type", "string"),
+            "list_parameters": ("type", "array"),
+            "dictionary_parameters": ("type", "object"),
+            "boolean_parameters": ("type", "boolean"),
+            "float_parameters": ("type", "number"),
+            "numeric_parameters": ("type", "number"),
+            "integer_parameters": ("type", "integer"),
+            "dropdown_parameters": ("oneOf", "options"),
+        }
+        settings_json_schema = {}
+        for setting_name in setting_names:
+            setting_info = self._settings.get(setting_name)
+            if setting_info is not None:
+                settings_properties = {
+                    "additionalProperties": False
+                }
+                for param_key, param_info in setting_info.items():
+                    if not self.is_key_info(param_info):
+                        continue
+
+                    property_info = {}
+                    schema_key, schema_val = parameters_mapping.get(param_info.get('parameter_type'), (None, None))
+                    if schema_key == "type":
+                        property_info[schema_key] = schema_val
+                    elif schema_key == "oneOf":
+                        property_info[schema_key] = param_info[schema_val]
+                    else:
+                        continue
+
+                    if "desc" in param_info:
+                        property_info["title"] = param_info["desc"]
+                    if "tooltip" in param_info:
+                        property_info["description"] = param_info["tooltip"]
+
+                    if "min" in param_info:
+                        property_info["minimum"] = param_info["min"]
+                    if "max" in param_info:
+                        property_info["maximum"] = param_info["max"]
+                    settings_properties[param_key] = property_info
+
+                if settings_properties:
+                    settings_json_schema[setting_name] = settings_properties
+
+        return settings_json_schema
+
 
     def get_settings(self):
         """return the dict with all the actual values"""
@@ -137,3 +229,259 @@ class Settings:
             return key_info['default']
         else:
             return key_info
+
+
+class SettingHandler:
+    extra_checks = []
+
+    def __init__(self, schemas=None, compatibility_profiles=None, settings_type='', logger=settings_logger):
+        if schemas is None:
+            schemas = []
+        if compatibility_profiles is None:
+            compatibility_profiles = []
+        self.__schemas = schemas
+        self.compatibility_profiles = compatibility_profiles
+        self.settings_type = settings_type
+        self.logger = logger
+
+    @property
+    def info(self):
+        """
+        Returns the path to the loaded JSON file.
+
+        Returns:
+            str: The path to the loaded JSON file.
+
+        """
+        return self.__schemas
+
+    def add_schema(self, schema, name, *, keys_path=None, schema_fp=None):
+        schema_info = {
+            'name': name,
+            'schema': schema,
+        }
+        if schema_fp is not None:
+            schema_info['schema_fp'] = schema_fp
+        if keys_path is not None:
+            schema_info['key_path'] = keys_path
+        self.__schemas.append(schema_info)
+
+
+    def add_schema_from_fp(self, schema_fp, **kwargs):
+        if schema_fp in os.listdir(DATA_PATH):
+            settings_logger.info(f'{schema_fp} loaded from default folder {DATA_PATH}')
+            schema_fp = Path(DATA_PATH, schema_fp)
+        else:
+            schema_fp = Path(schema_fp)
+
+        with open(schema_fp, encoding="UTF-8") as f:
+            schema = jsonref.load(f)
+
+        self.add_schema(schema, schema_fp=schema_fp, **kwargs)
+
+
+    def update_obsolete_keys(self, settings_data, version=None):
+        """
+        Updates the loaded JSON data to account for deprecated keys.
+
+        Args:
+            settings_data (dict): The loaded JSON data.
+            version: version to compare to when updating obsolete keys
+
+        Returns:
+            dict: The updated JSON data.
+
+        """
+        if version is None:
+            is_obsolete = lambda key_version: True
+        else:
+            is_obsolete = lambda key_version: key_version <= version # key is obsolete only if asked version is after new key has been introduced
+
+        updated_settings_data = settings_data.copy()
+        for compatibility_profile in self.compatibility_profiles:
+            for obj in json_dict_walk(updated_settings_data, compatibility_profile.get("compatibility_path", [])):
+                if not isinstance(obj, dict):
+                    self.logger.info(f"In setting {self.settings_type}, "
+                                     f"object at path {compatibility_profile.get('compatibility_path', [])} is not a dict or a list of dict")
+                    continue
+                obsolete_keys = set(obj) & set(key for key, info in compatibility_profile.items()
+                                               if key!='compatibility_path' and is_obsolete(info["from_ver"]))
+                for key in obsolete_keys:
+                    self.logger.info(f" '{key}' loaded as '{compatibility_profile[key]['updated_to']}'")
+                    obj[compatibility_profile[key]['updated_to']] = obj[key]
+                    if compatibility_profile[key]['deleted']:
+                        del obj[key]
+
+        return updated_settings_data
+
+    def load(self, settings_fp, version=None):
+        """
+        Loads the JSON data from a file path.
+
+        Args:
+            settings_fp (str): The path to the JSON file.
+            version: version to compare to when updating obsolete keys
+
+        Raises:
+            OdsException: If the JSON file is invalid.
+
+        Returns:
+            dict: The loaded JSON data.
+
+        """
+        try:
+            filepath = Path(settings_fp)
+            with filepath.open(encoding="UTF-8") as f:
+                settings_raw = json.load(f)
+        except (IOError, TypeError, ValueError):
+            raise OdsException(f'Invalid {self.settings_type} file or file path: {settings_fp}')
+        settings_data = self.update_obsolete_keys(settings_raw, version)
+        return settings_data
+
+    def validate(self, setting_data, raise_error=True):
+        """
+        Validates the loaded JSON data against the schema.
+
+        Args:
+            setting_data (dict): The loaded JSON data.
+            raise_error (bool): raise exception on validation failure
+
+        Returns:
+            tuple: A tuple containing a boolean indicating whether the JSON data is valid
+            and a dictionary containing any validation errors.
+
+        """
+        # special validation
+        exception_msgs = {}
+        for check in self.extra_checks:
+            settings_logger.info(f"Running check_{check}")
+            for field_name, message in getattr(self, f"check_{check}")(setting_data):
+                exception_msgs.setdefault(field_name, []).extend(message)
+
+        for schema_info in self.__schemas:
+            for json_sub_part in json_dict_walk(setting_data, schema_info.get('key_path', [])):
+                for err in jsonschema.Draft4Validator(schema_info['schema']).iter_errors(json_sub_part):
+                    if err.path:
+                        field = '-'.join([str(e) for e in err.path])
+                    elif err.schema_path:
+                        field = '-'.join([str(e) for e in err.schema_path])
+                    else:
+                        field = 'error'
+                    exception_msgs.setdefault(f"{schema_info['name']} {field}", []).append(err.message)
+
+        if exception_msgs and raise_error:
+            raise OdsException("\nJSON Validation error in '{}.json': {}".format(
+                self.settings_type,
+                json.dumps(exception_msgs, indent=4)
+            ))
+
+        return not bool(exception_msgs), exception_msgs
+
+    def validate_file(self, settings_fp, raise_error=True):
+        """
+        Validates the loaded JSON file against the schema.
+
+        Args:
+            settings_fp (str): The file path to the settings file.
+            raise_error (bool): raise execption on validation failuer
+
+        Returns:
+            tuple: A tuple containing a boolean indicating whether the JSON data is valid
+            and a dictionary containing any validation errors.
+        """
+        settings_data = self.load(settings_fp)
+        return self.validate(settings_data, raise_error=raise_error)
+
+
+class AnalysisSettingHandler(SettingHandler):
+    default_analysis_setting_json = 'analysis_settings_schema.json'
+    extra_checks = ['unique_summary_ids']
+    default_analysis_compatibility_profile = {
+        "module_supplier_id": {
+            "from_ver": "1.23.0",
+            "deleted": True,
+            "updated_to": "model_supplier_id"
+        },
+        "model_version_id": {
+            "from_ver": "1.23.0",
+            "deleted": True,
+            "updated_to": "model_name_id"
+        }
+    }
+
+
+
+    @classmethod
+    def make(cls,
+             analysis_setting_json=None, model_setting_json=None, computation_settings_json=None,
+             analysis_compatibility_profile=None, model_compatibility_profile=None, computation_compatibility_profile=None,
+             **kwargs):
+        if analysis_compatibility_profile is None:
+            analysis_compatibility_profile = cls.default_analysis_compatibility_profile
+        compatibility_profiles = [analysis_compatibility_profile]
+
+        if model_compatibility_profile is not None:
+            model_compatibility_profile['compatibility_path'] = ['model_settings']
+            compatibility_profiles.append(model_compatibility_profile)
+
+        if computation_compatibility_profile is not None:
+            computation_compatibility_profile['compatibility_path'] = ['computation_settings']
+            compatibility_profiles.append(computation_compatibility_profile)
+
+        handler = cls(settings_type='analysis_settings', compatibility_profiles=compatibility_profiles, **kwargs)
+
+        if analysis_setting_json is None:
+            handler.add_schema_from_fp(cls.default_analysis_setting_json, name='analysis_settings_schema')
+        elif isinstance(analysis_setting_json, str):
+            handler.add_schema_from_fp(analysis_setting_json, name='analysis_settings_schema')
+        else:
+            handler.add_schema(jsonref(analysis_setting_json), name='analysis_settings_schema')
+
+        model_setting_subpart_validation = ['model_settings']
+        if computation_settings_json is None:
+            model_setting_subpart_validation.append('computation_settings')
+        elif isinstance(computation_settings_json, str):
+            handler.add_schema_from_fp(computation_settings_json, name='computation_settings_schema', keys_path=['computation_settings'])
+        else:
+            handler.add_schema(computation_settings_json, name='computation_settings_schema', keys_path=['computation_settings'])
+
+        if model_setting_json is None:
+            pass
+        elif isinstance(model_setting_json, str):
+            with open(model_setting_json) as model_setting_file:
+                model_setting_dict = json.load(model_setting_file)
+        else:
+            model_setting_dict = model_setting_json
+
+        model_setting_induce_schema = Settings()
+        model_setting_induce_schema.add_settings(model_setting_dict)
+
+        handler.add_schema(model_setting_induce_schema.to_json_schema(model_setting_subpart_validation), name='model_setting_induce_schema')
+
+
+        return handler
+
+    def check_unique_summary_ids(self, setting_data):
+        """
+        Ensures that the JSON data contains unique summary IDs for each
+        runtype.
+
+        Args:
+            setting_data (dict): The loaded JSON data.
+
+        Returns:
+            dict: Exception messages. Will be empty if there are no unique
+            summary IDs.
+
+        """
+        exception_msgs = {}
+        runtype_summaries = [f'{runtype}_summaries' for runtype in ['gul', 'il', 'ri']]
+        for runtype_summary in runtype_summaries:
+            summary_ids = [summary.get('id', []) for summary in setting_data.get(runtype_summary, [])]
+            duplicate_ids = set(summary_id for summary_id in summary_ids if summary_ids.count(summary_id) > 1)
+            if duplicate_ids:
+                error_msgs = [f'id {summary_id} is duplicated' for summary_id in duplicate_ids]
+                exception_msgs[runtype_summary] = error_msgs
+
+        return exception_msgs
+
