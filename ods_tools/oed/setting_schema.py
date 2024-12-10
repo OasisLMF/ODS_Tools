@@ -255,7 +255,8 @@ class SettingSchema:
             The entire settings data as a dictionary if key is None, otherwise the value for the given key.
         """
         settings_data = self.load(settings_fp)
-        self.validate(settings_data, raise_error=True)
+        if validate:
+            self.validate(settings_data, raise_error=True)
         return settings_data if not key else settings_data.get(key)
 
 
