@@ -314,14 +314,15 @@ class SettingHandler:
 
         return updated_settings_data
 
-    def load(self, settings_fp, version=None):
+    def load(self, settings_fp, version=None, validate=True, raise_error=True):
         """
         Loads the JSON data from a file path.
 
         Args:
             settings_fp (str): The path to the JSON file.
             version: version to compare to when updating obsolete keys
-
+            validate: if True validate the file after load
+            raise_error:  raise exception on validation failure
         Raises:
             OdsException: If the JSON file is invalid.
 
@@ -335,7 +336,9 @@ class SettingHandler:
                 settings_raw = json.load(f)
         except (IOError, TypeError, ValueError):
             raise OdsException(f'Invalid {self.settings_type} file or file path: {settings_fp}')
+
         settings_data = self.update_obsolete_keys(settings_raw, version)
+        self.validate(settings_data, raise_error=raise_error)
         return settings_data
 
     def validate(self, setting_data, raise_error=True):
@@ -394,7 +397,7 @@ class SettingHandler:
 
 
 class AnalysisSettingHandler(SettingHandler):
-    default_analysis_setting_json = 'analysis_settings_schema.json'
+    default_analysis_setting_schema_json = 'analysis_settings_schema.json'
     extra_checks = ['unique_summary_ids']
     default_analysis_compatibility_profile = {
         "module_supplier_id": {
@@ -409,11 +412,9 @@ class AnalysisSettingHandler(SettingHandler):
         }
     }
 
-
-
     @classmethod
     def make(cls,
-             analysis_setting_json=None, model_setting_json=None, computation_settings_json=None,
+             analysis_setting_schema_json=None, model_setting_json=None, computation_settings_json=None,
              analysis_compatibility_profile=None, model_compatibility_profile=None, computation_compatibility_profile=None,
              **kwargs):
         if analysis_compatibility_profile is None:
@@ -430,34 +431,34 @@ class AnalysisSettingHandler(SettingHandler):
 
         handler = cls(settings_type='analysis_settings', compatibility_profiles=compatibility_profiles, **kwargs)
 
-        if analysis_setting_json is None:
-            handler.add_schema_from_fp(cls.default_analysis_setting_json, name='analysis_settings_schema')
-        elif isinstance(analysis_setting_json, str):
-            handler.add_schema_from_fp(analysis_setting_json, name='analysis_settings_schema')
+        if analysis_setting_schema_json is None:
+            handler.add_schema_from_fp(cls.default_analysis_setting_schema_json, name='analysis_settings_schema')
+        elif isinstance(analysis_setting_schema_json, (str, Path)):
+            handler.add_schema_from_fp(analysis_setting_schema_json, name='analysis_settings_schema')
         else:
-            handler.add_schema(jsonref(analysis_setting_json), name='analysis_settings_schema')
+            handler.add_schema(analysis_setting_schema_json, name='analysis_settings_schema')
 
         model_setting_subpart_validation = ['model_settings']
         if computation_settings_json is None:
             model_setting_subpart_validation.append('computation_settings')
-        elif isinstance(computation_settings_json, str):
+        elif isinstance(computation_settings_json, (str, Path)):
             handler.add_schema_from_fp(computation_settings_json, name='computation_settings_schema', keys_path=['computation_settings'])
         else:
             handler.add_schema(computation_settings_json, name='computation_settings_schema', keys_path=['computation_settings'])
 
         if model_setting_json is None:
             pass
-        elif isinstance(model_setting_json, str):
-            with open(model_setting_json) as model_setting_file:
-                model_setting_dict = json.load(model_setting_file)
         else:
-            model_setting_dict = model_setting_json
+            if isinstance(model_setting_json, (str, Path)):
+                with open(model_setting_json) as model_setting_file:
+                    model_setting_dict = json.load(model_setting_file)
+            else:
+                model_setting_dict = model_setting_json
 
-        model_setting_induce_schema = Settings()
-        model_setting_induce_schema.add_settings(model_setting_dict)
+            model_setting_induce_schema = Settings()
+            model_setting_induce_schema.add_settings(model_setting_dict)
 
-        handler.add_schema(model_setting_induce_schema.to_json_schema(model_setting_subpart_validation), name='model_setting_induce_schema')
-
+            handler.add_schema(model_setting_induce_schema.to_json_schema(model_setting_subpart_validation), name='model_setting_induce_schema')
 
         return handler
 
@@ -485,3 +486,39 @@ class AnalysisSettingHandler(SettingHandler):
 
         return exception_msgs
 
+
+class ModelSettingHandler(SettingHandler):
+    default_model_setting_json = 'model_settings_schema.json'
+
+    @classmethod
+    def make(cls,
+             model_setting_schema_json=None, computation_settings_json=None,
+             model_compatibility_profile=None, computation_compatibility_profile=None,
+             **kwargs):
+        compatibility_profiles = []
+
+        if model_compatibility_profile is not None:
+            model_compatibility_profile['compatibility_path'] = ['model_settings']
+            compatibility_profiles.append(model_compatibility_profile)
+
+        if computation_compatibility_profile is not None:
+            computation_compatibility_profile['compatibility_path'] = ['computation_settings']
+            compatibility_profiles.append(computation_compatibility_profile)
+
+        handler = cls(settings_type='model_settings', compatibility_profiles=compatibility_profiles, **kwargs)
+
+        if model_setting_schema_json is None:
+            handler.add_schema_from_fp(cls.default_model_setting_json, name='model_settings_schema')
+        elif isinstance(model_setting_schema_json, (str, Path)):
+            handler.add_schema_from_fp(model_setting_schema_json, name='model_settings_schema')
+        else:
+            handler.add_schema(model_setting_schema_json, name='model_settings_schema')
+
+        if computation_settings_json is None:
+            pass
+        if isinstance(computation_settings_json, (str, Path)):
+            handler.add_schema_from_fp(computation_settings_json, name='computation_settings_schema', keys_path=['computation_settings'])
+        else:
+            handler.add_schema(computation_settings_json, name='computation_settings_schema', keys_path=['computation_settings'])
+
+        return handler
