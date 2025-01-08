@@ -15,4 +15,4 @@ __all__ = [
     'OdsException', 'PANDAS_COMPRESSION_MAP', 'PANDAS_DEFAULT_NULL_VALUES', 'USUAL_FILE_NAME', 'OED_TYPE_TO_NAME',
     'OED_NAME_TO_TYPE', 'OED_IDENTIFIER_FIELDS', 'VALIDATOR_ON_ERROR_ACTION', 'DEFAULT_VALIDATION_CONFIG', 'OED_PERIL_COLUMNS', 'fill_empty',
     'UnknownColumnSaveOption', 'BLANK_VALUES', 'is_empty',
-] # this is necessary for flake8 to pass, otherwise you get an unused import error
+]  # this is necessary for flake8 to pass, otherwise you get an unused import error
