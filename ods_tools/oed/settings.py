@@ -218,7 +218,6 @@ class Settings:
 
         return settings_json_schema
 
-
     def get_settings(self):
         """return the dict with all the actual values"""
         return self.to_dict(self._settings)
@@ -266,7 +265,6 @@ class SettingHandler:
             schema_info['key_path'] = keys_path
         self.__schemas.append(schema_info)
 
-
     def add_schema_from_fp(self, schema_fp, **kwargs):
         if schema_fp in os.listdir(DATA_PATH):
             settings_logger.info(f'{schema_fp} loaded from default folder {DATA_PATH}')
@@ -278,7 +276,6 @@ class SettingHandler:
             schema = jsonref.load(f)
 
         self.add_schema(schema, schema_fp=schema_fp, **kwargs)
-
 
     def update_obsolete_keys(self, settings_data, version=None):
         """
@@ -293,9 +290,9 @@ class SettingHandler:
 
         """
         if version is None:
-            is_obsolete = lambda key_version: True
+            def is_obsolete(key_version): return True
         else:
-            is_obsolete = lambda key_version: key_version <= version # key is obsolete only if asked version is after new key has been introduced
+            def is_obsolete(key_version): return key_version <= version  # key is obsolete only if asked version is after new key has been introduced
 
         updated_settings_data = settings_data.copy()
         for compatibility_profile in self.compatibility_profiles:
@@ -305,7 +302,7 @@ class SettingHandler:
                                      f"object at path {compatibility_profile.get('compatibility_path', [])} is not a dict or a list of dict")
                     continue
                 obsolete_keys = set(obj) & set(key for key, info in compatibility_profile.items()
-                                               if key!='compatibility_path' and is_obsolete(info["from_ver"]))
+                                               if key != 'compatibility_path' and is_obsolete(info["from_ver"]))
                 for key in obsolete_keys:
                     self.logger.info(f" '{key}' loaded as '{compatibility_profile[key]['updated_to']}'")
                     obj[compatibility_profile[key]['updated_to']] = obj[key]
@@ -522,3 +519,17 @@ class ModelSettingHandler(SettingHandler):
             handler.add_schema(computation_settings_json, name='computation_settings_schema', keys_path=['computation_settings'])
 
         return handler
+
+
+def ModelSettingSchema(schema=None, json_path=None):
+    if schema is not None:
+        return ModelSettingHandler.make(model_setting_schema_json=schema, )
+    else:
+        return ModelSettingHandler.make(model_setting_schema_json=json_path, )
+
+
+def AnalysisSettingSchema(schema=None, json_path=None):
+    if schema is not None:
+        return AnalysisSettingHandler.make(model_setting_schema_json=schema, )
+    else:
+        return AnalysisSettingHandler.make(model_setting_schema_json=json_path, )
