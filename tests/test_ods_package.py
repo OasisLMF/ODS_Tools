@@ -599,9 +599,11 @@ class OdsPackageTests(TestCase):
 
             valid, errors = ods_analysis_setting.validate(settings_dict, raise_error=False)
             self.assertFalse(valid)
-            self.assertEqual({'gul_output': ["'True' is not of type 'boolean'"],
-                              'required': ["'gul_summaries' is a required property"],
-                              'ri_summaries': ['id 1 is duplicated']}, errors)
+            self.assertEqual({
+                'ri_summaries': ['id 1 is duplicated'],
+                'analysis_settings_schema gul_output': ["'True' is not of type 'boolean'"],
+                'analysis_settings_schema required': ["'gul_summaries' is a required property"],
+            }, errors)
 
             with self.assertRaises(OdsException):
                 ods_analysis_setting.validate(settings_dict)
@@ -653,8 +655,8 @@ class OdsPackageTests(TestCase):
             valid, errors = ods_model_setting.validate(settings_dict, raise_error=False)
             self.assertFalse(valid)
             self.assertEqual({
-                'additionalProperties': ["Additional properties are not allowed ('model_setting', 'unknown_key' were unexpected)"],
-                'required': ["'model_settings' is a required property"]
+                'model_settings_schema additionalProperties': ["Additional properties are not allowed ('model_setting', 'unknown_key' were unexpected)"],
+                'model_settings_schema required': ["'model_settings' is a required property"]
             }, errors)
 
             with self.assertRaises(OdsException):

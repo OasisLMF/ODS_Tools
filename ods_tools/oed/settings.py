@@ -265,6 +265,15 @@ class SettingHandler:
             schema_info['key_path'] = keys_path
         self.__schemas.append(schema_info)
 
+    def get_schema(self, name):
+        """
+        get the schema from self.__schemas with the name 'name'
+            return None if not present
+        """
+        for schema_info in self.__schemas:
+            if schema_info['name'] == name:
+                return schema_info['schema']
+
     def add_schema_from_fp(self, schema_fp, **kwargs):
         if schema_fp in os.listdir(DATA_PATH):
             settings_logger.info(f'{schema_fp} loaded from default folder {DATA_PATH}')
@@ -335,7 +344,8 @@ class SettingHandler:
             raise OdsException(f'Invalid {self.settings_type} file or file path: {settings_fp}')
 
         settings_data = self.update_obsolete_keys(settings_raw, version)
-        self.validate(settings_data, raise_error=raise_error)
+        if validate:
+            self.validate(settings_data, raise_error=raise_error)
         return settings_data
 
     def validate(self, setting_data, raise_error=True):
@@ -355,7 +365,7 @@ class SettingHandler:
         exception_msgs = {}
         for check in self.extra_checks:
             settings_logger.info(f"Running check_{check}")
-            for field_name, message in getattr(self, f"check_{check}")(setting_data):
+            for field_name, message in getattr(self, f"check_{check}")(setting_data).items():
                 exception_msgs.setdefault(field_name, []).extend(message)
 
         for schema_info in self.__schemas:
@@ -522,14 +532,22 @@ class ModelSettingHandler(SettingHandler):
 
 
 def ModelSettingSchema(schema=None, json_path=None):
+    """ModelSettingSchema factory to produce an equivalent to the previous usage"""
     if schema is not None:
-        return ModelSettingHandler.make(model_setting_schema_json=schema, )
+        setting_schema = ModelSettingHandler.make(model_setting_schema_json=schema, )
     else:
-        return ModelSettingHandler.make(model_setting_schema_json=json_path, )
+        setting_schema = ModelSettingHandler.make(model_setting_schema_json=json_path, )
+    setting_schema.schema = setting_schema.get_schema('model_settings_schema')
+    setting_schema.get = setting_schema.load
+    return setting_schema
 
 
 def AnalysisSettingSchema(schema=None, json_path=None):
+    """AnalysisSettingSchema factory to produce an equivalent to the previous usage"""
     if schema is not None:
-        return AnalysisSettingHandler.make(model_setting_schema_json=schema, )
+        setting_schema = AnalysisSettingHandler.make(analysis_setting_schema_json=schema, )
     else:
-        return AnalysisSettingHandler.make(model_setting_schema_json=json_path, )
+        setting_schema = AnalysisSettingHandler.make(analysis_setting_schema_json=json_path, )
+    setting_schema.schema = setting_schema.get_schema('analysis_settings_schema')
+    setting_schema.get = setting_schema.load
+    return setting_schema
