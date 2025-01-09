@@ -301,7 +301,8 @@ class SettingHandler:
         if version is None:
             def is_obsolete(key_version): return True
         else:
-            def is_obsolete(key_version): return key_version <= version  # key is obsolete only if asked version is after new key has been introduced
+            def is_obsolete(key_version):
+                return key_version <= version  # key is obsolete only if asked version is after new key has been introduced
 
         updated_settings_data = settings_data.copy()
         for compatibility_profile in self.compatibility_profiles:
@@ -342,7 +343,6 @@ class SettingHandler:
                 settings_raw = json.load(f)
         except (IOError, TypeError, ValueError):
             raise OdsException(f'Invalid {self.settings_type} file or file path: {settings_fp}')
-
         settings_data = self.update_obsolete_keys(settings_raw, version)
         if validate:
             self.validate(settings_data, raise_error=raise_error)
@@ -529,25 +529,3 @@ class ModelSettingHandler(SettingHandler):
             handler.add_schema(computation_settings_json, name='computation_settings_schema', keys_path=['computation_settings'])
 
         return handler
-
-
-def ModelSettingSchema(schema=None, json_path=None):
-    """ModelSettingSchema factory to produce an equivalent to the previous usage"""
-    if schema is not None:
-        setting_schema = ModelSettingHandler.make(model_setting_schema_json=schema, )
-    else:
-        setting_schema = ModelSettingHandler.make(model_setting_schema_json=json_path, )
-    setting_schema.schema = setting_schema.get_schema('model_settings_schema')
-    setting_schema.get = setting_schema.load
-    return setting_schema
-
-
-def AnalysisSettingSchema(schema=None, json_path=None):
-    """AnalysisSettingSchema factory to produce an equivalent to the previous usage"""
-    if schema is not None:
-        setting_schema = AnalysisSettingHandler.make(analysis_setting_schema_json=schema, )
-    else:
-        setting_schema = AnalysisSettingHandler.make(analysis_setting_schema_json=json_path, )
-    setting_schema.schema = setting_schema.get_schema('analysis_settings_schema')
-    setting_schema.get = setting_schema.load
-    return setting_schema
