@@ -1,4 +1,5 @@
 {
+   "$schema": "https://json-schema.org/draft/2020-12/schema",
    "type":"object",
    "title":"Model settings",
    "description":"Specifies the model resource schema",
@@ -749,9 +750,9 @@
          "uniqueItems":false,
          "title":"Model setting options",
          "description":"Runtime settings available to a model",
-         "additionalProperties":false,
+         "unevaluatedProperties":false,
+         "allOf": [{"$ref": "#/definition/extensible_parameters"}],
          "properties":{
-            "allOf": [{"$ref": "#/definitions/extensible_parameters"}],
             "event_set":{
                "title":"Event set selector",
                "description":"The 'id' field from options is used as a file suffix' events_<id>.bin",
@@ -1615,10 +1616,8 @@
          "type":"object",
          "title":"Computation setting options",
          "description":"List of parameters that will be passed as arguments to the MDK",
-         "additionalProperties":false,
-         "properties":{
-            "allOf": [{"$ref": "#/definitions/extensible_parameters"}]
-         }
+         "unevaluatedProperties":false,
+         "allOf": [{"$ref": "#/definition/extensible_parameters"}]
       }
    },
    "required":[

@@ -1,3 +1,4 @@
+import copy
 from pathlib import Path
 import json
 import jsonschema
@@ -22,7 +23,7 @@ def json_dict_walk(json_dict, key_path):
     [1, 2, 3]
 
     >>> test_dict = {'a' : [{'b': 1}, {'b': [2, 3]}], 'c': [{'b': 4}, {'b': 5}]}
-    >>> list(json_dict_walk(test_dict, ['a']))
+    >>> list(json_dict_walk(test_dict, 'a'))
     [{'b': 1}, {'b': [2, 3]}]
 
     >>> test_dict = {'a' : [{'b': 1}, {'b': [2, 3]}], 'c': [{'b': 4}, {'b': 5}]}
@@ -60,6 +61,16 @@ class Settings:
 
     sub_settings are also merge in the same way.
     """
+    parameters_mapping = {
+        "string_parameters": ("type", "string"),
+        "list_parameters": ("type", "array"),
+        "dictionary_parameters": ("type", "object"),
+        "boolean_parameters": ("type", "boolean"),
+        "float_parameters": ("type", "number"),
+        "numeric_parameters": ("type", "number"),
+        "integer_parameters": ("type", "integer"),
+        "dropdown_parameters": ("oneOf", "options"),
+    }
 
     def __init__(self):
         self._settings = {}
@@ -141,6 +152,7 @@ class Settings:
 
     @classmethod
     def update_settings(cls, main_settings: dict, extra_settings: dict, user_role: list):
+        extra_settings = copy.deepcopy(extra_settings)
         for key, key_info in extra_settings.items():
             if cls.is_sub_settings(key, key_info):
                 cls.update_settings(main_settings.setdefault(key, {}), key_info, user_role)
@@ -172,29 +184,23 @@ class Settings:
         return settings_dict
 
     def to_json_schema(self, setting_names):
-        parameters_mapping = {
-            "string_parameters": ("type", "string"),
-            "list_parameters": ("type", "array"),
-            "dictionary_parameters": ("type", "object"),
-            "boolean_parameters": ("type", "boolean"),
-            "float_parameters": ("type", "number"),
-            "numeric_parameters": ("type", "number"),
-            "integer_parameters": ("type", "integer"),
-            "dropdown_parameters": ("oneOf", "options"),
-        }
-        settings_json_schema = {}
+        settings_json_schema_properties = {}
+        settings_json_schema = {"properties": settings_json_schema_properties}
         for setting_name in setting_names:
             setting_info = self._settings.get(setting_name)
             if setting_info is not None:
-                settings_properties = {
-                    "additionalProperties": False
+                settings_properties = {}
+                settings_object = {
+                    "additionalProperties": False,
+                    "type": "object",
+                    "properties": settings_properties
                 }
                 for param_key, param_info in setting_info.items():
                     if not self.is_key_info(param_info):
                         continue
 
                     property_info = {}
-                    schema_key, schema_val = parameters_mapping.get(param_info.get('parameter_type'), (None, None))
+                    schema_key, schema_val = self.parameters_mapping.get(param_info.pop('parameter_type', None), (None, None))
                     if schema_key == "type":
                         property_info[schema_key] = schema_val
                     elif schema_key == "oneOf":
@@ -214,7 +220,7 @@ class Settings:
                     settings_properties[param_key] = property_info
 
                 if settings_properties:
-                    settings_json_schema[setting_name] = settings_properties
+                    settings_json_schema_properties[setting_name] = settings_object
 
         return settings_json_schema
 
@@ -243,6 +249,16 @@ class SettingHandler:
         self.settings_type = settings_type
         self.logger = logger
 
+    def add_compatibility_profile(self, compatibility_profile, compatibility_path):
+        if compatibility_profile is not None:
+            if isinstance(compatibility_profile, (str, Path)):
+                with open(compatibility_profile, encoding="UTF-8") as f:
+                    compatibility_profile = jsonref.load(f)
+            if isinstance(compatibility_path, str):
+                compatibility_path = [compatibility_path]
+            compatibility_profile['compatibility_path'] = compatibility_path
+            self.compatibility_profiles.append(compatibility_profile)
+
     @property
     def info(self):
         """
@@ -254,7 +270,7 @@ class SettingHandler:
         """
         return self.__schemas
 
-    def add_schema(self, schema, name, *, keys_path=None, schema_fp=None):
+    def add_schema(self, schema, name, *, keys_path=None, schema_fp=None, convert_sub_settings=False):
         schema_info = {
             'name': name,
             'schema': schema,
@@ -263,6 +279,7 @@ class SettingHandler:
             schema_info['schema_fp'] = schema_fp
         if keys_path is not None:
             schema_info['key_path'] = keys_path
+        schema_info['convert_sub_settings'] = convert_sub_settings
         self.__schemas.append(schema_info)
 
     def get_schema(self, name):
@@ -286,7 +303,7 @@ class SettingHandler:
 
         self.add_schema(schema, schema_fp=schema_fp, **kwargs)
 
-    def update_obsolete_keys(self, settings_data, version=None):
+    def update_obsolete_keys(self, settings_data, version=None, sub_path=None, delete_all=False):
         """
         Updates the loaded JSON data to account for deprecated keys.
 
@@ -305,19 +322,42 @@ class SettingHandler:
                 return key_version <= version  # key is obsolete only if asked version is after new key has been introduced
 
         updated_settings_data = settings_data.copy()
-        for compatibility_profile in self.compatibility_profiles:
-            for obj in json_dict_walk(updated_settings_data, compatibility_profile.get("compatibility_path", [])):
+        # if sub_path is passed settings_data is actually the sub part
+        if sub_path is None:
+            compatibility_profiles = self.compatibility_profiles
+        else:
+            compatibility_profiles = [compatibility_profile for compatibility_profile in self.compatibility_profiles
+                                      if sub_path == compatibility_profile.get("compatibility_path", [])]
+
+        for compatibility_profile in compatibility_profiles:
+            if sub_path is None:
+                key_path = compatibility_profile.get("compatibility_path", [])
+            else:
+                key_path = []
+            for obj in json_dict_walk(updated_settings_data, key_path):
                 if not isinstance(obj, dict):
                     self.logger.info(f"In setting {self.settings_type}, "
                                      f"object at path {compatibility_profile.get('compatibility_path', [])} is not a dict or a list of dict")
                     continue
-                obsolete_keys = set(obj) & set(key for key, info in compatibility_profile.items()
-                                               if key != 'compatibility_path' and is_obsolete(info["from_ver"]))
+                all_obsolete_keys = set(key for key, info in compatibility_profile.items()
+                                        if key != 'compatibility_path' and is_obsolete(info["from_ver"]))
+                obsolete_keys = set(obj) & all_obsolete_keys
                 for key in obsolete_keys:
                     self.logger.info(f" '{key}' loaded as '{compatibility_profile[key]['updated_to']}'")
                     obj[compatibility_profile[key]['updated_to']] = obj[key]
-                    if compatibility_profile[key]['deleted']:
+                    if delete_all or compatibility_profile[key]['deleted']:
                         del obj[key]
+                for key in obj:
+                    if key in Settings.parameters_mapping:
+                        for param in list(obj[key]):
+                            if param['name'] in all_obsolete_keys:
+                                if delete_all or compatibility_profile[param['name']]['deleted']:
+                                    param['name'] = compatibility_profile[param['name']]['updated_to']
+                                else:
+                                    param = copy.deepcopy(param)
+                                    param['name'] = compatibility_profile[param['name']]['updated_to']
+                                    obj[key].append(param)
+
 
         return updated_settings_data
 
@@ -344,6 +384,7 @@ class SettingHandler:
         except (IOError, TypeError, ValueError):
             raise OdsException(f'Invalid {self.settings_type} file or file path: {settings_fp}')
         settings_data = self.update_obsolete_keys(settings_raw, version)
+
         if validate:
             self.validate(settings_data, raise_error=raise_error)
         return settings_data
@@ -370,7 +411,13 @@ class SettingHandler:
 
         for schema_info in self.__schemas:
             for json_sub_part in json_dict_walk(setting_data, schema_info.get('key_path', [])):
-                for err in jsonschema.Draft4Validator(schema_info['schema']).iter_errors(json_sub_part):
+                if schema_info['convert_sub_settings']:
+                    _setting = Settings()
+                    _setting.add_settings(json_sub_part)
+                    json_sub_part = _setting.get_settings()
+                    json_sub_part = self.update_obsolete_keys(json_sub_part, sub_path=schema_info.get('key_path', []), delete_all=True)
+
+                for err in jsonschema.Draft202012Validator(schema_info['schema']).iter_errors(json_sub_part):
                     if err.path:
                         field = '-'.join([str(e) for e in err.path])
                     elif err.schema_path:
@@ -424,19 +471,13 @@ class AnalysisSettingHandler(SettingHandler):
              analysis_setting_schema_json=None, model_setting_json=None, computation_settings_json=None,
              analysis_compatibility_profile=None, model_compatibility_profile=None, computation_compatibility_profile=None,
              **kwargs):
+
+        handler = cls(settings_type='analysis_settings', **kwargs)
         if analysis_compatibility_profile is None:
             analysis_compatibility_profile = cls.default_analysis_compatibility_profile
-        compatibility_profiles = [analysis_compatibility_profile]
-
-        if model_compatibility_profile is not None:
-            model_compatibility_profile['compatibility_path'] = ['model_settings']
-            compatibility_profiles.append(model_compatibility_profile)
-
-        if computation_compatibility_profile is not None:
-            computation_compatibility_profile['compatibility_path'] = ['computation_settings']
-            compatibility_profiles.append(computation_compatibility_profile)
-
-        handler = cls(settings_type='analysis_settings', compatibility_profiles=compatibility_profiles, **kwargs)
+        handler.add_compatibility_profile(analysis_compatibility_profile, [])
+        handler.add_compatibility_profile(model_compatibility_profile, 'model_settings')
+        handler.add_compatibility_profile(computation_compatibility_profile, 'computation_settings')
 
         if analysis_setting_schema_json is None:
             handler.add_schema_from_fp(cls.default_analysis_setting_schema_json, name='analysis_settings_schema')
@@ -456,15 +497,20 @@ class AnalysisSettingHandler(SettingHandler):
         if model_setting_json is None:
             pass
         else:
-            if isinstance(model_setting_json, (str, Path)):
-                with open(model_setting_json) as model_setting_file:
-                    model_setting_dict = json.load(model_setting_file)
-            else:
-                model_setting_dict = model_setting_json
+            model_setting_handler = ModelSettingHandler.make(
+                model_setting_schema_json={},
+                computation_settings_json=computation_settings_json,
+                model_compatibility_profile=model_compatibility_profile,
+                computation_compatibility_profile=computation_compatibility_profile,
+                **kwargs
+            )
 
+            if isinstance(model_setting_json, (str, Path)):
+                model_setting_dict = model_setting_handler.load(model_setting_json)
+            else:
+                model_setting_dict = model_setting_handler.update_obsolete_keys(model_setting_json)
             model_setting_induce_schema = Settings()
             model_setting_induce_schema.add_settings(model_setting_dict)
-
             handler.add_schema(model_setting_induce_schema.to_json_schema(model_setting_subpart_validation), name='model_setting_induce_schema')
 
         return handler
@@ -502,17 +548,9 @@ class ModelSettingHandler(SettingHandler):
              model_setting_schema_json=None, computation_settings_json=None,
              model_compatibility_profile=None, computation_compatibility_profile=None,
              **kwargs):
-        compatibility_profiles = []
-
-        if model_compatibility_profile is not None:
-            model_compatibility_profile['compatibility_path'] = ['model_settings']
-            compatibility_profiles.append(model_compatibility_profile)
-
-        if computation_compatibility_profile is not None:
-            computation_compatibility_profile['compatibility_path'] = ['computation_settings']
-            compatibility_profiles.append(computation_compatibility_profile)
-
-        handler = cls(settings_type='model_settings', compatibility_profiles=compatibility_profiles, **kwargs)
+        handler = cls(settings_type='model_settings', **kwargs)
+        handler.add_compatibility_profile(model_compatibility_profile, 'model_settings')
+        handler.add_compatibility_profile(computation_compatibility_profile, 'computation_settings')
 
         if model_setting_schema_json is None:
             handler.add_schema_from_fp(cls.default_model_setting_json, name='model_settings_schema')
@@ -524,8 +562,12 @@ class ModelSettingHandler(SettingHandler):
         if computation_settings_json is None:
             pass
         if isinstance(computation_settings_json, (str, Path)):
-            handler.add_schema_from_fp(computation_settings_json, name='computation_settings_schema', keys_path=['computation_settings'])
+            handler.add_schema_from_fp(computation_settings_json, name='computation_settings_schema',
+                                       keys_path=['computation_settings'],
+                                       convert_sub_settings=True)
         else:
-            handler.add_schema(computation_settings_json, name='computation_settings_schema', keys_path=['computation_settings'])
+            handler.add_schema(computation_settings_json, name='computation_settings_schema',
+                               keys_path=['computation_settings'],
+                               convert_sub_settings=True)
 
         return handler

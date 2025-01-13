@@ -1,0 +1,7 @@
+{
+    "test_float_old":{
+        "from_ver": "1.4.1",
+        "deleted": true,
+        "updated_to": "test_float_new"
+    }
+}

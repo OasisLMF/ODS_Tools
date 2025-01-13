@@ -1,6 +1,9 @@
 import unittest
-from ods_tools.oed.settings import Settings
+from pathlib import Path
+from ods_tools.oed import Settings, ModelSettingHandler, AnalysisSettingHandler
 
+
+test_data_dir = Path(Path(__file__).parent, "data")
 
 class MultiSettingsPriorityCheck(unittest.TestCase):
 
@@ -89,3 +92,69 @@ class MultiSettingsPriorityCheck(unittest.TestCase):
         assert dict_settings['num_process'] == 16
         assert dict_settings['model_settings']['setting_1'] == 6
         assert dict_settings['model_settings']['setting_2'] == 2
+
+class OEDSettingsChecks(unittest.TestCase):
+    def test_model_settings(self):
+        model_setting_handler = ModelSettingHandler.make(
+            computation_settings_json=Path(test_data_dir, 'computation_settings_schema.json'),
+            model_compatibility_profile=Path(test_data_dir, 'model_compatibility_profile.json'),
+            computation_compatibility_profile=Path(test_data_dir, 'config_compatibility_profile.json')
+        )
+        # correct settings load, no error expected
+        setting_data = model_setting_handler.load(Path(test_data_dir, "model_settings.json"))
+
+        # check loaded valid data is still valid
+        model_setting_handler.validate(setting_data)
+
+        # incorrect settings validation fail
+        setting_data["model_settings"]["bad_float"] = 5.0
+        setting_data["computation_settings"]["float_parameters"] = [
+          {
+            "name": "bad_param",
+            "desc": "test for param renaming",
+            "tooltip": "raise an error",
+            "default": 0.2,
+            "min": 0.0,
+            "max": 100000.0
+          }
+        ]
+        with self.assertRaises(Exception) as context:
+            model_setting_handler.validate(setting_data)
+
+        self.assertTrue("'bad_float' was unexpected" in str(context.exception))
+        self.assertTrue("'bad_param' was unexpected" in str(context.exception))
+
+    def test_analysis_settings(self):
+        analysis_settings_handler = AnalysisSettingHandler.make(
+            model_setting_json=Path(test_data_dir, "model_settings.json"),
+            computation_settings_json=Path(test_data_dir, 'computation_settings_schema.json'),
+            model_compatibility_profile=Path(test_data_dir, 'model_compatibility_profile.json'),
+            computation_compatibility_profile=Path(test_data_dir, 'config_compatibility_profile.json'),
+        )
+
+        # correct settings load, no error expected
+        setting_data = analysis_settings_handler.load(Path(test_data_dir, "analysis_settings.json"))
+
+        # check loaded valid data is still valid
+        analysis_settings_handler.validate(setting_data)
+
+        # incorrect settings validation fail
+        setting_data["model_settings"]["bad_float"] = 5.0
+        setting_data["computation_settings"]["bad_param"] = 0.2
+        setting_data["gul_summaries"].append({
+            "aalcalc": True,
+            "eltcalc": True,
+            "id": 1,
+            "lec_output": True,
+            "leccalc": {
+                "full_uncertainty_aep": True,
+                "full_uncertainty_oep": True,
+                "return_period_file": True
+            }
+        })
+        with self.assertRaises(Exception) as context:
+            analysis_settings_handler.validate(setting_data)
+
+        self.assertTrue("'bad_float' was unexpected" in str(context.exception))
+        self.assertTrue("'bad_param' was unexpected" in str(context.exception))
+        self.assertTrue("id 1 is duplicated" in str(context.exception))
