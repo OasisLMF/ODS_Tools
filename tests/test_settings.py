@@ -5,6 +5,7 @@ from ods_tools.oed import Settings, ModelSettingHandler, AnalysisSettingHandler
 
 test_data_dir = Path(Path(__file__).parent, "data")
 
+
 class MultiSettingsPriorityCheck(unittest.TestCase):
 
     def setUp(self):
@@ -93,6 +94,7 @@ class MultiSettingsPriorityCheck(unittest.TestCase):
         assert dict_settings['model_settings']['setting_1'] == 6
         assert dict_settings['model_settings']['setting_2'] == 2
 
+
 class OEDSettingsChecks(unittest.TestCase):
     def test_model_settings(self):
         model_setting_handler = ModelSettingHandler.make(
@@ -109,14 +111,14 @@ class OEDSettingsChecks(unittest.TestCase):
         # incorrect settings validation fail
         setting_data["model_settings"]["bad_float"] = 5.0
         setting_data["computation_settings"]["float_parameters"] = [
-          {
-            "name": "bad_param",
-            "desc": "test for param renaming",
-            "tooltip": "raise an error",
-            "default": 0.2,
-            "min": 0.0,
-            "max": 100000.0
-          }
+            {
+                "name": "bad_param",
+                "desc": "test for param renaming",
+                "tooltip": "raise an error",
+                "default": 0.2,
+                "min": 0.0,
+                "max": 100000.0
+            }
         ]
         with self.assertRaises(Exception) as context:
             model_setting_handler.validate(setting_data)

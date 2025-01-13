@@ -358,7 +358,6 @@ class SettingHandler:
                                     param['name'] = compatibility_profile[param['name']]['updated_to']
                                     obj[key].append(param)
 
-
         return updated_settings_data
 
     def load(self, settings_fp, version=None, validate=True, raise_error=True):
