@@ -14,5 +14,7 @@
                 "return_period_file": true
             }
         }],
-  "computation_settings": {}
+  "computation_settings": {
+    "gulmc": true
+  }
 }

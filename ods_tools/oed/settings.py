@@ -560,7 +560,7 @@ class ModelSettingHandler(SettingHandler):
 
         if computation_settings_json is None:
             pass
-        if isinstance(computation_settings_json, (str, Path)):
+        elif isinstance(computation_settings_json, (str, Path)):
             handler.add_schema_from_fp(computation_settings_json, name='computation_settings_schema',
                                        keys_path=['computation_settings'],
                                        convert_sub_settings=True)
