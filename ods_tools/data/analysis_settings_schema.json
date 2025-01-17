@@ -533,7 +533,7 @@
             "type": "boolean",
             "title": "Apply Oasis Disaggregation",
             "description": "Set whether to split terms and conditions for aggregate exposure (optional)",
-            "default": false
+            "default": true
         },
         "pla_secondary_factor": {
             "type": "number",

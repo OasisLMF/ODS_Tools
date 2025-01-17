@@ -14,4 +14,4 @@ jobs:
     secrets: inherit
     with:
       ods_branch: ${{ github.ref }}
-      platform_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' ||  inputs.platform_branch }}
+      platform_branch: ${{ github.event_name != 'workflow_dispatch' && 'stable/2.3.x' ||  inputs.platform_branch }}
