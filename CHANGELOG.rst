@@ -1,6 +1,12 @@
 ODS_Tools Changelog
 ===================
 
+`3.2.10`_
+ ---------
+* [#167](https://github.com/OasisLMF/ODS_Tools/pull/169) - Fix default for do_disaggregation in schema 
+* [#172](https://github.com/OasisLMF/ODS_Tools/pull/172) - CI Fix - branches renamed in OED repo
+.. _`3.2.10`:  https://github.com/OasisLMF/ODS_Tools/compare/3.2.9...3.2.10
+
 `3.2.9`_
  ---------
 * [#148](https://github.com/OasisLMF/ODS_Tools/pull/162) - PLA options to be added into MS/AS schemas explicitly
