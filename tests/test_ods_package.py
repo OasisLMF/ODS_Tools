@@ -553,7 +553,7 @@ class OdsPackageTests(TestCase):
             assert 'FlexiLocdefault_rename' in oed_saved.location.dataframe.columns
 
     def test_setting_schema_analysis__is_valid(self):
-        file_name = 'data/analysis_settings.json'
+        file_name = 'analysis_settings.json'
         file_url = f'https://raw.githubusercontent.com/OasisLMF/OasisPiWind/{piwind_branch}/{file_name}'
         ods_analysis_setting = AnalysisSettingSchema()
         assert (ods_analysis_setting.schema is not None)
@@ -563,10 +563,10 @@ class OdsPackageTests(TestCase):
             abs_dir.mkdir()
 
             with urllib.request.urlopen(file_url) as response, \
-                    open(pathlib.Path(tmp_dir, 'data/analysis_settings.json'), 'wb') as out_file:
+                    open(pathlib.Path(tmp_dir, 'analysis_settings.json'), 'wb') as out_file:
                 shutil.copyfileobj(response, out_file)
 
-            settings_fp = pathlib.Path(tmp_dir, 'data/analysis_settings.json')
+            settings_fp = pathlib.Path(tmp_dir, 'analysis_settings.json')
             settings_dict = ods_analysis_setting.load(settings_fp)
             valid, errors = ods_analysis_setting.validate(settings_dict)
 
@@ -575,7 +575,7 @@ class OdsPackageTests(TestCase):
             self.assertEqual(settings_dict, ods_analysis_setting.get(settings_fp))
 
     def test_setting_schema_analysis__is_invalid(self):
-        file_name = 'data/analysis_settings.json'
+        file_name = 'analysis_settings.json'
         file_url = f'https://raw.githubusercontent.com/OasisLMF/OasisPiWind/{piwind_branch}/{file_name}'
         ods_analysis_setting = AnalysisSettingSchema()
         assert (ods_analysis_setting.schema is not None)
@@ -585,10 +585,10 @@ class OdsPackageTests(TestCase):
             abs_dir.mkdir()
 
             with urllib.request.urlopen(file_url) as response, \
-                    open(pathlib.Path(tmp_dir, 'data/analysis_settings.json'), 'wb') as out_file:
+                    open(pathlib.Path(tmp_dir, 'analysis_settings.json'), 'wb') as out_file:
                 shutil.copyfileobj(response, out_file)
 
-            settings_fp = pathlib.Path(tmp_dir, 'data/analysis_settings.json')
+            settings_fp = pathlib.Path(tmp_dir, 'analysis_settings.json')
             settings_dict = ods_analysis_setting.load(settings_fp)
 
             # Insert errors
@@ -599,12 +599,9 @@ class OdsPackageTests(TestCase):
 
             valid, errors = ods_analysis_setting.validate(settings_dict, raise_error=False)
             self.assertFalse(valid)
-            self.assertEqual({
-                'ri_summaries': ['id 1 is duplicated'],
-                'analysis_settings_schema gul_output': ["'True' is not of type 'boolean'"],
-                'analysis_settings_schema required': ["'gul_summaries' is a required property"],
-            }, errors)
-
+            self.assertEqual({'gul_output': ["'True' is not of type 'boolean'"],
+                              'required': ["'gul_summaries' is a required property"],
+                              'ri_summaries': ['id 1 is duplicated']}, errors)
             with self.assertRaises(OdsException):
                 ods_analysis_setting.validate(settings_dict)
 
@@ -619,10 +616,10 @@ class OdsPackageTests(TestCase):
             abs_dir.mkdir()
 
             with urllib.request.urlopen(file_url) as response, \
-                    open(pathlib.Path(tmp_dir, 'data/model_settings.json'), 'wb') as out_file:
+                    open(pathlib.Path(tmp_dir, 'model_settings.json'), 'wb') as out_file:
                 shutil.copyfileobj(response, out_file)
 
-            settings_fp = pathlib.Path(tmp_dir, 'data/model_settings.json')
+            settings_fp = pathlib.Path(tmp_dir, 'model_settings.json')
             settings_dict = ods_model_setting.load(settings_fp)
             valid, errors = ods_model_setting.validate(settings_dict)
 
@@ -641,10 +638,10 @@ class OdsPackageTests(TestCase):
             abs_dir.mkdir()
 
             with urllib.request.urlopen(file_url) as response, \
-                    open(pathlib.Path(tmp_dir, 'data/model_settings.json'), 'wb') as out_file:
+                    open(pathlib.Path(tmp_dir, 'model_settings.json'), 'wb') as out_file:
                 shutil.copyfileobj(response, out_file)
 
-            settings_fp = pathlib.Path(tmp_dir, 'data/model_settings.json')
+            settings_fp = pathlib.Path(tmp_dir, 'model_settings.json')
             settings_dict = ods_model_setting.load(settings_fp)
 
             # Insert errors
@@ -655,8 +652,8 @@ class OdsPackageTests(TestCase):
             valid, errors = ods_model_setting.validate(settings_dict, raise_error=False)
             self.assertFalse(valid)
             self.assertEqual({
-                'model_settings_schema additionalProperties': ["Additional properties are not allowed ('model_setting', 'unknown_key' were unexpected)"],
-                'model_settings_schema required': ["'model_settings' is a required property"]
+                'additionalProperties': ["Additional properties are not allowed ('model_setting', 'unknown_key' were unexpected)"],
+                'required': ["'model_settings' is a required property"]
             }, errors)
 
             with self.assertRaises(OdsException):
