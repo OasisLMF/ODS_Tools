@@ -135,35 +135,35 @@ class OdsPackageTests(TestCase):
             assert OedExposure(**config).class_of_business == ClassOfBusiness.prop
 
     def test_oed_cyber_example(self):
-        oed_example_url = "https://raw.githubusercontent.com/OasisLMF/ODS_OpenExposureData/refs/heads/release/4.0.0/Examples"
+        oed_example_url = "https://raw.githubusercontent.com/OasisLMF/ODS_OpenExposureData/refs/heads/main/Examples"
         config = {
             'account': oed_example_url + '/cyber_account.csv',
-            'oed_schema_info': "/home/sstruzik/test/cyber_model/V2/OpenExposureData_Spec.json",
+            'oed_schema_info': '/home/sstruzik/tests/OED_V4/OpenExposureData_Spec.json',
             'check_oed': True,
             'use_field': True,
         }
         assert OedExposure(**config).class_of_business == ClassOfBusiness.cyb
 
     def test_oed_marinecargo_example(self):
-        oed_example_url = "https://raw.githubusercontent.com/OasisLMF/ODS_OpenExposureData/refs/heads/release/4.0.0/Examples"
+        oed_example_url = "https://raw.githubusercontent.com/OasisLMF/ODS_OpenExposureData/refs/heads/main/Examples"
         config = {
             'location': oed_example_url + '/marinecargo_location.csv',
             'account': oed_example_url + '/marinecargo_account.csv',
-            'oed_schema_info': "/home/sstruzik/test/cyber_model/V2/OpenExposureData_Spec.json",
+            'oed_schema_info': '/home/sstruzik/tests/OED_V4/OpenExposureData_Spec.json',
             'check_oed': True,
             'use_field': True,
         }
         assert OedExposure(**config).class_of_business in [ClassOfBusiness.prop, ClassOfBusiness.mar]
 
     def test_oed_liability_example(self):
-        oed_example_url = "https://raw.githubusercontent.com/OasisLMF/ODS_OpenExposureData/refs/heads/release/4.0.0/Examples"
+        oed_example_url = "https://raw.githubusercontent.com/OasisLMF/ODS_OpenExposureData/refs/heads/main/Examples"
         config = {
             'account': oed_example_url + '/liability_account.csv',
-            'oed_schema_info': "/home/sstruzik/test/cyber_model/V2/OpenExposureData_Spec.json",
+            'oed_schema_info': '/home/sstruzik/tests/OED_V4/OpenExposureData_Spec.json',
             'check_oed': True,
             'use_field': True,
         }
-        assert OedExposure(**config).class_of_business == ClassOfBusiness.cyb
+        assert OedExposure(**config).class_of_business == ClassOfBusiness.liabs
 
 
 
