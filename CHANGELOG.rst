@@ -1,6 +1,20 @@
 ODS_Tools Changelog
 ===================
 
+`3.2.9`_
+ ---------
+* [#148](https://github.com/OasisLMF/ODS_Tools/pull/162) - PLA options to be added into MS/AS schemas explicitly
+* [#151](https://github.com/OasisLMF/ODS_Tools/pull/165) - Package does not include the validation files
+.. _`3.2.9`:  https://github.com/OasisLMF/ODS_Tools/compare/3.2.8...3.2.9
+
+`3.2.8`_
+ ---------
+* [#144](https://github.com/OasisLMF/ODS_Tools/pull/144) - Release 3.2.7
+* [#139](https://github.com/OasisLMF/ODS_Tools/pull/138) - Look for validation files in custom paths
+* [#147](https://github.com/OasisLMF/ODS_Tools/pull/147) - fix fill_empty method for field that end in XX or YYY
+* [#157](https://github.com/OasisLMF/ODS_Tools/pull/157) - Both correlation_settings fields are marked as "Legacy" in desc
+.. _`3.2.8`:  https://github.com/OasisLMF/ODS_Tools/compare/3.2.7...3.2.8
+
 `3.2.7`_
  ---------
 * [#131](https://github.com/OasisLMF/ODS_Tools/pull/131) - Release 3.2.6 (July 31) 

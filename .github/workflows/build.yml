@@ -31,7 +31,7 @@ on:
 jobs:
   oed_spec:
     if: inputs.oed_spec_branch != ''
-    uses:  OasisLMF/ODS_OpenExposureData/.github/workflows/build.yml@develop
+    uses:  OasisLMF/ODS_OpenExposureData/.github/workflows/build.yml@main
     secrets: inherit
     with:
       ods_branch: ${{ inputs.oed_spec_branch }}
