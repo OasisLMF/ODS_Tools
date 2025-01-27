@@ -96,7 +96,7 @@ class Validator:
         for coherence_rule in coherence_rules:
             r_sources = []
             if coherence_rule["type"] == "CR":
-                c_sources = [getattr(self.exposure, source) for source in coherence_rule[ "c_sources"]]
+                c_sources = [getattr(self.exposure, source) for source in coherence_rule["c_sources"]]
                 if any(c_sources):
                     if not all(c_sources):
                         invalid_data.append(
@@ -109,7 +109,7 @@ class Validator:
 
             if not all(r_sources):
                 invalid_data.append({'name': coherence_rule['name'], 'source': None,
-                                 'msg': f"Exposure needs {coherence_rule['r_sources']}, got={r_sources}"})
+                                     'msg': f"Exposure needs {coherence_rule['r_sources']}, got={r_sources}"})
 
         return invalid_data
 
@@ -132,7 +132,7 @@ class Validator:
             for field_info in input_fields.values():
                 if field_info['Input Field Name'] not in field_to_columns:
                     requ_field_ref = CLASS_OF_BUSINESSES[self.exposure.class_of_business]['field_status_name']
-                    if requ_field_ref not in field_info: # OED v3 only support PROP and used 'Required Field'
+                    if requ_field_ref not in field_info:  # OED v3 only support PROP and used 'Required Field'
                         requ_field_ref = 'Required Field'
                     if field_info.get(requ_field_ref) == 'R':
                         invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,

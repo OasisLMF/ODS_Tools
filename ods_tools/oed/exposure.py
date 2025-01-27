@@ -143,7 +143,6 @@ class OedExposure:
         if check_oed:
             self.check()
 
-
     def get_class_of_business(self):
         any_field_info = next(iter(self.get_input_fields('null').values()))
         if 'Required Field' in any_field_info:
@@ -164,7 +163,7 @@ class OedExposure:
                         if field_info['Input Field Name'] in present_field:
                             exclusion_messages.setdefault(class_of_business, {}).setdefault('present', []).append(field_info['Input Field Name'])
 
-        final_cobs =  class_of_businesses.difference(exclusion_messages)
+        final_cobs = class_of_businesses.difference(exclusion_messages)
         if len(final_cobs) == 1:
             final_cobs = final_cobs.pop()
             logger.info(f"detected class of business is {final_cobs}")
@@ -304,11 +303,10 @@ class OedExposure:
             if oed_source:
                 yield oed_source
 
-    def get_subject_at_risk_source(self)->OedSource:
+    def get_subject_at_risk_source(self) -> OedSource:
         if self.class_of_business is None:
             self.class_of_business = self.get_class_of_business()
         return getattr(self, CLASS_OF_BUSINESSES[self.class_of_business]['subject_at_risk_source'])
-
 
     def save_config(self, filepath):
         """

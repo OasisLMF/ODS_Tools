@@ -127,7 +127,7 @@ OED_IDENTIFIER_FIELDS = {
     'ReinsScope': ['ReinsNumber', 'PortNumber', 'AccNumber', 'LocNumber']
 }
 
-#class of businesses
+
 class ClassOfBusiness(enum.Enum):
     prop = 'PROP'
     mar = 'MAR'
