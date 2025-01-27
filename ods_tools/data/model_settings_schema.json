@@ -1695,7 +1695,7 @@
       "computation_settings": {
          "type":"object",
          "title":"Computation setting options",
-         "description":"List of parameters that will be passed as arguments to the MDK",
+         "description":"List of parameters that will be passed as arguments to the MDK, options are dependent on the package version. To see these look at releases 2.4.0 and up (https://github.com/OasisLMF/OasisLMF/releases)",
          "unevaluatedProperties":false,
          "allOf": [{"$ref": "#/definition/extensible_parameters"}]
       }
