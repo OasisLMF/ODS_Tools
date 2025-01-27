@@ -128,7 +128,7 @@ class OdsPackageTests(TestCase):
                 'account': base_url + '/SourceAccOEDPiWind.csv',
                 'ri_info': base_url + '/SourceReinsInfoOEDPiWind.csv',
                 'ri_scope': base_url + '/SourceReinsScopeOEDPiWind.csv',
-                'oed_schema_info' : os.path.join(tmp_run_dir, 'OpenExposureData_Spec.json'),
+                'oed_schema_info': os.path.join(tmp_run_dir, 'OpenExposureData_Spec.json'),
                 'check_oed': True,
                 'use_field': True,
             }
@@ -164,8 +164,6 @@ class OdsPackageTests(TestCase):
             'use_field': True,
         }
         assert OedExposure(**config).class_of_business == ClassOfBusiness.liabs
-
-
 
     def test_categorical_with_default(self):
         # UseReinsDates is a string column with a non null default, check default setting works
