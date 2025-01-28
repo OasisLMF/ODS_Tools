@@ -1,0 +1,20 @@
+{
+  "module_supplier_id": "test_id",
+  "model_name_id": "test_id",
+  "model_settings": {"test_float_old": 0.3},
+  "gul_output": true,
+  "gul_summaries": [{
+            "aalcalc": true,
+            "eltcalc": true,
+            "id": 1,
+            "lec_output": true,
+            "leccalc": {
+                "full_uncertainty_aep": true,
+                "full_uncertainty_oep": true,
+                "return_period_file": true
+            }
+        }],
+  "computation_settings": {
+    "gulmc": true
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "model_settings": {
+    "pla": true,
+    "float_parameters": [
+      {
+        "name": "test_float_old",
+        "desc": "test for param renaming",
+        "tooltip": "this should change to test_float_new",
+        "default": 0.2,
+        "min": 0.0,
+        "max": 100000.0
+      }
+    ]
+  },
+  "lookup_settings": {},
+  "computation_settings": {
+    "string_parameters": [
+      {
+        "name": "lookup_package_dir",
+        "desc": "test for param renaming",
+        "tooltip": "this should change to test_float_new",
+        "default": "fake_path"
+      }
+    ]
+  }
+}
