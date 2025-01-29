@@ -138,8 +138,7 @@ class OdsPackageTests(TestCase):
         oed_example_url = "https://raw.githubusercontent.com/OasisLMF/ODS_OpenExposureData/refs/heads/main/Examples"
         config = {
             'account': oed_example_url + '/cyber_account.csv',
-            'oed_schema_info': '/home/sstruzik/tests/OED_V4/OpenExposureData_Spec.json',
-            'check_oed': True,
+            'check_oed': True,  # issue with current marine exemple set to true and remove the correction when fixed
             'use_field': True,
         }
         assert OedExposure(**config).class_of_business == ClassOfBusiness.cyb
@@ -149,17 +148,21 @@ class OdsPackageTests(TestCase):
         config = {
             'location': oed_example_url + '/marinecargo_location.csv',
             'account': oed_example_url + '/marinecargo_account.csv',
-            'oed_schema_info': '/home/sstruzik/tests/OED_V4/OpenExposureData_Spec.json',
-            'check_oed': True,
+            'check_oed': False,  # issue with current marine exemple set to true and remove the correction when fixed
             'use_field': True,
         }
+        ## marine example manual fixup ###
+        exposure = OedExposure(**config)
+        exposure.account.dataframe["PolDedType6All"] = 1
+        config['account'] = exposure.account.dataframe
+        config['check_oed'] = True
+        #####
         assert OedExposure(**config).class_of_business in [ClassOfBusiness.prop, ClassOfBusiness.mar]
 
     def test_oed_liability_example(self):
         oed_example_url = "https://raw.githubusercontent.com/OasisLMF/ODS_OpenExposureData/refs/heads/main/Examples"
         config = {
             'account': oed_example_url + '/liability_account.csv',
-            'oed_schema_info': '/home/sstruzik/tests/OED_V4/OpenExposureData_Spec.json',
             'check_oed': True,
             'use_field': True,
         }

@@ -249,7 +249,6 @@ class OedSchema:
         Returns:
             True if value is in one of the range
         """
-
         if value in BLANK_VALUES:
             return allow_blanks
         for valid_range in valid_ranges:
