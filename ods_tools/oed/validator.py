@@ -7,7 +7,7 @@ from pathlib import Path
 from collections.abc import Iterable
 
 from .common import (OdsException, OED_PERIL_COLUMNS, OED_IDENTIFIER_FIELDS, DEFAULT_VALIDATION_CONFIG, CLASS_OF_BUSINESSES,
-                     VALIDATOR_ON_ERROR_ACTION, BLANK_VALUES, is_empty, ClassOfBusiness)
+                     VALIDATOR_ON_ERROR_ACTION, BLANK_VALUES, is_empty)
 from .oed_schema import OedSchema
 
 logger = logging.getLogger(__name__)
