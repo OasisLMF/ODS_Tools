@@ -655,7 +655,6 @@ class OdsPackageTests(TestCase):
             self.assertEqual({'gul_output': ["'True' is not of type 'boolean'"],
                               'required': ["'gul_summaries' is a required property"],
                               'ri_summaries': ['id 1 is duplicated']}, errors)
-
             with self.assertRaises(OdsException):
                 ods_analysis_setting.validate(settings_dict)
 
