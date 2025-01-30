@@ -1,6 +1,8 @@
 """
 common static variable and ods_tools exceptions
 """
+import enum
+
 from urllib.parse import urlparse
 from pathlib import Path
 import numpy as np
@@ -125,9 +127,60 @@ OED_IDENTIFIER_FIELDS = {
     'ReinsScope': ['ReinsNumber', 'PortNumber', 'AccNumber', 'LocNumber']
 }
 
+
+class ClassOfBusiness(enum.Enum):
+    prop = 'PROP'
+    mar = 'MAR'
+    cyb = 'CYB'
+    liabs = 'LIABS'
+
+
+CLASS_OF_BUSINESSES = {
+    ClassOfBusiness.prop: {
+        'name': 'Property',
+        'field_status_name': 'Property field status',
+        'subject_at_risk_source': 'location',
+        'subject_at_risk_id_fields': ['PortNumber', 'AccNumber', 'LocNumber'],
+        'coherence_rules': [
+            {"name": "location", "type": "R", "r_sources": ["location"], },
+            {"name": "reinsurance", "type": "CR", "c_sources": ["ri_info", "ri_scope"], "r_sources": ["account"]}
+        ],
+    },
+    ClassOfBusiness.mar: {
+        'name': 'Marine Cargo',
+        'field_status_name': 'Marine Cargo field status',
+        'subject_at_risk_source': 'location',
+        'subject_at_risk_id_fields': ['PortNumber', 'AccNumber', 'LocNumber'],
+        'coherence_rules': [
+            {"name": "location", "type": "R", "r_sources": ["location"], },
+            {"name": "reinsurance", "type": "CR", "c_sources": ["ri_info", "ri_scope"], "r_sources": ["account"]}
+        ],
+    },
+    ClassOfBusiness.cyb: {
+        'name': 'Cyber',
+        'field_status_name': 'Cyber field status',
+        'subject_at_risk_source': 'account',
+        'subject_at_risk_id_fields': ['PortNumber', 'AccNumber'],
+        'coherence_rules': [
+            {"name": "account", "type": "R", "r_sources": ["account"]},
+            {"name": "reinsurance", "type": "CR", "c_sources": ["ri_info", "ri_scope"]}
+        ]
+    },
+    ClassOfBusiness.liabs: {
+        'name': 'Liability',
+        'field_status_name': 'Liability field status',
+        'subject_at_risk_source': 'account',
+        'subject_at_risk_id_fields': ['PortNumber', 'AccNumber'],
+        'coherence_rules': [
+            {"name": "account", "type": "R", "r_sources": ["account"]},
+            {"name": "reinsurance", "type": "CR", "c_sources": ["ri_info", "ri_scope"]}
+        ]
+    },
+}
+
 VALIDATOR_ON_ERROR_ACTION = {'raise', 'log', 'ignore', 'return'}
 DEFAULT_VALIDATION_CONFIG = [
-    {'name': 'source_coherence', 'on_error': 'raise'},
+    {'name': 'source_coherence', 'on_error': 'log'},
     {'name': 'required_fields', 'on_error': 'raise'},
     {'name': 'unknown_column', 'on_error': 'raise'},
     {'name': 'valid_values', 'on_error': 'raise'},
