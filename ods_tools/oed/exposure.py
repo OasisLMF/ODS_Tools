@@ -14,7 +14,8 @@ from pathlib import Path
 
 from .common import (PANDAS_COMPRESSION_MAP,
                      USUAL_FILE_NAME, OED_TYPE_TO_NAME,
-                     UnknownColumnSaveOption)
+                     UnknownColumnSaveOption, CLASS_OF_BUSINESSES, OdsException,
+                     ClassOfBusiness)
 from .oed_schema import OedSchema
 from .source import OedSource
 from .validator import Validator
@@ -30,7 +31,7 @@ class OedExposure:
     """
     DEFAULT_EXPOSURE_CONFIG_NAME = 'exposure_info.json'
 
-    def __init__(self,
+    def __init__(self, *,
                  location=None,
                  account=None,
                  ri_info=None,
@@ -38,6 +39,7 @@ class OedExposure:
                  oed_schema_info=None,
                  currency_conversion=None,
                  reporting_currency=None,
+                 class_of_business=None,
                  check_oed=False,
                  use_field=False,
                  validation_config=None,
@@ -129,6 +131,8 @@ class OedExposure:
 
         self.reporting_currency = reporting_currency
 
+        self.class_of_business = class_of_business
+
         self.validation_config = validation_config
 
         if not working_dir:
@@ -138,6 +142,49 @@ class OedExposure:
 
         if check_oed:
             self.check()
+
+    def get_class_of_business(self):
+        any_field_info = next(iter(self.get_input_fields('null').values()))
+        if 'Required Field' in any_field_info:
+            logger.debug(f"OED schema version < 4.0.0, only support {ClassOfBusiness.prop}")
+            return ClassOfBusiness.prop
+        class_of_businesses = set(CLASS_OF_BUSINESSES)
+        exclusion_messages = {}
+
+        for oed_source in self.get_oed_sources():
+            present_field = set(field_info['Input Field Name'] for field_info in oed_source.get_column_to_field().values())
+            for field_info in self.get_input_fields(oed_source.oed_type).values():
+                for class_of_business in class_of_businesses:
+                    cob_field_status = CLASS_OF_BUSINESSES[class_of_business]['field_status_name']
+                    if field_info.get(cob_field_status) == 'R':
+                        if field_info['Input Field Name'] not in present_field:
+                            exclusion_messages.setdefault(class_of_business, {}).setdefault('missing', []).append(field_info['Input Field Name'])
+                    elif field_info.get(cob_field_status) == 'n/a':
+                        if field_info['Input Field Name'] in present_field:
+                            exclusion_messages.setdefault(class_of_business, {}).setdefault('present', []).append(field_info['Input Field Name'])
+
+        final_cobs = class_of_businesses.difference(exclusion_messages)
+        if len(final_cobs) == 1:
+            final_cobs = final_cobs.pop()
+            logger.info(f"detected class of business is {final_cobs}")
+            return final_cobs
+        elif len(final_cobs) == 0:
+            error_msg = "\n".join(f"{class_of_business}:"
+                                  + ("\n    " + ", ".join(messages['missing']) + " missing" if messages.get('missing') else "")
+                                  + ("\n    " + ", ".join(messages['present']) + " present" if messages.get('present') else "")
+                                  for class_of_business, messages in exclusion_messages.items())
+            raise OdsException(error_msg)
+        elif len(final_cobs) == 2 and len(final_cobs.difference({ClassOfBusiness.prop, ClassOfBusiness.mar})) == 0:
+            # Marine and Property have mostly the same column, default to Property if undetermined
+            return ClassOfBusiness.prop
+        else:
+            raise OdsException(f"could not determine the COB of the exposure between those {final_cobs}")
+
+    @property
+    def class_of_business_info(self):
+        if self.class_of_business is None:
+            self.class_of_business = self.get_class_of_business()
+        return CLASS_OF_BUSINESSES[self.class_of_business]
 
     @classmethod
     def resolve_oed_info(cls, oed_info, df_engine):
@@ -208,7 +255,7 @@ class OedExposure:
             kwargs['working_dir'] = oed_dir
 
             missing_files = [file for file, found in files_found.items() if not found]
-            if missing_files:
+            if missing_files and False:
                 raise FileNotFoundError(f"Files not found in current path ({oed_dir}): {', '.join(missing_files)}")
 
             return cls(**{**config, **kwargs})
@@ -255,6 +302,11 @@ class OedExposure:
             oed_source: OedSource = getattr(self, oed_name)
             if oed_source:
                 yield oed_source
+
+    def get_subject_at_risk_source(self) -> OedSource:
+        if self.class_of_business is None:
+            self.class_of_business = self.get_class_of_business()
+        return getattr(self, CLASS_OF_BUSINESSES[self.class_of_business]['subject_at_risk_source'])
 
     def save_config(self, filepath):
         """
@@ -327,6 +379,9 @@ class OedExposure:
             OdsException if some invalid data is found
 
         """
+        if self.class_of_business is None:
+            self.class_of_business = self.get_class_of_business()
+
         if validation_config is None:
             validation_config = self.validation_config
         validator = Validator(self)
