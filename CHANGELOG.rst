@@ -1,6 +1,8 @@
 ODS_Tools Changelog
 ===================
 
+.. _`4.0.0`:  https://github.com/OasisLMF/ODS_Tools/compare/3.2.10...4.0.0
+
 `3.2.9`_
  ---------
 * [#148](https://github.com/OasisLMF/ODS_Tools/pull/162) - PLA options to be added into MS/AS schemas explicitly
