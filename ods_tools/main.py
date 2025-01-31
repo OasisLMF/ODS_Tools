@@ -46,7 +46,7 @@ def check(**kwargs):
     """run the check command on Exposure"""
     logger = logging.getLogger(__name__)
     args_set = {k for k, v in kwargs.items() if v is not None}
-    args_exp = set(['location', 'account', 'ri_info', 'ri_scope'])
+    args_exp = set(['location', 'account', 'ri_info', 'ri_scope', 'oed_dir'])
 
     try:
         if args_exp.intersection(set(args_set)):

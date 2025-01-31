@@ -19,7 +19,8 @@ import tempfile
 sys.path.append(sys.path.pop(0))
 
 from ods_tools.main import convert
-from ods_tools.oed import OedExposure, OedSchema, OdsException, ModelSettingSchema, AnalysisSettingSchema, OED_TYPE_TO_NAME, UnknownColumnSaveOption
+from ods_tools.oed import (OedExposure, OedSchema, OdsException, ModelSettingSchema, AnalysisSettingSchema, OED_TYPE_TO_NAME, UnknownColumnSaveOption,
+                           ClassOfBusiness)
 from ods_tools.odtf.controller import transform_format
 
 logger = logging.getLogger(__file__)
@@ -114,6 +115,58 @@ class OdsPackageTests(TestCase):
                 config = json.load(oed_json_file)
                 exposure2 = OedExposure(**config)
             self.assertTrue(exposure.location.dataframe.equals(exposure2.location.dataframe))
+
+    def test_oed_V3(self):
+        with tempfile.TemporaryDirectory() as tmp_run_dir:
+            with open(os.path.join(tmp_run_dir, 'OpenExposureData_Spec.json'), 'wb') as schema_file:
+                schema_file.write(
+                    urllib.request.urlopen('https://github.com/OasisLMF/ODS_OpenExposureData/releases/download/3.4.0/OpenExposureData_Spec.json')
+                    .read())
+
+            config = {
+                'location': base_url + '/SourceLocOEDPiWind.csv',
+                'account': base_url + '/SourceAccOEDPiWind.csv',
+                'ri_info': base_url + '/SourceReinsInfoOEDPiWind.csv',
+                'ri_scope': base_url + '/SourceReinsScopeOEDPiWind.csv',
+                'oed_schema_info': os.path.join(tmp_run_dir, 'OpenExposureData_Spec.json'),
+                'check_oed': True,
+                'use_field': True,
+            }
+            assert OedExposure(**config).class_of_business == ClassOfBusiness.prop
+
+    def test_oed_cyber_example(self):
+        oed_example_url = "https://raw.githubusercontent.com/OasisLMF/ODS_OpenExposureData/refs/heads/main/Examples"
+        config = {
+            'account': oed_example_url + '/cyber_account.csv',
+            'check_oed': True,  # issue with current marine exemple set to true and remove the correction when fixed
+            'use_field': True,
+        }
+        assert OedExposure(**config).class_of_business == ClassOfBusiness.cyb
+
+    def test_oed_marinecargo_example(self):
+        oed_example_url = "https://raw.githubusercontent.com/OasisLMF/ODS_OpenExposureData/refs/heads/main/Examples"
+        config = {
+            'location': oed_example_url + '/marinecargo_location.csv',
+            'account': oed_example_url + '/marinecargo_account.csv',
+            'check_oed': False,  # issue with current marine exemple set to true and remove the correction when fixed
+            'use_field': True,
+        }
+        ## marine example manual fixup ###
+        exposure = OedExposure(**config)
+        exposure.account.dataframe["PolDedType6All"] = 1
+        config['account'] = exposure.account.dataframe
+        config['check_oed'] = True
+        #####
+        assert OedExposure(**config).class_of_business in [ClassOfBusiness.prop, ClassOfBusiness.mar]
+
+    def test_oed_liability_example(self):
+        oed_example_url = "https://raw.githubusercontent.com/OasisLMF/ODS_OpenExposureData/refs/heads/main/Examples"
+        config = {
+            'account': oed_example_url + '/liability_account.csv',
+            'check_oed': True,
+            'use_field': True,
+        }
+        assert OedExposure(**config).class_of_business == ClassOfBusiness.liabs
 
     def test_categorical_with_default(self):
         # UseReinsDates is a string column with a non null default, check default setting works
@@ -602,7 +655,6 @@ class OdsPackageTests(TestCase):
             self.assertEqual({'gul_output': ["'True' is not of type 'boolean'"],
                               'required': ["'gul_summaries' is a required property"],
                               'ri_summaries': ['id 1 is duplicated']}, errors)
-
             with self.assertRaises(OdsException):
                 ods_analysis_setting.validate(settings_dict)
 

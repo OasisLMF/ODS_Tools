@@ -353,6 +353,24 @@
             "title": "User set quantile points",
             "description": "List of quantiles as float values '[0.0, 0.2, 0.4 .. etc]'"
         },
+        "computation_settings": {
+           "type": "object",
+           "title": "Computation setting options",
+           "description": "List of oasislmf package settings, options are dependent on the package version. To see these look at releases 2.4.0 and up (https://github.com/OasisLMF/OasisLMF/releases)",
+           "patternProperties": {
+             "^.*$": {
+               "anyOf": [
+                 { "type": "integer" },
+                 { "type": "string" },
+                 { "type": "boolean" },
+                 { "type": "object" },
+                 { "type": "number" },
+                 { "type": "array" }
+               ]
+             }
+           },
+           "additionalProperties": true
+        },
         "model_settings": {
             "type": "object",
             "title": "Model settings",
@@ -533,7 +551,7 @@
             "type": "boolean",
             "title": "Apply Oasis Disaggregation",
             "description": "Set whether to split terms and conditions for aggregate exposure (optional)",
-            "default": false
+            "default": true
         },
         "pla_secondary_factor": {
             "type": "number",
