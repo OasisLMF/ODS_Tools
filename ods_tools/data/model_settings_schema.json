@@ -1380,14 +1380,16 @@
             "pla": {
                "type": "boolean",
                "title": "Apply Post Loss Amplification",
-               "description": "If true apply post loss amplification/reduction to losses by default.",
-               "default": false
+               "description": "Legacy - moved to 'computation_settings'.",
+               "default": false,
+               "deprecated": true,
            },
            "do_disaggregation": {
                "type": "boolean",
                "title": "Apply Oasis Disaggregation",
-               "description": "Set whether to split terms and conditions for aggregate exposure (optional)",
-               "default": true
+               "description": "Legacy - moved to 'computation_settings'",
+               "default": true,
+               "deprecated": true,
            },
            "string_parameters":{
                "$ref": "#/definition/extensible_parameters/properties/string_parameters"
@@ -1470,6 +1472,7 @@
          "type": "array",
          "title": "Correlation Settings (Legacy)",
          "description": "Legacy Correlation Settings. Now moved to model_settings",
+         "deprecated": true,
          "items": {
             "type": "object",
             "properties": {
