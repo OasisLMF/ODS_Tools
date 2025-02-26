@@ -1382,14 +1382,14 @@
                "title": "Apply Post Loss Amplification",
                "description": "Legacy - moved to 'computation_settings'.",
                "default": false,
-               "deprecated": true,
+               "deprecated": true
            },
            "do_disaggregation": {
                "type": "boolean",
                "title": "Apply Oasis Disaggregation",
                "description": "Legacy - moved to 'computation_settings'",
                "default": true,
-               "deprecated": true,
+               "deprecated": true
            },
            "string_parameters":{
                "$ref": "#/definition/extensible_parameters/properties/string_parameters"
