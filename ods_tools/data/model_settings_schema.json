@@ -751,7 +751,6 @@
          "title":"Model setting options",
          "description":"Runtime settings available to a model",
          "unevaluatedProperties":false,
-         "allOf": [{"$ref": "#/definition/extensible_parameters"}],
          "properties":{
             "event_set":{
                "title":"Event set selector",
@@ -1381,601 +1380,47 @@
             "pla": {
                "type": "boolean",
                "title": "Apply Post Loss Amplification",
-               "description": "If true apply post loss amplification/reduction to losses by default.",
-               "default": false
+               "description": "Legacy - moved to 'computation_settings'.",
+               "default": false,
+               "deprecated": true
            },
            "do_disaggregation": {
                "type": "boolean",
                "title": "Apply Oasis Disaggregation",
-               "description": "Set whether to split terms and conditions for aggregate exposure (optional)",
-               "default": true
+               "description": "Legacy - moved to 'computation_settings'",
+               "default": true,
+               "deprecated": true
            },
-            "string_parameters":{
-               "title":"Single string paramters",
-               "type":"array",
-               "uniqueItems":true,
-               "items":{
-                  "type":"object",
-                  "uniqueItems":false,
-                  "title":"String options",
-                  "description":"User selected string value",
-                  "additionalProperties":false,
-                  "properties":{
-                     "name":{
-                        "type":"string",
-                        "title":"UI Option",
-                        "description":"UI name for selection",
-                        "minLength":1
-                     },
-                     "desc":{
-                        "type":"string",
-                        "title":"Short description",
-                        "description":"UI description for selection",
-                        "minLength":1
-                     },
-                     "used_for":{
-                        "type":"string",
-                        "title":"Where the setting is applied",
-                        "description":"Set if this parameter is ONLY used at input 'generation' or for output 'losses'",
-                        "enum":[
-                           "all",
-                           "generation",
-                           "losses"
-                        ]
-                     },
-                     "tooltip":{
-                        "type":"string",
-                        "title":"UI tooltip",
-                        "description":"Long description (optional)"
-                     },
-                     "default":{
-                        "type":"string",
-                        "title":"Initial string",
-                        "description":"Default 'string' for variable"
-                     }
-                  },
-                  "required":[
-                     "name",
-                     "desc",
-                     "default"
-                  ]
-               }
-            },
-            "list_parameters":{
-               "title":"List of strings parameters",
-               "type":"array",
-               "uniqueItems":true,
-               "items":{
-                  "type":"object",
-                  "uniqueItems":false,
-                  "title":"List options",
-                  "description":"User selected list values",
-                  "additionalProperties":false,
-                  "properties":{
-                     "name":{
-                        "type":"string",
-                        "title":"UI Option",
-                        "description":"UI name for selection",
-                        "minLength":1
-                     },
-                     "desc":{
-                        "type":"string",
-                        "title":"Short description",
-                        "description":"UI description for selection",
-                        "minLength":1
-                     },
-                     "used_for":{
-                        "type":"string",
-                        "title":"Where the setting is applied",
-                        "description":"Set if this parameter is ONLY used at input 'generation' or for output 'losses'",
-                        "enum":[
-                           "all",
-                           "generation",
-                           "losses"
-                        ]
-                     },
-                     "tooltip":{
-                        "type":"string",
-                        "title":"UI tooltip",
-                        "description":"Long description (optional)"
-                     },
-                     "default":{
-                        "type":"array",
-                        "title":"Default List value",
-                        "description":"Default 'list' set for variable",
-                        "items":{
-                           "type":"string"
-                        }
-                     }
-                  },
-                  "required":[
-                     "name",
-                     "desc",
-                     "default"
-                  ]
-               }
-            },
-            "dictionary_parameters":{
-               "title":"Generic dictionary parameters",
-               "type":"array",
-               "uniqueItems":true,
-               "items":{
-                  "type":"object",
-                  "uniqueItems":false,
-                  "title":"Dictionary option",
-                  "description":"User selected dictionarys",
-                  "additionalProperties":false,
-                  "properties":{
-                     "name":{
-                        "type":"string",
-                        "title":"UI Option",
-                        "description":"UI name for selection",
-                        "minLength":1
-                     },
-                     "desc":{
-                        "type":"string",
-                        "title":"Short description",
-                        "description":"UI description for selection",
-                        "minLength":1
-                     },
-                     "used_for":{
-                        "type":"string",
-                        "title":"Where the setting is applied",
-                        "description":"Set if this parameter is ONLY used at input 'generation' or for output 'losses'",
-                        "enum":[
-                           "all",
-                           "generation",
-                           "losses"
-                        ]
-                     },
-                     "tooltip":{
-                        "type":"string",
-                        "title":"UI tooltip",
-                        "description":"Long description (optional)"
-                     },
-                     "default":{
-                        "type":"object",
-                        "title":"Default dictionary",
-                        "description":"Defaults set for variable"
-                     }
-                  },
-                  "required":[
-                     "name",
-                     "desc",
-                     "default"
-                  ]
-               }
-            },
-            "boolean_parameters":{
-               "title":"Boolean parameters",
-               "type":"array",
-               "uniqueItems":true,
-               "items":{
-                  "type":"object",
-                  "uniqueItems":false,
-                  "title":"Boolean option",
-                  "description":"User selected boolean option",
-                  "additionalProperties":false,
-                  "properties":{
-                     "name":{
-                        "type":"string",
-                        "title":"UI Option",
-                        "description":"UI name for selection",
-                        "minLength":1
-                     },
-                     "desc":{
-                        "type":"string",
-                        "title":"Short description",
-                        "description":"UI description for selection",
-                        "minLength":1
-                     },
-                     "used_for":{
-                        "type":"string",
-                        "title":"Where the setting is applied",
-                        "description":"Set if this parameter is ONLY used at input 'generation' or for output 'losses'",
-                        "enum":[
-                           "all",
-                           "generation",
-                           "losses"
-                        ]
-                     },
-                     "tooltip":{
-                        "type":"string",
-                        "title":"UI tooltip",
-                        "description":"Long description (optional)"
-                     },
-                     "default":{
-                        "type":"boolean",
-                        "title":"Initial value",
-                        "description":"Default 'value' set for variable"
-                     }
-                  },
-                  "required":[
-                     "name",
-                     "desc",
-                     "default"
-                  ]
-               }
-            },
-            "float_parameters":{
-               "title":"Bounded float paramters",
-               "type":"array",
-               "uniqueItems":true,
-               "items":{
-                  "type":"object",
-                  "uniqueItems":false,
-                  "title":"Float option",
-                  "description":"Select float value",
-                  "additionalProperties":false,
-                  "properties":{
-                     "name":{
-                        "type":"string",
-                        "title":"UI Option",
-                        "description":"UI name for selection",
-                        "minLength":1
-                     },
-                     "desc":{
-                        "type":"string",
-                        "title":"Short description",
-                        "description":"UI description for selection",
-                        "minLength":1
-                     },
-                     "used_for":{
-                        "type":"string",
-                        "title":"Where the setting is applied",
-                        "description":"Set if this parameter is ONLY used at input 'generation' or for output 'losses'",
-                        "enum":[
-                           "all",
-                           "generation",
-                           "losses"
-                        ]
-                     },
-                     "tooltip":{
-                        "type":"string",
-                        "title":"UI tooltip",
-                        "description":"Long description (optional)"
-                     },
-                     "default":{
-                        "type":"number",
-                        "title":"Initial value",
-                        "description":"Default 'value' set for float variable"
-                     },
-                     "max":{
-                        "type":"number",
-                        "title":"Maximum value",
-                        "description":"Maximum Value for float variable"
-                     },
-                     "min":{
-                        "type":"number",
-                        "title":"Minimum value",
-                        "description":"Minimum Value for float variable"
-                     },
-                     "stepsize":{
-                        "type":"number",
-                        "title":"Interval step size",
-                        "description":"The slider widget's step interval for adjusting the float parameter."
-                     }
-                  },
-                  "required":[
-                     "name",
-                     "desc",
-                     "default",
-                     "max",
-                     "min"
-                  ]
-               }
-            },
-            "numeric_parameters":{
-               "title":"unbounded numeric paramters",
-               "type":"array",
-               "description":"WARNING: option flagged for removal, superseded by `integer_parameters` and `float_parameters`",
-               "uniqueItems":true,
-               "items":{
-                  "type":"object",
-                  "uniqueItems":false,
-                  "title":"Numeric option",
-                  "description":"Select float value",
-                  "additionalProperties":false,
-                  "properties":{
-                     "name":{
-                        "type":"string",
-                        "title":"UI Option",
-                        "description":"UI name for selection",
-                        "minLength":1
-                     },
-                     "desc":{
-                        "type":"string",
-                        "title":"Short description",
-                        "description":"UI description for selection",
-                        "minLength":1
-                     },
-                     "used_for":{
-                        "type":"string",
-                        "title":"Where the setting is applied",
-                        "description":"Set if this parameter is ONLY used at input 'generation' or for output 'losses'",
-                        "enum":[
-                           "all",
-                           "generation",
-                           "losses"
-                        ]
-                     },
-                     "tooltip":{
-                        "type":"string",
-                        "title":"UI tooltip",
-                        "description":"Long description (optional)"
-                     },
-                     "default":{
-                        "type":"number",
-                        "title":"Initial value, integer or float",
-                        "description":"Default integer or float 'value' set for variable"
-                     }
-                  },
-                  "required":[
-                     "name",
-                     "desc",
-                     "default"
-                  ]
-               }
-            },
-            "integer_parameters":{
-               "title":"Integer paramters",
-               "type":"array",
-               "uniqueItems":true,
-               "items":{
-                  "type":"object",
-                  "uniqueItems":false,
-                  "title":"Integer option",
-                  "description":"Select float value",
-                  "additionalProperties":false,
-                  "properties":{
-                     "name":{
-                        "type":"string",
-                        "title":"UI Option",
-                        "description":"UI name for selection",
-                        "minLength":1
-                     },
-                     "desc":{
-                        "type":"string",
-                        "title":"Short description",
-                        "description":"UI description for selection",
-                        "minLength":1
-                     },
-                     "used_for":{
-                        "type":"string",
-                        "title":"Where the setting is applied",
-                        "description":"Set if this parameter is ONLY used at input 'generation' or for output 'losses'",
-                        "enum":[
-                           "all",
-                           "generation",
-                           "losses"
-                        ]
-                     },
-                     "tooltip":{
-                        "type":"string",
-                        "title":"UI tooltip",
-                        "description":"Long description (optional)"
-                     },
-                     "default":{
-                        "type":"integer",
-                        "title":"Initial integer value",
-                        "description":"Default integer 'value' set for variable"
-                     }
-                  },
-                  "required":[
-                     "name",
-                     "desc",
-                     "default"
-                  ]
-               }
-            },
-            "dropdown_parameters":{
-               "title":"Generic dropdown paramters",
-               "type":"array",
-               "uniqueItems":true,
-               "items":{
-                  "title":"dropdown option selector",
-                  "description":"The 'id' field is mapped into the analysis settings as 'paramter_name': '<id-selected>'",
-                  "type":"object",
-                  "uniqueItems":false,
-                  "additionalProperties":false,
-                  "properties":{
-                     "name":{
-                        "type":"string",
-                        "title":"UI Option",
-                        "description":"UI name for selection",
-                        "minLength":1
-                     },
-                     "desc":{
-                        "type":"string",
-                        "title":"Short description",
-                        "description":"UI description for selection",
-                        "minLength":1
-                     },
-                     "used_for":{
-                        "type":"string",
-                        "title":"Where the setting is applied",
-                        "description":"Set if this parameter is ONLY used at input 'generation' or for output 'losses'",
-                        "enum":[
-                           "all",
-                           "generation",
-                           "losses"
-                        ]
-                     },
-                     "tooltip":{
-                        "type":"string",
-                        "title":"UI tooltip",
-                        "description":"Long description (optional)"
-                     },
-                     "default":{
-                        "type":"string",
-                        "title":"Default Event set",
-                        "description":"Initial setting for dropdown option"
-                     },
-                     "options":{
-                        "type":"array",
-                        "title":"Selection options",
-                        "description":"Array of possible event sets",
-                        "items":{
-                           "type":"object",
-                           "title":"Option element",
-                           "description":"Dropdown option",
-                           "additionalProperties":false,
-                           "properties":{
-                              "id":{
-                                 "type":"string",
-                                 "title":"event set suffix",
-                                 "description":"String value used to select an event set",
-                                 "minLength":1
-                              },
-                              "desc":{
-                                 "type":"string",
-                                 "title":"Short description",
-                                 "description":"UI description for selection",
-                                 "minLength":1
-                              },
-                              "tooltip":{
-                                 "type":"string",
-                                 "title":"UI tooltip",
-                                 "description":"Long description (optional)"
-                              }
-                           },
-                           "required":[
-                              "id",
-                              "desc"
-                           ]
-                        }
-                     }
-                  },
-                  "required":[
-                     "name",
-                     "desc",
-                     "default",
-                     "options"
-                  ]
-               }
-            },
-            "multi_parameter_options":{
-               "title":"Multiple Parameter option",
-               "description":"Sets of parameters with pre-assigned values",
-               "type":"array",
-               "uniqueItems":true,
-               "items":{
-                  "type":"object",
-                  "uniqueItems":false,
-                  "title":"Parameter group option",
-                  "additionalProperties":false,
-                  "properties":{
-                     "name":{
-                        "type":"string",
-                        "title":"UI Option",
-                        "description":"UI name for selection",
-                        "minLength":1
-                     },
-                     "desc":{
-                        "type":"string",
-                        "title":"Short group description",
-                        "description":"UI description for selection",
-                        "minLength":1
-                     },
-                     "used_for":{
-                        "type":"string",
-                        "title":"Where the setting is applied",
-                        "description":"Set if this parameter is ONLY used at input 'generation' or for output 'losses'",
-                        "enum":[
-                           "all",
-                           "generation",
-                           "losses"
-                        ]
-                     },
-                     "tooltip":{
-                        "type":"string",
-                        "title":"UI tooltip",
-                        "description":"Long description (optional)"
-                     },
-                     "config":{
-                        "type":"object",
-                        "title":"Parameter Group configuration",
-                        "description":"JSON object holding <parameter_name>:<value> pairs"
-                     }
-                  },
-                  "required":[
-                     "name",
-                     "desc",
-                     "config"
-                  ]
-               }
-            },
-            "parameter_groups":{
-               "title":"Parameter Groups",
-               "type":"array",
-               "uniqueItems":true,
-               "items":{
-                  "title":"Grouping element",
-                  "description":"Defines which parameter are related",
-                  "type":"object",
-                  "uniqueItems":false,
-                  "additionalProperties":false,
-                  "properties":{
-                     "name":{
-                        "type":"string",
-                        "title":"Group name",
-                        "description":"Reference for the group element",
-                        "minLength":1
-                     },
-                     "desc":{
-                        "type":"string",
-                        "title":"Short description",
-                        "description":"UI description for selection",
-                        "minLength":1
-                     },
-                     "used_for":{
-                        "type":"string",
-                        "title":"Where the setting is applied",
-                        "description":"Set if this parameter is ONLY used at input 'generation' or for output 'losses'",
-                        "enum":[
-                           "all",
-                           "generation",
-                           "losses"
-                        ]
-                     },
-                     "tooltip":{
-                        "type":"string",
-                        "title":"UI tooltip",
-                        "description":"Long description (optional)"
-                     },
-                     "priority_id":{
-                        "type":"integer",
-                        "title":"Display priority",
-                        "description":"Set which parameter groups to display first"
-                     },
-                     "presentation_order":{
-                        "type":"array",
-                        "title":"presentation of grouped parameters",
-                        "description":"List of parameters reference by their 'name' property",
-                        "items":{
-                           "type":"string",
-                           "minItems":1
-                        }
-                     },
-                     "collapsible":{
-                        "title":"Collapsible option for UI",
-                        "description":"Boolean to mark if this parameter group is collapsible",
-                        "type":"boolean"
-                     },
-                     "default_collapsed":{
-                        "title":"Default Collapsed State",
-                        "description":"Boolean to mark if parameter group starts collapsed",
-                        "type":"boolean"
-                     }
-                  },
-                  "required":[
-                     "name",
-                     "desc",
-                     "priority_id",
-                     "presentation_order"
-                  ]
-               }
-            }
+           "string_parameters":{
+               "$ref": "#/definition/extensible_parameters/properties/string_parameters"
+           },
+           "list_parameters":{
+               "$ref": "#/definition/extensible_parameters/properties/list_parameters"
+           },
+           "dictionary_parameters":{
+               "$ref": "#/definition/extensible_parameters/properties/dictionary_parameters"
+           },
+           "boolean_parameters":{
+               "$ref": "#/definition/extensible_parameters/properties/boolean_parameters"
+           },
+           "float_parameters":{
+               "$ref": "#/definition/extensible_parameters/properties/float_parameters"
+           },
+           "numeric_parameters":{
+               "$ref": "#/definition/extensible_parameters/properties/numeric_parameters"
+           },
+           "integer_parameters":{
+               "$ref": "#/definition/extensible_parameters/properties/integer_parameters"
+           },
+           "dropdown_parameters":{
+               "$ref": "#/definition/extensible_parameters/properties/dropdown_parameters"
+           },
+           "multi_parameter_options":{
+               "$ref": "#/definition/extensible_parameters/properties/multi_parameter_options"
+           },
+           "parameter_groups":{
+               "$ref": "#/definition/extensible_parameters/properties/parameter_groups"
+           }
          }
       },
       "lookup_settings":{
@@ -2027,6 +1472,7 @@
          "type": "array",
          "title": "Correlation Settings (Legacy)",
          "description": "Legacy Correlation Settings. Now moved to model_settings",
+         "deprecated": true,
          "items": {
             "type": "object",
             "properties": {
@@ -2283,7 +1729,39 @@
          "title":"Computation setting options",
          "description":"List of parameters that will be passed as arguments to the MDK, options are dependent on the package version. To see these look at releases 2.4.0 and up (https://github.com/OasisLMF/OasisLMF/releases)",
          "unevaluatedProperties":false,
-         "allOf": [{"$ref": "#/definition/extensible_parameters"}]
+         "additionalProperties":false,
+         "properties": {
+            "string_parameters":{
+                "$ref": "#/definition/extensible_parameters/properties/string_parameters"
+            },
+            "list_parameters":{
+                "$ref": "#/definition/extensible_parameters/properties/list_parameters"
+            },
+            "dictionary_parameters":{
+                "$ref": "#/definition/extensible_parameters/properties/dictionary_parameters"
+            },
+            "boolean_parameters":{
+                "$ref": "#/definition/extensible_parameters/properties/boolean_parameters"
+            },
+            "float_parameters":{
+                "$ref": "#/definition/extensible_parameters/properties/float_parameters"
+            },
+            "numeric_parameters":{
+                "$ref": "#/definition/extensible_parameters/properties/numeric_parameters"
+            },
+            "integer_parameters":{
+                "$ref": "#/definition/extensible_parameters/properties/integer_parameters"
+            },
+            "dropdown_parameters":{
+                "$ref": "#/definition/extensible_parameters/properties/dropdown_parameters"
+            },
+            "multi_parameter_options":{
+                "$ref": "#/definition/extensible_parameters/properties/multi_parameter_options"
+            },
+            "parameter_groups":{
+                "$ref": "#/definition/extensible_parameters/properties/parameter_groups"
+            }
+         }
       }
    },
    "required":[
