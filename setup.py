@@ -113,7 +113,7 @@ setuptools.setup(
     author_email="support@oasislmf.org",
     packages=setuptools.find_packages(exclude=('tests', 'tests.*', 'tests.*.*')),
     package_dir={'ods_tools': 'ods_tools'},
-    python_requires='>=3.9',
+    python_requires='>=3.8',
     install_requires=reqs,
     extras_require={
         'extra': extra_reqs,
