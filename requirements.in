@@ -1,7 +1,7 @@
 pandas
 numba
 chardet
-jsonschema
+jsonschema>=4.0.1
 jsonref
 oasis-data-manager
 packaging
