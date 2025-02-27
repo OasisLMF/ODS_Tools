@@ -1,6 +1,15 @@
 ODS_Tools Changelog
 ===================
 
+`4.0.1`_
+ ---------
+* [#173](https://github.com/OasisLMF/ODS_Tools/pull/173) - Feature/v4 integration
+* [#176](https://github.com/OasisLMF/ODS_Tools/pull/176) - Drop testing for py3.8
+* [#178](https://github.com/OasisLMF/ODS_Tools/pull/178) - Adjust model settings schema, replace AllOf with schema refs
+* [#175](https://github.com/OasisLMF/ODS_Tools/pull/179) - Min package pin needed for jsonschema
+* [#181](https://github.com/OasisLMF/ODS_Tools/pull/181) - drop py3.8 testing but don't force the version
+.. _`4.0.1`:  https://github.com/OasisLMF/ODS_Tools/compare/4.0.0...4.0.1
+
 .. _`4.0.0`:  https://github.com/OasisLMF/ODS_Tools/compare/3.2.10...4.0.0
 
 `3.2.9`_
