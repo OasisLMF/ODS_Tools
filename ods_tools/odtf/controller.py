@@ -173,7 +173,7 @@ class Controller:
             return None
 
 
-def generate_config(input_file, output_file, transformation_type, mapping_file):
+def generate_config(input_file, output_file, transformation_type, mappings_dir):
     """
     This function generates a config dictionary based on the input parameters.
     When running without a config file, this will generate the config dict.
@@ -199,7 +199,7 @@ def generate_config(input_file, output_file, transformation_type, mapping_file):
     config_dict['transformations']['loc']['output_format'] = FORMAT_MAPPINGS[transformation_type]['output_format']
     config_dict['transformations']['loc']['extractor']['options']['path'] = input_file
     config_dict['transformations']['loc']['loader']['options']['path'] = output_file
-    config_dict['transformations']['loc']['mapping']['options']['search_paths'] = mapping_file
+    config_dict['transformations']['loc']['mapping']['options']['search_paths'] = mappings_dir
 
     return config_dict
 
