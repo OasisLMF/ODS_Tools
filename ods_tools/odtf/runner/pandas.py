@@ -429,7 +429,7 @@ class PandasRunner(BaseRunner):
         config_search_paths = self.config.get('mapping', {}).get('options', {}).get('search_paths', [])
         if isinstance(config_search_paths, str):
             config_search_paths = [config_search_paths]
-        search_paths.extend(config_search_paths)
+        search_paths.extend(config_search_paths or [])  # Null guard
 
         # Instantiate the validator with the updated search paths
         validator = PandasValidator(search_paths=search_paths)

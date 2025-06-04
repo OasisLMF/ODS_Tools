@@ -1,6 +1,7 @@
 import importlib
 import logging
 import sys
+import os
 import threading
 from datetime import datetime
 from typing import Any, Type
@@ -51,6 +52,11 @@ BASE_CONFIG = {
                 "options": {
                     "path": "",
                     "quoting": "minimal"
+                }
+            },
+            "mapping": {
+                "options": {
+                    "search_paths": None
                 }
             }
         }
@@ -167,7 +173,7 @@ class Controller:
             return None
 
 
-def generate_config(input_file, output_file, transformation_type):
+def generate_config(input_file, output_file, transformation_type, mapping_file):
     """
     This function generates a config dictionary based on the input parameters.
     When running without a config file, this will generate the config dict.
@@ -193,11 +199,12 @@ def generate_config(input_file, output_file, transformation_type):
     config_dict['transformations']['loc']['output_format'] = FORMAT_MAPPINGS[transformation_type]['output_format']
     config_dict['transformations']['loc']['extractor']['options']['path'] = input_file
     config_dict['transformations']['loc']['loader']['options']['path'] = output_file
+    config_dict['transformations']['loc']['mapping']['options']['search_paths'] = mapping_file
 
     return config_dict
 
 
-def transform_format(path_to_config_file=None, input_file=None, output_file=None, transformation=None):
+def transform_format(path_to_config_file=None, input_file=None, output_file=None, transformation=None, mappings_dir=None):
     """This function takes the input parameters when called from ods_tools
     and starts the transformation process. Either path_to_config_file or
     all three input_file, output_file, and transformation_type must be provided.
@@ -215,8 +222,10 @@ def transform_format(path_to_config_file=None, input_file=None, output_file=None
     if path_to_config_file:
         with open(path_to_config_file, 'r') as file:
             config_dict = yaml.safe_load(file)
+        make_relative_paths_to_config_absolute(config_dict['transformations']['loc']['mapping']['options'], 'search_paths', path_to_config_file)
+
     else:
-        config_dict = generate_config(input_file, output_file, transformation)
+        config_dict = generate_config(input_file, output_file, transformation, mappings_dir)
     config = Config(config_dict)
     controller = Controller(config)
     controller.run()
@@ -231,3 +240,19 @@ def transform_format(path_to_config_file=None, input_file=None, output_file=None
         output_file_path = value.get('loader', {}).get('options', {}).get('path')
         outputs.append((output_file_path, output_file_type))
     return outputs
+
+
+def make_relative_paths_to_config_absolute(dict, key, config_location):
+    """Ensures paths given local to config file will be correctly loaded
+
+    Args:
+        dict (dictionary): Dict in config file holding the path location
+        key (str): Key in dict to access path location
+        config_location (str): Location of config file
+    """
+    if isinstance(dict[key], str):
+        dict[key] = [dict[key]]
+
+    for i, maybe_local_path in enumerate(dict[key]):
+        if not os.path.isabs(maybe_local_path):
+            dict[key][i] = os.path.join(os.path.dirname(config_location), maybe_local_path)

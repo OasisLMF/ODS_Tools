@@ -105,7 +105,8 @@ def transform(**kwargs):
                 raise OdsException("When --config-file is not provided, --format, --input-file, and --output-file are required.")
 
         transform_result = transform_format(path_to_config_file=kwargs.get('config_file'), input_file=kwargs.get('input_file'),
-                                            output_file=kwargs.get('output_file'), transformation=kwargs.get('format'))
+                                            output_file=kwargs.get('output_file'), transformation=kwargs.get('format'),
+                                            mappings_dir=kwargs.get('mappings_dir'))
         if not kwargs.get('nocheck'):
             for output_file in transform_result:
                 if output_file[1] == 'location' and os.path.isfile(output_file[0]):

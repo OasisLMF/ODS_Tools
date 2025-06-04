@@ -407,7 +407,7 @@ class FileMapping(BaseMapping):
         file_type: str,
         search_paths: List[str] = None,
         standard_search_path: str = get_data_path("mappings"),
-        search_working_dir=True,
+        search_working_dir=False,
         **options,
     ):
         """
@@ -434,14 +434,15 @@ class FileMapping(BaseMapping):
 
         self._raw_configs: Union[None, Dict[str, RawMappingConfig]] = None
         self._hydrated_configs: Union[None, Dict[str, FileMappingSpec]] = None
-        if isinstance(search_paths, str):
-            search_paths = [search_paths]
-        self.search_paths = [
-            *(os.path.abspath(p) for p in (search_paths or [])),
-            os.path.abspath(standard_search_path),
-        ]
 
-        if search_working_dir:
+        if search_paths is None:
+            self.search_paths = [os.path.abspath(standard_search_path)]
+        elif isinstance(search_paths, str):
+            self.search_paths = [search_paths]
+        else:
+            self.search_paths = [*(os.path.abspath(p) for p in (search_paths or []))]
+
+        if search_working_dir:  # Now defaulted false: may cause issues if people unaware?
             self.search_paths.insert(0, os.path.abspath("."))
 
     def _load_raw_configs(self) -> Dict[str, RawMappingConfig]:
@@ -469,7 +470,7 @@ class FileMapping(BaseMapping):
     @property
     def raw_configs(self) -> Dict[str, RawMappingConfig]:
         """
-        Gets the raw configs from teh system. If they have not yet been loaded
+        Gets the raw configs from the system. If they have not yet been loaded
         they are loaded here.
         """
         if self._raw_configs is None:
