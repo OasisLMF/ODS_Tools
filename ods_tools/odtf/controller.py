@@ -222,7 +222,10 @@ def transform_format(path_to_config_file=None, input_file=None, output_file=None
     if path_to_config_file:
         with open(path_to_config_file, 'r') as file:
             config_dict = yaml.safe_load(file)
-        make_relative_paths_to_config_absolute(config_dict['transformations']['loc']['mapping']['options'], 'search_paths', path_to_config_file)
+
+        mapping_options = config_dict.get('transformations', {}).get('loc', {}).get('mapping', {}).get('options', None)
+        if mapping_options is not None:
+            make_relative_paths_from_config_absolute(mapping_options, 'search_paths', path_to_config_file)
 
     else:
         config_dict = generate_config(input_file, output_file, transformation, mappings_dir)
@@ -242,7 +245,7 @@ def transform_format(path_to_config_file=None, input_file=None, output_file=None
     return outputs
 
 
-def make_relative_paths_to_config_absolute(dict, key, config_location):
+def make_relative_paths_from_config_absolute(dictionary, key, config_location):
     """Ensures paths given local to config file will be correctly loaded
 
     Args:
@@ -250,9 +253,9 @@ def make_relative_paths_to_config_absolute(dict, key, config_location):
         key (str): Key in dict to access path location
         config_location (str): Location of config file
     """
-    if isinstance(dict[key], str):
-        dict[key] = [dict[key]]
+    if isinstance(dictionary[key], str):
+        dictionary[key] = [dictionary[key]]
 
-    for i, maybe_local_path in enumerate(dict[key]):
+    for i, maybe_local_path in enumerate(dictionary[key]):
         if not os.path.isabs(maybe_local_path):
-            dict[key][i] = os.path.join(os.path.dirname(config_location), maybe_local_path)
+            dictionary[key][i] = os.path.join(os.path.dirname(config_location), maybe_local_path)
