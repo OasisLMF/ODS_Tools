@@ -1,20 +1,14 @@
 import logging
 import math
-import os
 import re
+import json
 from functools import reduce
 from operator import and_, or_
-from typing import Any, Dict, Iterable, Union
 
 import pandas as pd
 from numpy import nan
 
-from ..connector.base import BaseConnector
-from ..mapping.base import (
-    BaseMapping,
-    ColumnConversions,
-    TransformationEntry
-)
+
 from ..transformers import run
 from ..transformers.transform import (
     GroupWrapper,
@@ -26,7 +20,6 @@ from ..transformers.transform import (
 from ..transformers.transform_utils import replace_multiple
 from ..notset import NotSet, NotSetType
 from ..validator_pandas import PandasValidator
-from .base import BaseRunner
 #
 # Group Wrappers
 #
@@ -207,7 +200,7 @@ def type_converter(to_type, nullable, null_values):
     return _converter
 
 
-class PandasRunner(BaseRunner):
+class PandasRunner():
     """
     Default implementation for a pandas like runner
     """
@@ -226,10 +219,127 @@ class PandasRunner(BaseRunner):
         ),
     }
 
-    dataframe_type = pd.DataFrame
     series_type = pd.Series
 
-    def coerce_row_types(self, row, conversions: ColumnConversions):
+    def __init__(self, config):
+        self.config = config
+
+    def run(self, extractor, mapper, loader):
+        """
+        Runs the transformation process and sends the data to the data loader
+
+        :param extractor: The data connection to extract data from
+        :param mapping: Mapping object describing the transformations to apply
+        :param loader: The data connection to load data to
+        """
+        loader.load(self.transform(extractor, mapper))
+
+    def transform(self, extractor, mapper):
+        """
+        Orchestrates the data transformation.
+        It receives the data in batches from the extractor, calculates which
+        transformations can be applied to it, applies them, and yields the
+        transformed rows.
+
+        :param extractor: The data extractor object (e.g., CSV or database connector).
+        :param mapping: The mapping object defining transformations.
+        :return: An iterable of dictionaries, each representing a transformed row.
+        """
+
+        validator = PandasValidator()
+        batch_size = self.config.get('batch_size', 100000)
+        total_rows = 0
+        transformations = []
+
+        try:
+            for batch in extractor.fetch_data(batch_size):
+                # Calculates the set of transformations from the columns in the
+                # first batch (to avoid double-querying)
+                if not transformations:
+                    available_columns = set(batch.columns)
+                    transformation = mapper.get_transform(available_columns=available_columns)
+                    logger.info("Running transformation set [{extractor.name}]")
+
+                # Validate input data
+                try:
+                    validator.run(self.coerce_row_types(batch, transformations[0].types),
+                                  mapper.input_format.name, mapper.input_format.version, mapper.file_type)
+                except KeyError as e:
+                    logger.warning(f"Validation failed due to a missing column: {e}")
+                except Exception as e:
+                    logger.warning(f"Validation failed: {e}")
+
+                # Apply the transformations to the batch
+                batch = self.apply_transformation_set(batch, transformation)
+
+                # Validate output data
+                try:
+                    validator.run(batch, mapper.output_format.name, mapper.output_format.version, mapper.file_type)
+                except KeyError as e:
+                    logger.warning(f"Validation failed due to a missing column: {e}")
+                except Exception as e:
+                    logger.warning(f"Validation failed: {e}")
+
+                # Log the transformation progress
+                total_rows += len(batch)
+                logger.info(f"Processed {len(batch)} rows in the current batch (total: {total_rows})")
+
+                yield from (r.to_dict() for idx, r in batch.iterrows())
+        except FileNotFoundError:
+            logger.error(f"File not found: {extractor.file_path}")
+        except Exception as e:
+            logger.error(f"Error processing batch: {e}")
+
+    def apply_transformation_set(self, row, transformations):
+        """
+        Applies all the transformations to produce the output row
+
+        :param row: The current input row
+        :param transformations: The full set of column conversions and
+            transformation sets to apply to the ``row`` row.
+
+        :return: The transformed row
+        """
+        coerced_row = self.coerce_row_types(row, transformations.types)
+        if coerced_row is None:
+            return NotSet
+
+        return reduce(
+            lambda target, col_transforms: self.assign(
+                row,
+                target,
+                {
+                    col_transforms[0]: self.apply_column_transformation(
+                        coerced_row, col_transforms[1]
+                    )
+                },
+            ),
+            transformations.transformation_set.items(),
+            NotSet,
+        )
+
+    def apply_column_transformation(self, row, entry_list):
+        """
+        Applies all the transformations for a single output column
+
+        :param row: The current input row
+        :param entry_list: A list of all the transformations to apply to
+            generate the output series
+
+        :return: The transformation result
+        """
+        result = reduce(
+            lambda current_column_value, entry: self.combine_column(
+                row,
+                current_column_value,
+                entry,
+            ),
+            entry_list,
+            NotSet,
+        )
+        return result
+
+    def coerce_row_types(self, row, conversions):
         coerced_row = NotSet
 
         for column in row.columns:
@@ -277,12 +387,7 @@ class PandasRunner(BaseRunner):
     def create_series(self, index, value):
         return self.series_type(value, index=index)
 
-    def combine_column(
-        self,
-        row,
-        current_column_value: Union[pd.Series, NotSetType],
-        entry: TransformationEntry,
-    ):
+    def combine_column(self, row, current_column_value, entry):
         """
         Combines the current column value with the result of the
         transformation. If the current value is ``NotSet`` the value of the
@@ -315,12 +420,7 @@ class PandasRunner(BaseRunner):
         else:
             return current_column_value.combine_first(new_column_value)
 
-    def assign(
-        self,
-        input_row: pd.DataFrame,
-        output_row: Union[pd.DataFrame, NotSetType],
-        **assignments,
-    ):
+    def assign(self, input_row, output_row, assignments):
         """
         Helper function for assigning a series to a dataframe. Some
         implementations of pandas are less efficient if we start with an empty
@@ -349,11 +449,7 @@ class PandasRunner(BaseRunner):
 
         return output_row
 
-    def apply_transformation_entry(
-        self,
-        input_df: pd.DataFrame,
-        entry: TransformationEntry,
-    ) -> Union[pd.Series, NotSetType]:
+    def apply_transformation_entry(self, input_df, entry):
         """
         Applies a single transformation to the dataset returning the result
         as a series.
@@ -409,72 +505,18 @@ class PandasRunner(BaseRunner):
         else:
             return self.create_series(input_df.index, result)
 
-    def transform(
-        self, extractor: BaseConnector, mapping: BaseMapping
-    ) -> Iterable[Dict[str, Any]]:
+    @classmethod
+    def log_type_coercion_error(cls, row, column, value, to_type, reason):
         """
-        Orchestrates the data transformation.
-        It receives the data in batches from the extractor, calculates which
-        transformations can be applied to it, applies them, and yields the
-        transformed rows.
+        Logs a failure of a row type coercion
 
-        :param extractor: The data extractor object (e.g., CSV or database connector).
-        :param mapping: The mapping object defining transformations.
-        :return: An iterable of dictionaries, each representing a transformed row.
+        :param row: The input row that failed
+        :param column: The name of the column in which the error occurred
+        :param value: The value of the failing column
+        :param to_type: The type the coercion was attempting
+        :param reason: The error message
         """
-        # Initial search paths
-        search_paths = [os.path.dirname(self.config.path)] if self.config.path else []
-
-        # Add search paths from the config, if provided
-        config_search_paths = self.config.get('mapping', {}).get('options', {}).get('search_paths', [])
-        if isinstance(config_search_paths, str):
-            config_search_paths = [config_search_paths]
-        search_paths.extend(config_search_paths or [])  # Null guard
-
-        # Instantiate the validator with the updated search paths
-        validator = PandasValidator(search_paths=search_paths)
-        runner_config = self.config.config.get('runner', None)
-        batch_size = runner_config.get('batch_size', 100000)
-        total_rows = 0
-        transformations = []
-
-        try:
-            for batch in extractor.fetch_data(batch_size):
-                # Calculates the set of transformations from the columns in the
-                # first batch (to avoid double-querying)
-                if not transformations:
-                    available_columns = set(batch.columns)
-                    transformations = mapping.get_transformations(available_columns=available_columns)
-                    logger.info(
-                        f"Running transformation set {transformations[0].input_format} -> {transformations[-1].output_format} [{extractor.name}]")
-
-                # Validate input data
-                try:
-                    validator.run(self.coerce_row_types(batch, transformations[0].types),
-                                  mapping.input_format.name, mapping.input_format.version, mapping.file_type)
-                except KeyError as e:
-                    logger.warning(f"Validation failed due to a missing column: {e}")
-                except Exception as e:
-                    logger.warning(f"Validation failed: {e}")
-
-                # Apply the transformations to the batch
-                for transformation in transformations:
-                    batch = self.apply_transformation_set(batch, transformation)
-
-                # Validate output data
-                try:
-                    validator.run(batch, mapping.output_format.name, mapping.output_format.version, mapping.file_type)
-                except KeyError as e:
-                    logger.warning(f"Validation failed due to a missing column: {e}")
-                except Exception as e:
-                    logger.warning(f"Validation failed: {e}")
-
-                # Log the transformation progress
-                total_rows += len(batch)
-                logger.info(f"Processed {len(batch)} rows in the current batch (total: {total_rows})")
-
-                yield from (r.to_dict() for idx, r in batch.iterrows())
-        except FileNotFoundError:
-            logger.error(f"File not found: {extractor.file_path}")
-        except Exception as e:
-            logger.error(f"Error processing batch: {e}")
+        logger.warning(
+            f"Cannot coerce {column} ({value}) to {to_type}. "
+            f"Reason: {reason}. Row: {json.dumps(row)}."
+        )

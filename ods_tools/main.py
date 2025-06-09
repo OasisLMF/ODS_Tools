@@ -20,8 +20,9 @@ from ods_tools.oed import (
 )
 try:
     from ods_tools.odtf.controller import transform_format
-except ImportError:
-    logger.info("Data transformation package requirements not intalled.")
+except ImportError as e:
+    logger.error("Data transformation package requirements not intalled.")
+    logger.error(e)
 
 
 def get_oed_exposure(config_json=None, oed_dir=None, **kwargs):
@@ -106,17 +107,16 @@ def transform(**kwargs):
 
         transform_result = transform_format(path_to_config_file=kwargs.get('config_file'), input_file=kwargs.get('input_file'),
                                             output_file=kwargs.get('output_file'), transformation=kwargs.get('format'),
-                                            mappings_dir=kwargs.get('mappings_dir'))
+                                            mapping_path=kwargs.get('mapping_path'))
         if not kwargs.get('nocheck'):
-            for output_file in transform_result:
-                if output_file[1] == 'location' and os.path.isfile(output_file[0]):
-                    check(location=output_file[0])
-                elif output_file[1] == 'account' and os.path.isfile(output_file[0]):
-                    check(account=output_file[0])
+            if transform_result[1] == 'location' and os.path.isfile(transform_result[0]):
+                check(location=transform_result[0])
+            elif transform_result[1] == 'account' and os.path.isfile(transform_result[0]):
+                check(account=transform_result[0])
     except OdsException as e:
         logger.error(e)
     except NameError as e:
-        logger.error("Data transformation package requirements not intalled.")
+        logger.error("Data transformation package requirements not installed.")
         logger.error(e)
 
 

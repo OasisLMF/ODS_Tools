@@ -1,6 +1,4 @@
 import logging
-import os
-from functools import reduce
 from typing import (
     Any,
     Dict,
@@ -13,8 +11,6 @@ from typing import (
 )
 
 import yaml
-
-from .data import get_data_path
 
 logger = logging.getLogger(__name__)
 
@@ -83,45 +79,20 @@ class ValidatorConfig:
 class BaseValidator(Generic[DataType, GroupedDataType]):
     def __init__(
         self,
-        search_paths: List[str] = None,
-        standard_search_path: str = get_data_path("validators"),
-        search_working_dir=True,
+        path: List[str] = None
     ):
-        self.search_paths = [
-            *(search_paths or []),
-            *([os.getcwd()] if search_working_dir else []),
-            standard_search_path,
-        ]
+        self.path = path
 
     def load_config(
         self, fmt, version, file_type
     ) -> Union[None, ValidatorConfig]:
-        # Build the candidate paths with and without the version preferring
-        # with the version if its available
-        candidate_paths = [
-            os.path.join(p, f"validation_{fmt}_v{version}_{file_type}.yaml")
-            for p in self.search_paths
-        ] + [
-            os.path.join(p, f"validation_{fmt}_{file_type}.yaml")
-            for p in self.search_paths
-        ]
-
-        # find the first validation config path that matches the format
-        config_path = reduce(
-            lambda found, current: found
-            or (current if os.path.exists(current) else None),
-            candidate_paths,
-            None,
-        )
-
-        if not config_path:
+        if self.path is None:
             logger.warning(
-                f"Could not find validator config for {fmt}. "
-                f"Tried paths {', '.join(candidate_paths)}"
+                "No validation given"
             )
             return None
 
-        return ValidatorConfig(config_path)
+        return ValidatorConfig(self.path)
 
     def run(self, data: DataType, fmt: str, version: str, file_type: str, enable_logging: bool = False):
         config = self.load_config(fmt, version, file_type)

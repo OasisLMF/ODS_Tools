@@ -1,7 +1,5 @@
 from typing import Any, AsyncIterable, Dict, Iterable
 
-from ..config import TransformationConfig
-
 
 class BaseConnector:
     """
@@ -18,9 +16,9 @@ class BaseConnector:
     name = "Base Connector"
     options_schema = {"type": "object", "properties": {}}
 
-    def __init__(self, config: TransformationConfig, **options):
-        self._options = options
+    def __init__(self, config, isExtractor=True):
         self.config = config
+        self.isExtractor = isExtractor
 
     def extract(self) -> Iterable[Dict[str, Any]]:
         """

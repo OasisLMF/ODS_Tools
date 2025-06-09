@@ -48,7 +48,7 @@ class SQLiteConnector(BaseDBConnector):
 
         try:
             conn = sqlite3.connect(
-                self.config.absolute_path(database["database"])
+                self.config["absolute_path_database"]
             )
         except Error:
             raise DBConnectionError()

@@ -2,15 +2,13 @@ import importlib
 import logging
 import sys
 import os
-import threading
 from datetime import datetime
 from typing import Any, Type
 import yaml
 
-from .config import Config, TransformationConfig
 from .connector import BaseConnector
-from .mapping import BaseMapping
-from .runner import BaseRunner
+from .mapping.mapper import Mapper
+from .runner.pandas import PandasRunner
 
 # Default versions for OED and AIR when running without a config file
 OED_VERSION = "3.0.2"
@@ -29,37 +27,24 @@ FORMAT_MAPPINGS = {
 
 # Default config when running without a config file
 BASE_CONFIG = {
-    "transformations": {
-        "loc": {
-            "input_format": {
-                "name": "",
-                "version": ""
-            },
-            "output_format": {
-                "name": "",
-                "version": ""
-            },
-            "runner": {
-                "batch_size": 150000
-            },
-            "extractor": {
-                "options": {
-                    "path": "",
-                    "quoting": "minimal"
-                }
-            },
-            "loader": {
-                "options": {
-                    "path": "",
-                    "quoting": "minimal"
-                }
-            },
-            "mapping": {
-                "options": {
-                    "search_paths": None
-                }
-            }
-        }
+    "type": "loc",
+    "input": {
+        "path": "",
+        "quoting": "minimal"
+    },
+    "output": {
+        "path": "",
+        "quoting": "minimal"
+    },
+    "mapping": {
+        "path": ""
+    },
+    "batch_size": "150000",
+    "validator": {
+        "input_version": "",
+        "input_format": "",
+        "output_version": "",
+        "output_format": "",
     }
 }
 
@@ -80,7 +65,7 @@ class Controller:
     :param config: The resolved normalised config
     """
 
-    def __init__(self, config: Config):
+    def __init__(self, config):
         self.config = config
 
     def _load_from_module(self, path: str) -> Any:
@@ -96,84 +81,36 @@ class Controller:
         start_time = datetime.now()
         logger.info("Starting transformation")
 
-        transformation_configs = self.config.get_transformation_configs()
-        output_file_paths = []
-        if self.config.get("parallel", True):
-            threads = list(
-                map(
-                    lambda c: threading.Thread(
-                        target=lambda: output_file_paths.append(self._run_transformation(c))
-                    ),
-                    transformation_configs,
-                )
-            )
-
-            for thread in threads:
-                thread.start()
-
-            for thread in threads:
-                thread.join()
-            output_file_paths = [path for path in output_file_paths if path is not None]
-        else:
-            for c in transformation_configs:
-                output_file_path = self._run_transformation(c)
-                if output_file_path:
-                    output_file_paths[c.file_type] = output_file_path
-
-        logger.info(
-            f"Transformation finished in {datetime.now() - start_time}"
-        )
-        return output_file_paths
-
-    def _run_transformation(self, config: TransformationConfig):
         try:
-            mapping_class: Type[BaseMapping] = self._load_from_module(
-                config.get(
-                    "mapping.path", fallback="ods_tools.odtf.mapping.FileMapping"
-                )
-            )
-            mapping: BaseMapping = mapping_class(
-                config,
-                config.file_type,
-                **config.get("mapping.options", fallback={}),
-            )
+            mapper = Mapper(self.config['mapping']['path'])
 
-            extractor_type = config.get("extractor.type", fallback="csv")
+            extractor_type = self.config.get("extractor_type", "csv")
             if extractor_type in CONNECTOR_MAPPINGS:
                 extractor_class: Type[BaseConnector] = self._load_from_module(
                     CONNECTOR_MAPPINGS[extractor_type]
                 )
-            extractor: BaseConnector = extractor_class(
-                config, **config.get("extractor.options", fallback={})
-            )
+            extractor: BaseConnector = extractor_class(self.config, isExtractor=True)
 
             loader_class: Type[BaseConnector] = self._load_from_module(
-                config.get(
-                    "loader.path", fallback="ods_tools.odtf.connector.CsvConnector"
+                self.config.get(
+                    "loader_type", "ods_tools.odtf.connector.CsvConnector"
                 )
             )
-            loader: BaseConnector = loader_class(
-                config, **config.get("loader.options", fallback={})
-            )
+            loader: BaseConnector = loader_class(self.config, isExtractor=False)
 
-            runner_class: Type[BaseRunner] = self._load_from_module(
-                config.get("runner.path", fallback="ods_tools.odtf.runner.PandasRunner")
-            )
-            runner: BaseRunner = runner_class(
-                config, **config.get("runner.options", fallback={})
-            )
-
-            runner.run(extractor, mapping, loader)
+            runner = PandasRunner(self.config)
+            runner.run(extractor, mapper, loader)
 
         except Exception as e:
-            exc_type, exc_obj, exc_tb = sys.exc_info()
+            _, _, exc_tb = sys.exc_info()
             logger.error(
                 f"{repr(e)}, line {exc_tb.tb_lineno} in {exc_tb.tb_frame.f_code.co_filename}"
             )
-            return None
+
+        logger.info(f"Transformation finished in {datetime.now() - start_time}")
 
 
-def generate_config(input_file, output_file, transformation_type, mappings_dir):
+def generate_config(input_file, output_file, transformation_type, mappings_path):
     """
     This function generates a config dictionary based on the input parameters.
     When running without a config file, this will generate the config dict.
@@ -189,22 +126,15 @@ def generate_config(input_file, output_file, transformation_type, mappings_dir):
     Returns:
         dict: the generated config dictionary
     """
-    if transformation_type not in FORMAT_MAPPINGS:
-        raise ValueError(
-            f'Invalid transformation type. Only {list(FORMAT_MAPPINGS.keys())} are supported.'
-        )
-
     config_dict = BASE_CONFIG.copy()
-    config_dict['transformations']['loc']['input_format'] = FORMAT_MAPPINGS[transformation_type]['input_format']
-    config_dict['transformations']['loc']['output_format'] = FORMAT_MAPPINGS[transformation_type]['output_format']
-    config_dict['transformations']['loc']['extractor']['options']['path'] = input_file
-    config_dict['transformations']['loc']['loader']['options']['path'] = output_file
-    config_dict['transformations']['loc']['mapping']['options']['search_paths'] = mappings_dir
+    config_dict['input']['path'] = input_file
+    config_dict['output']['path'] = output_file
+    config_dict['mapping']['path'] = mappings_path
 
     return config_dict
 
 
-def transform_format(path_to_config_file=None, input_file=None, output_file=None, transformation=None, mappings_dir=None):
+def transform_format(path_to_config_file=None, input_file=None, output_file=None, transformation=None, mapping_path=None):
     """This function takes the input parameters when called from ods_tools
     and starts the transformation process. Either path_to_config_file or
     all three input_file, output_file, and transformation_type must be provided.
@@ -221,31 +151,25 @@ def transform_format(path_to_config_file=None, input_file=None, output_file=None
     """
     if path_to_config_file:
         with open(path_to_config_file, 'r') as file:
-            config_dict = yaml.safe_load(file)
+            config = yaml.safe_load(file)
 
-        mapping_options = config_dict.get('transformations', {}).get('loc', {}).get('mapping', {}).get('options', None)
-        if mapping_options is not None:
-            make_relative_paths_from_config_absolute(mapping_options, 'search_paths', path_to_config_file)
+        mapping = config['mapping']
+        input = config['input']
+        output = config['output']
+        make_relative_path_from_config_absolute(mapping, "path", path_to_config_file)
+        make_relative_path_from_config_absolute(input, "path", path_to_config_file)
+        make_relative_path_from_config_absolute(output, "path", path_to_config_file)
 
     else:
-        config_dict = generate_config(input_file, output_file, transformation, mappings_dir)
-    config = Config(config_dict)
+        config = generate_config(input_file, output_file, transformation, mapping_path)
+
     controller = Controller(config)
     controller.run()
-    outputs = []
-    for key, value in config_dict.get('transformations', {}).items():
-        if value.get('output_format').get('name') == 'OED_Location':
-            output_file_type = 'location'
-        elif value.get('output_format').get('name') == 'OED_Contract':
-            output_file_type = 'account'
-        else:
-            output_file_type = 'other'
-        output_file_path = value.get('loader', {}).get('options', {}).get('path')
-        outputs.append((output_file_path, output_file_type))
-    return outputs
+
+    return (config["output"]["path"], config["type"])
 
 
-def make_relative_paths_from_config_absolute(dictionary, key, config_location):
+def make_relative_path_from_config_absolute(dictionary, key, config_location):
     """Ensures paths given local to config file will be correctly loaded
 
     Args:
@@ -253,9 +177,5 @@ def make_relative_paths_from_config_absolute(dictionary, key, config_location):
         key (str): Key in dict to access path location
         config_location (str): Location of config file
     """
-    if isinstance(dictionary[key], str):
-        dictionary[key] = [dictionary[key]]
-
-    for i, maybe_local_path in enumerate(dictionary[key]):
-        if not os.path.isabs(maybe_local_path):
-            dictionary[key][i] = os.path.join(os.path.dirname(config_location), maybe_local_path)
+    if not os.path.isabs(dictionary[key]):
+        dictionary[key] = os.path.abspath(os.path.join(os.path.dirname(config_location), dictionary[key]))
