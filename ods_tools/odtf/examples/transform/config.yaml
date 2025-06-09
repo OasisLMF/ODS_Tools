@@ -1,0 +1,18 @@
+input:
+  path: ./input.csv
+  quoting: minimal
+output:
+  path: ./output.csv
+  quoting: minimal
+mapping:
+  path: ./mapping.yml
+runner:
+  batch_size: 150000
+type: loc
+write_header: true
+absolute_path_database: ""
+validator:  # Not done yet: how it will look
+  input_format: ""
+  output_format: ""
+  input_version: ""
+  output_version: ""

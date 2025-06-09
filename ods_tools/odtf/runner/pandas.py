@@ -249,21 +249,21 @@ class PandasRunner():
         validator = PandasValidator()
         batch_size = self.config.get('batch_size', 100000)
         total_rows = 0
-        transformations = []
+        transformation = None
 
         try:
             for batch in extractor.fetch_data(batch_size):
                 # Calculates the set of transformations from the columns in the
                 # first batch (to avoid double-querying)
-                if not transformations:
+                if transformation is None:
                     available_columns = set(batch.columns)
                     transformation = mapper.get_transform(available_columns=available_columns)
                     logger.info("Running transformation set [{extractor.name}]")
 
                 # Validate input data
                 try:
-                    validator.run(self.coerce_row_types(batch, transformations[0].types),
-                                  mapper.input_format.name, mapper.input_format.version, mapper.file_type)
+                    validator.run(self.coerce_row_types(batch, transformation.types),
+                                  self.config['validator']['input_format'], self.config['validator']['input_version'], self.config['type'])
                 except KeyError as e:
                     logger.warning(f"Validation failed due to a missing column: {e}")
                 except Exception as e:
@@ -274,7 +274,7 @@ class PandasRunner():
 
                 # Validate output data
                 try:
-                    validator.run(batch, mapper.output_format.name, mapper.output_format.version, mapper.file_type)
+                    validator.run(batch, self.config['validator']['output_format'], self.config['validator']['output_version'], self.config['type'])
                 except KeyError as e:
                     logger.warning(f"Validation failed due to a missing column: {e}")
                 except Exception as e:

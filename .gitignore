@@ -39,6 +39,8 @@ coverage.xml
 .pydevproject
 .idea
 
+# Files created by example
+ods_tools/odtf/examples/transform/output.csv
 
 # excel
 *.xlsx#
