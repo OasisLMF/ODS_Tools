@@ -45,7 +45,8 @@ BASE_CONFIG = {
         "input_format": "",
         "output_version": "",
         "output_format": "",
-    }
+    },
+    "write_header": True
 }
 
 logger = logging.getLogger(__name__)
@@ -110,7 +111,7 @@ class Controller:
         logger.info(f"Transformation finished in {datetime.now() - start_time}")
 
 
-def generate_config(input_file, output_file, transformation_type, mappings_path):
+def generate_config(input_file, output_file, mappings_path):
     """
     This function generates a config dictionary based on the input parameters.
     When running without a config file, this will generate the config dict.
@@ -134,7 +135,7 @@ def generate_config(input_file, output_file, transformation_type, mappings_path)
     return config_dict
 
 
-def transform_format(path_to_config_file=None, input_file=None, output_file=None, transformation=None, mapping_path=None):
+def transform_format(path_to_config_file=None, input_file=None, output_file=None, mapping_path=None):
     """This function takes the input parameters when called from ods_tools
     and starts the transformation process. Either path_to_config_file or
     all three input_file, output_file, and transformation_type must be provided.
@@ -161,7 +162,7 @@ def transform_format(path_to_config_file=None, input_file=None, output_file=None
         make_relative_path_from_config_absolute(output, "path", path_to_config_file)
 
     else:
-        config = generate_config(input_file, output_file, transformation, mapping_path)
+        config = generate_config(input_file, output_file, mapping_path)
 
     controller = Controller(config)
     controller.run()

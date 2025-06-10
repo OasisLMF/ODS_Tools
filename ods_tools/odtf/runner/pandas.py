@@ -19,7 +19,8 @@ from ..transformers.transform import (
 )
 from ..transformers.transform_utils import replace_multiple
 from ..notset import NotSet, NotSetType
-from ..validator_pandas import PandasValidator
+from ..mapping.validator import Validator
+
 #
 # Group Wrappers
 #
@@ -246,7 +247,7 @@ class PandasRunner():
         :return: An iterable of dictionaries, each representing a transformed row.
         """
 
-        validator = PandasValidator()
+        validator = Validator(mapper.validation)
         batch_size = self.config.get('batch_size', 100000)
         total_rows = 0
         transformation = None
@@ -260,23 +261,15 @@ class PandasRunner():
                     transformation = mapper.get_transform(available_columns=available_columns)
                     logger.info("Running transformation set [{extractor.name}]")
 
-                # Validate input data
                 try:
-                    validator.run(self.coerce_row_types(batch, transformation.types),
-                                  self.config['validator']['input_format'], self.config['validator']['input_version'], self.config['type'])
-                except KeyError as e:
-                    logger.warning(f"Validation failed due to a missing column: {e}")
+                    validator.run(self.coerce_row_types(batch, transformation.types), stage=0, enable_logging=True)
                 except Exception as e:
                     logger.warning(f"Validation failed: {e}")
 
-                # Apply the transformations to the batch
                 batch = self.apply_transformation_set(batch, transformation)
 
-                # Validate output data
                 try:
-                    validator.run(batch, self.config['validator']['output_format'], self.config['validator']['output_version'], self.config['type'])
-                except KeyError as e:
-                    logger.warning(f"Validation failed due to a missing column: {e}")
+                    validator.run(batch, stage=1, enable_logging=True)
                 except Exception as e:
                     logger.warning(f"Validation failed: {e}")
 

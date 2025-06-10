@@ -81,3 +81,32 @@ transform:
     - transformation: TimeElementValue
   LocCurrency:
     - transformation: Currency
+validation:
+  input:
+    Total:
+      fields:
+        - BuildingValue
+        - ContentsValue
+      operator: sum
+    TotalByContractID:
+      fields:
+        - BuildingValue
+      operator: sum
+      group_by:
+        - ContractID
+    NumRows:
+      operator: count_rows
+  output:
+    Total:
+      fields:
+        - BuildingTIV
+        - ContentsTIV
+      operator: sum
+    TotalByAccNumber:
+      fields:
+        - BuildingTIV
+      operator: sum
+      group_by:
+        - AccNumber
+    NumRows:
+      operator: count_rows

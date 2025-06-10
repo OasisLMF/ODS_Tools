@@ -9,4 +9,3 @@ entries:
     operator: count_unique
   NumRows:
     operator: count
-  

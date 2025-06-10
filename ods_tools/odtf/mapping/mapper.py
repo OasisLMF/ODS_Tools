@@ -12,8 +12,16 @@ class Mapper:
         self.make_transforms(self.file['transform'])
         self.null_values = self.file['null_values']
         self.make_types(self.file['types'], self.null_values)
+        self.validation = self.file.get('validation', {})
 
     def get_transform(self, available_columns):
+        """Returns the valid transform from the mapping file
+        Args:
+            available_columns (List): List of columns in data set
+
+        Returns:
+            Mapping: Named tuple of transformation set, data types and null values
+        """
         missing_columns = list(set(self.types.keys()) - set(available_columns))
         transformation_set = {}
         for transformation in self.transformations:
@@ -21,21 +29,13 @@ class Mapper:
             valid_transformations = []
             for individual_transform in col_transformation:
                 individual_transform.parse()
-                if (
-                    (
-                        individual_transform.transformation_tree is None or
-                        not self.has_missing_columns(
-                            individual_transform.transformation_tree,
-                            missing_columns
-                        )
-                    ) and (
-                        individual_transform.when_tree is None or
-                        not self.has_missing_columns(
-                            individual_transform.when_tree,
-                            missing_columns
-                        )
-                    )
-                ):
+
+                no_trans_tree = individual_transform.transformation_tree is None
+                missing_trans_columns = self.has_missing_columns(individual_transform.transformation_tree, missing_columns)
+                no_when_tree = individual_transform.when_tree is None
+                missing_when_columns = self.has_missing_columns(individual_transform.when_tree, missing_columns)
+
+                if (no_trans_tree or not missing_trans_columns) and (no_when_tree or not missing_when_columns):
                     valid_transformations.append(individual_transform)
             if valid_transformations:
                 transformation_set[col_name] = valid_transformations
@@ -43,6 +43,11 @@ class Mapper:
         return Mapping(transformation_set, self.types, self.null_values)
 
     def make_transforms(self, transforms):
+        """Converts given file's transform section into transformation entry objects
+
+        Args:
+            transforms (dict): Dictionary of transformations for all items
+        """
         self.transformations = []
         for transform in transforms.items():
             name, individual_transforms = transform
@@ -54,6 +59,12 @@ class Mapper:
             self.transformations.append((name, individual_transform_objects))
 
     def make_types(self, types, null_values):
+        """Converts given file's types section into Column Conversion objects
+
+        Args:
+            types (dict): Dict of variables with their type
+            null_values (set): All possible null values in data
+        """
         self.types = {}
         for name, options in types.items():
             self.types[name] = ColumnConversion(options['type'], options.get('nullable', True), null_values)
