@@ -102,11 +102,11 @@ def transform(**kwargs):
     Transform location and account data to a new format (ex: AIR to OED)"""
     try:
         if kwargs.get('config_file') is None:
-            if kwargs.get('format') is None or kwargs.get('input_file') is None or kwargs.get('output_file') is None:
-                raise OdsException("When --config-file is not provided, --format, --input-file, and --output-file are required.")
+            if kwargs.get('mapping_file') is None or kwargs.get('input_file') is None or kwargs.get('output_file') is None:
+                raise OdsException("When config_file is not provided, mapping_file, input_file, and output_file are required.")
 
         transform_result = transform_format(path_to_config_file=kwargs.get('config_file'), input_file=kwargs.get('input_file'),
-                                            output_file=kwargs.get('output_file'), mapping_path=kwargs.get('mapping_path'))
+                                            output_file=kwargs.get('output_file'), mapping_file=kwargs.get('mapping_file'))
         if not kwargs.get('nocheck'):
             if transform_result[1] == 'location' and os.path.isfile(transform_result[0]):
                 check(location=transform_result[0])

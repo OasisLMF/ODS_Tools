@@ -10,21 +10,6 @@ from .connector import BaseConnector
 from .mapping.mapper import Mapper
 from .runner.pandas import PandasRunner
 
-# Default versions for OED and AIR when running without a config file
-OED_VERSION = "3.0.2"
-AIR_VERSION = "10.0.0"
-
-FORMAT_MAPPINGS = {
-    'oed-air': {
-        'input_format': {'name': 'OED_Location', 'version': OED_VERSION},
-        'output_format': {'name': 'Cede_Location', 'version': AIR_VERSION}
-    },
-    'air-oed': {
-        'input_format': {'name': 'Cede_Location', 'version': AIR_VERSION},
-        'output_format': {'name': 'OED_Location', 'version': OED_VERSION}
-    }
-}
-
 # Default config when running without a config file
 BASE_CONFIG = {
     "type": "loc",
@@ -39,13 +24,7 @@ BASE_CONFIG = {
     "mapping": {
         "path": ""
     },
-    "batch_size": "150000",
-    "validator": {
-        "input_version": "",
-        "input_format": "",
-        "output_version": "",
-        "output_format": "",
-    },
+    "batch_size": 150000,
     "write_header": True
 }
 
@@ -111,7 +90,7 @@ class Controller:
         logger.info(f"Transformation finished in {datetime.now() - start_time}")
 
 
-def generate_config(input_file, output_file, mappings_path):
+def generate_config(input_file, output_file, mapping_file):
     """
     This function generates a config dictionary based on the input parameters.
     When running without a config file, this will generate the config dict.
@@ -130,12 +109,12 @@ def generate_config(input_file, output_file, mappings_path):
     config_dict = BASE_CONFIG.copy()
     config_dict['input']['path'] = input_file
     config_dict['output']['path'] = output_file
-    config_dict['mapping']['path'] = mappings_path
+    config_dict['mapping']['path'] = mapping_file
 
     return config_dict
 
 
-def transform_format(path_to_config_file=None, input_file=None, output_file=None, mapping_path=None):
+def transform_format(path_to_config_file=None, input_file=None, output_file=None, mapping_file=None):
     """This function takes the input parameters when called from ods_tools
     and starts the transformation process. Either path_to_config_file or
     all three input_file, output_file, and transformation_type must be provided.
@@ -162,7 +141,7 @@ def transform_format(path_to_config_file=None, input_file=None, output_file=None
         make_relative_path_from_config_absolute(output, "path", path_to_config_file)
 
     else:
-        config = generate_config(input_file, output_file, mapping_path)
+        config = generate_config(input_file, output_file, mapping_file)
 
     controller = Controller(config)
     controller.run()

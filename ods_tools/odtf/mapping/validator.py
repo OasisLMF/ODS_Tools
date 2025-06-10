@@ -78,7 +78,7 @@ class ValidationEntry:
 class Results:
     def __init__(self, stage):
         self.results = {}
-        self.stage = stage
+        self.stage = ["Input", "Output"][stage]
 
     def __eq__(self, other):
         if self.results.keys() != other.results.keys():
@@ -89,10 +89,11 @@ class Results:
         return True
 
     def __str__(self):
-        res = [f"{["Input", "Output"][self.stage]} Validation Results:\n"]
+
+        res = [f"{self.stage} Validation Results:\n"]
         for name, result in self.results.items():
             res.append(f"  {name}:")
             result_string = result.to_string(index=False, float_format='{:,.2f}'.format)
             res.extend(['    ' + line for line in result_string.split('\n')])
 
-        return '\n'.join(res)+'\n'
+        return '\n'.join(res) + '\n'
