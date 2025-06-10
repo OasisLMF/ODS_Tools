@@ -1,5 +1,5 @@
 import yaml
-from ..transformers.transform import parse
+from ods_tools.odtf.transformers.transform import parse
 from lark import Token
 from typing import NamedTuple
 from typing import Dict, Set
@@ -12,7 +12,7 @@ class Mapper:
         self.make_transforms(self.file['transform'])
         self.null_values = self.file['null_values']
         self.make_types(self.file['types'], self.null_values)
-        self.validation = self.file.get('validation', {})
+        self.validation = self.file.get('validation', None)
 
     def get_transform(self, available_columns):
         """Returns the valid transform from the mapping file
