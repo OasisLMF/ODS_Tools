@@ -10,3 +10,4 @@ batch_size: 150000
 type: loc
 write_header: true
 absolute_path_database: ""
+logging: True

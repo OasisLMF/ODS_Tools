@@ -302,10 +302,10 @@ class OdsPackageTests(TestCase):
             csv_as_parquet = open(os.path.join(tmp_run_dir, 'SourceLocOEDPiWind.parquet'), 'rb')
             parquet_as_csv = open(os.path.join(tmp_run_dir, 'SourceAccOEDPiWind.csv'))
 
-            with self.assertRaises(OdsException) as ex:
-                exposure = OedExposure(**{'location': csv_as_parquet})
-            with self.assertRaises(OdsException) as ex:
-                exposure = OedExposure(**{'account': parquet_as_csv})
+            with self.assertRaises(OdsException):
+                OedExposure(**{'location': csv_as_parquet})
+            with self.assertRaises(OdsException):
+                OedExposure(**{'account': parquet_as_csv})
 
     def test_reporting_currency(self):
         config = {
@@ -999,49 +999,29 @@ class OdsPackageTests(TestCase):
 
             with open(config_file_path, 'w') as config_file:
                 yaml.dump({
-                    'transformations': {
-                        'loc': {
-                            'input_format': {
-                                'name': 'Test_input',
-                                'version': '1.0.0'
-                            },
-                            'output_format': {
-                                'name': 'Test_output',
-                                'version': '1.2.3'
-                            },
-                            'runner': {
-                                'batch_size': 10000
-                            },
-                            'mapping': {
-                                'options': {
-                                    'search_paths': str(pathlib.Path(base_test_path))
-                                }
-                            },
-                            'extractor': {
-                                'options': {
-                                    'path': str(pathlib.Path(base_test_path, 't_input.csv')),
-                                    'quoting': 'minimal'
-                                }
-                            },
-                            'loader': {
-                                'options': {
-                                    'path': str(pathlib.Path(tmp_dir, 't_output.csv')),
-                                    'quoting': 'minimal'
-                                }
-                            }
-                        }
-                    }
-                }, config_file)
+                        "input": {
+                            "path": str(pathlib.Path(base_test_path, 't_input.csv')),
+                            "quoting": "minimal",
+                        },
+                        "output": {
+                            "path": str(pathlib.Path(tmp_dir, 't_output.csv')),
+                            "quoting": "minimal",
+                        },
+                        "mapping": {
+                            "path": str(pathlib.Path(base_test_path, 'mapping_test.yaml')),
+                        },
+                        "batch_size": 150000,
+                        "type": "other",
+                    }, config_file)
 
             # Run the transformation
             transform_result = transform_format(str(config_file_path))
 
             # Assert the transformation result
-            assert len(transform_result) == 1
-            assert transform_result[0][0] == str(pathlib.Path(tmp_dir, 't_output.csv'))
-            assert transform_result[0][1] == 'other'
+            assert transform_result[0] == str(pathlib.Path(tmp_dir, 't_output.csv'))
+            assert transform_result[1] == 'other'
 
-            output_df = pd.read_csv(transform_result[0][0])
+            output_df = pd.read_csv(transform_result[0])
 
             expected_values = {
                 'Output_int_1': [110, 120, 111, 113, 117, 155, 201, 1099, 877, 101],

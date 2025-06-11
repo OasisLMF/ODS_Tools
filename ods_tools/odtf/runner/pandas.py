@@ -4,6 +4,7 @@ import re
 import json
 from functools import reduce
 from operator import and_, or_
+from packaging import version
 
 import pandas as pd
 from numpy import nan
@@ -24,7 +25,7 @@ from ..mapping.validator import Validator
 #
 # Group Wrappers
 #
-if tuple(map(int, pd.__version__.split('.'))) >= (2, 1, 9):
+if version.parse(pd.__version__) >= version.parse("2.1.9"):
     pd.set_option('future.no_silent_downcasting', True)
 logger = logging.getLogger(__name__)
 
@@ -224,6 +225,7 @@ class PandasRunner():
 
     def __init__(self, config):
         self.config = config
+        self.logging = config.get('logging', False)
 
     def run(self, extractor, mapper, loader):
         """
@@ -233,6 +235,7 @@ class PandasRunner():
         :param mapping: Mapping object describing the transformations to apply
         :param loader: The data connection to load data to
         """
+        # import ipdb; ipdb.set_trace()
         loader.load(self.transform(extractor, mapper))
 
     def transform(self, extractor, mapper):
@@ -259,23 +262,27 @@ class PandasRunner():
                 if transformation is None:
                     available_columns = set(batch.columns)
                     transformation = mapper.get_transform(available_columns=available_columns)
-                    logger.info("Running transformation set [{extractor.name}]")
+                    self.log("Running transformation set [{extractor.name}]", "info")
 
                 try:
-                    validator.run(self.coerce_row_types(batch, transformation.types), stage=0, enable_logging=True)
+                    validation = validator.run(self.coerce_row_types(batch, transformation.types), stage=0)
+                    if self.config.get('logging', False):
+                        self.log(validation, "warning")
                 except Exception as e:
-                    logger.warning(f"Validation failed: {e}")
+                    self.log(f"Validation failed: {e}", "warning")
 
                 batch = self.apply_transformation_set(batch, transformation)
 
                 try:
-                    validator.run(batch, stage=1, enable_logging=True)
+                    validation = validator.run(batch, stage=1)
+                    if self.config.get('logging', False):
+                        self.log(validation, "warning")
                 except Exception as e:
-                    logger.warning(f"Validation failed: {e}")
+                    self.log(f"Validation failed: {e}", "warning")
 
                 # Log the transformation progress
                 total_rows += len(batch)
-                logger.info(f"Processed {len(batch)} rows in the current batch (total: {total_rows})")
+                self.log(f"Processed {len(batch)} rows in the current batch (total: {total_rows})", "info")
 
                 yield from (r.to_dict() for idx, r in batch.iterrows())
         except FileNotFoundError:
@@ -332,6 +339,59 @@ class PandasRunner():
         )
         return result
 
+    def apply_transformation_entry(self, input_df, entry):
+        """
+        Applies a single transformation to the dataset returning the result
+        as a series.
+
+        :param input_df: The dataframe loaded from the extractor
+        :param entry: The transformation to apply
+
+        :return: The transformation result
+        """
+        transformer_mapping: TransformerMapping = {
+            "logical_and": logical_and_transformer,
+            "logical_or": logical_or_transformer,
+            "logical_not": logical_not_transformer,
+            "is_in": in_transformer,
+            "not_in": not_in_transformer,
+            "any": lambda r, values: PandasAnyWrapper(values),
+            "all": lambda r, values: PandasAllWrapper(values),
+            "str_replace": StrReplace(self.series_type),
+            "str_match": StrMatch(self.series_type),
+            "str_search": StrSearch(self.series_type),
+            "str_join": StrJoin(self.series_type),
+            "replace_multiple": replace_multiple,
+        }
+
+        # process the when clause to get a filter series
+        filter_series = run(
+            input_df, entry.when_tree or entry.when, transformer_mapping
+        )
+
+        if isinstance(filter_series, self.series_type):
+            # if we have a series treat it as a row mapping
+            filtered_input = input_df[filter_series]
+        elif filter_series:
+            # if the filter series is normal value that resolves to true
+            # return all rows
+            filtered_input = input_df
+        else:
+            # if the filter series is normal value that resolves to false
+            # return no rows, this should never happen so raise a warning.
+            self.log(f"A transformer when clause resolves to false in all cases ({entry.when}).", "warning")
+            return NotSet
+
+        result = run(
+            filtered_input,
+            entry.transformation_tree or entry.transformation,
+            transformer_mapping,
+        )
+        if isinstance(result, self.series_type):
+            return result
+        else:
+            return self.create_series(input_df.index, result)
+
     def coerce_row_types(self, row, conversions):
         coerced_row = NotSet
 
@@ -374,7 +434,7 @@ class PandasRunner():
             if bad_rows is not None and len(bad_rows):
                 row = row[~bad_rows]
                 coerced_row = coerced_row[~bad_rows]  # type: ignore
-
+        # import ipdb; ipdb.set_trace()
         return coerced_row
 
     def create_series(self, index, value):
@@ -442,61 +502,10 @@ class PandasRunner():
 
         return output_row
 
-    def apply_transformation_entry(self, input_df, entry):
-        """
-        Applies a single transformation to the dataset returning the result
-        as a series.
-
-        :param input_df: The dataframe loaded from the extractor
-        :param entry: The transformation to apply
-
-        :return: The transformation result
-        """
-        transformer_mapping: TransformerMapping = {
-            "logical_and": logical_and_transformer,
-            "logical_or": logical_or_transformer,
-            "logical_not": logical_not_transformer,
-            "is_in": in_transformer,
-            "not_in": not_in_transformer,
-            "any": lambda r, values: PandasAnyWrapper(values),
-            "all": lambda r, values: PandasAllWrapper(values),
-            "str_replace": StrReplace(self.series_type),
-            "str_match": StrMatch(self.series_type),
-            "str_search": StrSearch(self.series_type),
-            "str_join": StrJoin(self.series_type),
-            "replace_multiple": replace_multiple,
-        }
-
-        # process the when clause to get a filter series
-        filter_series = run(
-            input_df, entry.when_tree or entry.when, transformer_mapping
-        )
-
-        if isinstance(filter_series, self.series_type):
-            # if we have a series treat it as a row mapping
-            filtered_input = input_df[filter_series]
-        elif filter_series:
-            # if the filter series is normal value that resolves to true
-            # return all rows
-            filtered_input = input_df
-        else:
-            # if the filter series is normal value that resolves to false
-            # return no rows, this should never happen so raise a warning.
-            logger.warning(
-                f"A transformer when clause resolves to false in all cases "
-                f"({entry.when})."
-            )
-            return NotSet
-
-        result = run(
-            filtered_input,
-            entry.transformation_tree or entry.transformation,
-            transformer_mapping,
-        )
-        if isinstance(result, self.series_type):
-            return result
-        else:
-            return self.create_series(input_df.index, result)
+    def log(self, message, severity):
+        if self.logging:
+            log_method = getattr(logger, severity.lower(), logger.info)
+            log_method(message)
 
     @classmethod
     def log_type_coercion_error(cls, row, column, value, to_type, reason):

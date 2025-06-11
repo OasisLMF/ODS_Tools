@@ -180,8 +180,7 @@ check_command.add_argument('-v', '--logging-level', help='logging level (debug:1
 
 transform_description = """
 Transform data format to/from OED.
-This transformation can be done either by providing a config file or directly by specifying the input and output files.
-If input and output files are provided, either --oed-air or --air-oed must be specified to indicate the transformation direction.
+This transformation can be done either by providing a config file or directly by specifying the input, output and mapping files.
 
 If a config file is provided, the transformation will be done according to the config file.
 Please note that the config file allows for more options (batch size, file format, database connection, etc.)
@@ -189,9 +188,9 @@ Please note that the config file allows for more options (batch size, file forma
 transform_command = command_parser.add_parser('transform', description=transform_description,
                                               formatter_class=argparse.RawTextHelpFormatter)
 transform_command.add_argument('--config-file', help='Path to the config file')
-transform_command.add_argument('-f', "--format", help='Specify which transformation to use (currently oed-air or air-oed)', default=None)
 transform_command.add_argument('--input-file', help='Path to the input file', default=None)
 transform_command.add_argument('--output-file', help='Path to the output file', default=None)
+transform_command.add_argument('--mapping-file', help='Path to the mapping file', default=None)
 transform_command.add_argument('-v', '--logging-level', help='logging level (debug:10, info:20, warning:30, error:40, critical:50)',
                                default=30, type=int)
 transform_command.add_argument('--nocheck', help='if True, OED file will not be checked after transformation', default=False, action='store_true')

@@ -10,7 +10,7 @@ class Validator:
         else:
             self.validation = [validation['input'], validation['output']]
 
-    def run(self, data, stage=0, enable_logging=False):
+    def run(self, data, stage=0):
         """Runs the validation
 
         Args:
@@ -23,9 +23,6 @@ class Validator:
         result = Results(stage)  # So it prints nicely
         for name, mapping in run_dict.items():
             result.results[name] = self.run_entry(data, ValidationEntry(mapping))
-
-        if enable_logging:
-            logger.warning(result)
 
         return result
 

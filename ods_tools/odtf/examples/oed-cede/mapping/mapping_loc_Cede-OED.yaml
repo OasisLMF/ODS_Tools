@@ -1,0 +1,1542 @@
+# MAPPING VERSION: CEDEDB_OED_Test
+# CREATOR: Ben Hayes
+# MODEL VERSIONS: OED 3.0.2 | AIR CEDE (database) v10.0.0
+# MAP FILETYPE: SQL Server DB extract file to Flat File
+# LICENSE: BSD 3 clause license
+# SOURCE: https://github.com/OasisLMF/OpenDataTransform/
+# COMMENTS: Full example to demonstrate Sql Server DB extract to Flat File
+
+types:
+  AdjacentBuildingHeight:
+    type: int
+  AppurtenantStructures:
+    type: int
+  Area:
+    type: string
+  AreaName:
+    type: string
+  BaseFloodElevation:
+    type: float
+  BaseFloodElevationUnit:
+    type: string
+  BasementFinishType:
+    type: int
+  BasementLevelCount:
+    type: int
+  BrickVeneer:
+    type: int
+  BuildingCondition:
+    type: int
+  BuildingExteriorOpening:
+    type: int
+  BuildingHeight:
+    type: int
+  BuildingHeightUnitCode:
+    type: string
+  BuildingShape:
+    type: int
+  BuildingValue:
+    type: float
+  CargoPacking:
+    type: int
+  CargoProtection:
+    type: int
+  Cede Field:
+    type: ODTF Data Type
+  CertifiedStructuresIBHS:
+    type: int
+  Chimney:
+    type: int
+  City:
+    type: string
+  Cladding:
+    type: int
+  ColdFormedTube:
+    type: int
+  ColumnBasement:
+    type: int
+  ContentDamageability:
+    type: int
+  ContentsValue:
+    type: float
+  ContentVulnerability:
+    type: int
+  ContractID:
+    type: string
+  ConstructionCode:
+    type: string
+  ConstructionOther:
+    type: int
+  CRESTA:
+    type: string
+  CountryISO:
+    type: string
+  Currency:
+    type: string
+  CustomElevation:
+    type: float
+  CustomElevationUnit:
+    type: string
+  CustomFloodSOP:
+    type: float
+  CustomFloodSOPType:
+    type: string
+  CustomFloodZone:
+    type: int
+  DaysCovered:
+    type: int
+  DeductBldg:
+    type: float
+  DeductOther:
+    type: float
+  DeductContent:
+    type: float
+  DeductTime:
+    type: float
+  DeductType:
+    type: string
+  DefensibleSpace:
+    type: int
+  EnhancedGeoMatchLevelCode:
+    type: string
+  Equipment:
+    type: string
+  ExpirationDate:
+    type: string
+  #ExposureSetName:
+    #type: string
+  ExternalDoors:
+    type: int
+  FirewiseCommunityParticipation:
+    type: int
+  FIRMCompliance:
+    type: int
+  FirstFloorHeight:
+    type: float
+  FirstFloorHeightUnit:
+    type: string
+  FloorArea:
+    type: int
+  FloorAreaUnitCode:
+    type: string
+  FloorsOccupied:
+    type: string
+  FloorOfInterest:
+    type: int
+  FoundationType:
+    type: int
+  FoundationConnection:
+    type: int
+  GeocoderCode:
+    type: string
+  GeocoderAccountId:
+    type: string
+  GeoMatchLevelCode:
+    type: string
+  GlassPercent:
+    type: int
+  GlassType:
+    type: int
+  GrossArea:
+    type: float
+  GrossAreaUnit:
+    type: string
+  ISOBIN:
+    type: string
+  ISOConstructionCode:
+    type: string
+  ISOOccupancyCode:
+    type: string
+  InceptionDate:
+    type: string
+  InternalPartition:
+    type: int
+  IsFireSprinklerAvailable:
+    type: int
+  IsPrimary:
+    type: int
+  IsTenant:
+    type: int
+  #ISValueType:
+    #type: float
+  LargeMissile:
+    type: int
+  Latitude:
+    type: float
+  LatticeType:
+    type: int
+  LimitBldg:
+    type: float
+  LimitContent:
+    type: float
+  LimitOther:
+    type: float
+  LimitTime:
+    type: float
+  LocationDFID:
+    type: string
+  LocationGroup:
+    type: string
+  LocationID:
+    type: string
+  LocationName:
+    type: string
+  LocLimitType:
+    type: string
+  LocPerils:
+    type: string
+  Longitude:
+    type: float
+  MaxDeduct:
+    type: float
+  MinDeduct:
+    type: float
+  MinMaxDeductType:
+    type: string
+  MinDeduct:
+    type: float
+  MultiStoryHallType:
+    type: int
+  NonCATGroundUpLoss:
+    type: float
+  NumberOfStories:
+    type: int
+  OccupancyCode:
+    type: int
+  OEDVersion:
+    type: string
+  Ornamentation:
+    type: int
+  OtherValue:
+    type: float
+  Participation1:
+    type: float
+  Participation2:
+    type: float
+  PostalCode:
+    type: string
+  Pounding:
+    type: int
+  PPCCode:
+    type: string
+  Premium:
+    type: float
+  ProjectCompletion:
+    type: float
+  ProjectPhaseCode:
+    type: int
+  Redundancy:
+    type: int
+  TimeElementValue:
+    type: float
+  Retrofit:
+    type: int
+  RiskCount:
+    type: string
+  RoofAnchorage:
+    type: int
+  RoofAttachedStructure:
+    type: int
+  RoofCoverAttachment:
+    type: int
+  RoofCover:
+    type: int
+  RoofDeckAttachment:
+    type: int
+  RoofDeck:
+    type: int
+  RoofGeometry:
+    type: int
+  RoofHailImpactResistance:
+    type: int
+  RoofPitch:
+    type: int
+  RoofYearBuilt:
+    type: int
+  SalvagePotential:
+    type: int
+  SealOfApproval:
+    type: int
+  ServiceEquipmentProtection:
+    type: int
+  ShapeIrregularity:
+    type: int
+  ShortColumn:
+    type: int
+  SmallDebris:
+    type: int
+  SoftStory:
+    type: int
+  SpecialConstruction:
+    type: int
+  SpecieStorage:
+    type: int
+  SprinklerType:
+    type: int
+  Street:
+    type: string
+  SubArea:
+    type: string
+  SubArea2:
+    type: string
+  SublimitArea:
+    type: string
+  TallOneStory:
+    type: int
+  Tank:
+    type: int
+  TerrainRoughness:
+    type: int
+  Territory:
+    type: string
+  Torsion:
+    type: int
+  TransitionInSRC:
+    type: int
+  TreeExposure:
+    type: int
+  #UserConstructionCodeA:
+    #type: string
+  #UserConstructionSchemeCode:
+    #type: string
+  UserGeocodeMatchLevel:
+    type: string
+  UDF1:
+    type: string
+  UDF2:
+    type: string
+  UDF3:
+    type: string
+  UDF4:
+    type: string
+  UDF5:
+    type: string
+  #UserOccupancyCode:
+    #type: string
+  #UserOccupancySchemeCode:
+    #type: string
+  WetFloodProofing:
+    type: int
+  #WallAttachedStructureCode:
+    #type: string
+  WallSiding:
+    type: int
+  WallSidingCode:
+    type: int
+  WallType:
+    type: int
+  WaterHeater:
+    type: int
+  Welding:
+    type: int
+  WindowProtection:
+    type: int
+  YearBuilt:
+    type: int
+null_values:
+  - "''"
+  - Null
+  - NULL
+transform:
+  AccNumber:
+    - transformation: ContractID
+  AppurtenantStructure:
+    - transformation: AppurtenantStructures
+  AreaCode:
+    - transformation: Area
+  AreaName:
+    - transformation: Area
+  BaseFloodElevation:
+    - transformation: BaseFloodElevation
+  BaseFloodElevationUnit:
+    - transformation: |
+        replace(
+        BaseFloodElevationUnit,
+        'SQFT','11',
+        'SQM','12',
+        'AC','13',
+        'HA','14',
+        'FT','1',
+        'M','2',
+        'KM','3',
+        'MI','4',
+        'None',''
+        )
+      when: BaseFloodElevationUnit is not in [Null, 'NULL']
+    - transformation: "''"
+  Basement:
+    - transformation: BasementFinishType
+  BasementLevelCount:
+    - transformation: BasementLevelCount
+  BIPOI:
+    - transformation: DaysCovered
+  BITIV:
+    - transformation: TimeElementValue
+  BrickVeneer:
+    - transformation: BrickVeneer
+  # BuildingCondition:
+  #   - transformation: |
+  #       replace(
+  #       BuildingCondition,
+  #       '0','A',
+  #       '1','B',
+  #       '2','C',
+  #       '3','D',
+  #       '4','D'
+  #       )
+  BuildingCondition:
+    - transformation: BuildingCondition
+  BuildingExteriorOpening:
+    - transformation: BuildingExteriorOpening
+  BuildingHeight:
+    - transformation: BuildingHeight
+  BuildingHeightUnit:
+    - transformation: |
+        replace(
+        BuildingHeightUnitCode,
+        'SQFT','11',
+        'SQM','12',
+        'AC','13',
+        'HA','14',
+        'FT','1',
+        'M','2',
+        'KM','3',
+        'MI','4',
+        'None',''
+        )
+      when: BuildingHeightUnitCode is not in [Null, 'NULL']
+    - transformation: "''"
+  BuildingShape:
+    - transformation: BuildingShape
+  BuildingTIV:
+    - transformation: BuildingValue
+  Packaging:
+    - transformation: |
+        replace(
+        CargoPacking,
+        '0','0',
+        '1','3',
+        '2','2',
+        '3','1'
+        )
+  Protection:
+    - transformation: |
+        replace(
+        CargoProtection,
+        '0','0',
+        '1','3',
+        '2','2',
+        '3','1'
+        )
+  Chimney:
+    - transformation: Chimney
+  City:
+    - transformation: City
+  Cladding:
+    - transformation: WallSidingCode
+  CondTag:
+    - transformation: SublimitArea
+  ConstructionQuality:
+    - transformation: CertifiedStructuresIBHS
+  ConstructionCode:
+    - transformation: |
+        replace(
+          ConstructionCode,
+          '2286','5662',
+          '2285','5661',
+          '2284','5660',
+          '2283','5659',
+          '2282','5658',
+          '2281','5657',
+          '2276','5656',
+          '2275','5655',
+          '2274','5654',
+          '2273','5653',
+          '2272','5652',
+          '2271','5651',
+          '2270','5650',
+          '2263','5614',
+          '2262','5613',
+          '2261','5612',
+          '2253','5611',
+          '2252','5610',
+          '2251','5609',
+          '2243','5608',
+          '2242','5607',
+          '2241','5606',
+          '2233','5605',
+          '2232','5604',
+          '2231','5603',
+          '2221','5602',
+          '2211','5601',
+          '2210','5600',
+          '2152','5555',
+          '2151','5554',
+          '2150','5550',
+          '2142','5557',
+          '2141','5552',
+          '2132','5556',
+          '2131','5551',
+          '2031','5403',
+          '2022','5410',
+          '2021','5409',
+          '2016','5408',
+          '2015','5407',
+          '2013','5406',
+          '2012','5405',
+          '2011','5404',
+          '2010','5400',
+          '813','7013',
+          '812','7012',
+          '811','7011',
+          '810','7010',
+          '809','7009',
+          '808','7008',
+          '807','7007',
+          '806','7006',
+          '805','7005',
+          '804','7004',
+          '803','7003',
+          '802','7002',
+          '801','7001',
+          '800','7000',
+          '296','6150',
+          '295','6156',
+          '294','6155',
+          '293','6154',
+          '292','6153',
+          '291','6152',
+          '290','6151',
+          '286','6100',
+          '285','6106',
+          '284','6105',
+          '283','6104',
+          '282','6103',
+          '281','6102',
+          '280','6101',
+          '276','6000',
+          '275','6056',
+          '274','6055',
+          '273','6054',
+          '272','6053',
+          '271','6052',
+          '270','6051',
+          '267','5902',
+          '266','5901',
+          '265','5900',
+          '263','5854',
+          '262','5853',
+          '261','5850',
+          '260','5960',
+          '259','5959',
+          '258','7000',
+          '257','5958',
+          '256','5957',
+          '255','5956',
+          '254','5955',
+          '253','5954',
+          '252','5953',
+          '251','5952',
+          '250','5951',
+          '247','5807',
+          '246','5806',
+          '245','5805',
+          '244','5804',
+          '243','5803',
+          '242','5802',
+          '241','5801',
+          '238','5755',
+          '237','5754',
+          '236','5753',
+          '235','5752',
+          '234','5751',
+          '233','5703',
+          '232','5702',
+          '231','5701',
+          '228','5657',
+          '227','5651',
+          '226','5612',
+          '225','5609',
+          '224','5606',
+          '223','5603',
+          '222','5602',
+          '221','5601',
+          '215','5553',
+          '214','5552',
+          '213','5551',
+          '212','5502',
+          '211','5501',
+          '206','5453',
+          '205','5452',
+          '204','5451',
+          '203','5403',
+          '202','5402',
+          '201','5401',
+          '194','5353',
+          '193','5352',
+          '192','5351',
+          '191','5350',
+          '187','5306',
+          '186','5305',
+          '185','5304',
+          '183','5303',
+          '182','5302',
+          '181','5301',
+          '179','5265',
+          '178','5264',
+          '177','5263',
+          '176','5262',
+          '175','5261',
+          '174','5260',
+          '173','5259',
+          '172','5258',
+          '171','5257',
+          '166','5256',
+          '165','5255',
+          '164','5254',
+          '163','5253',
+          '162','5252',
+          '161','5251',
+          '160','5209',
+          '159','5208',
+          '158','5207',
+          '157','5206',
+          '156','5205',
+          '155','5204',
+          '154','5203',
+          '153','5202',
+          '152','5201',
+          '151','5200',
+          '140','5159',
+          '139','5158',
+          '138','5157',
+          '137','5156',
+          '136','5155',
+          '135','5154',
+          '134','5153',
+          '133','5152',
+          '132','5151',
+          '131','5150',
+          '121','5110',
+          '120','5109',
+          '119','5108',
+          '118','5107',
+          '117','5106',
+          '116','5105',
+          '115','5104',
+          '114','5103',
+          '113','5102',
+          '112','5101',
+          '111','5100',
+          '108','5057',
+          '107','5056',
+          '106','5055',
+          '105','5054',
+          '104','5053',
+          '103','5052',
+          '102','5051',
+          '101','5050',
+          '100','5000'
+          )
+  ContentsFloodVuln:
+    - transformation: |
+        replace(
+        ContentVulnerability,
+        '0','0',
+        '1','3',
+        '2','4',
+        '3','5',
+        '4','6'
+        )
+  ContentsTIV:
+    - transformation: ContentsValue
+  CountryCode:
+    - transformation: CountryISO
+  CustomFloodSOP:
+    - transformation: CustomFloodSOP
+  CustomFloodZone:
+    - transformation: CustomFloodZone
+  EquipmentBracing:
+    - transformation: Equipment
+  ExternalDoors:
+    - transformation: ExternalDoors
+  FEMACompliance:
+    - transformation: FIRMCompliance
+  FirstFloorHeight:
+    - transformation: FirstFloorHeight
+  FirstFloorHeightUnit:
+    - transformation: |
+        replace(
+        FirstFloorHeightUnit,
+        'SQFT','11',
+        'SQM','12',
+        'AC','13',
+        'HA','14',
+        'FT','1',
+        'M','2',
+        'KM','3',
+        'MI','4',
+        'None',''
+        )
+      when: FirstFloorHeightUnit is not in [Null, 'NULL']
+    - transformation: "''"
+  FlexiLocAdjacentBuildingHeight:
+    - transformation: AdjacentBuildingHeight
+  FlexiLocConstructionOther:
+    - transformation: |
+        replace(
+        ConstructionOther,
+        '2286','5662',
+        '2285','5661',
+        '2284','5660',
+        '2283','5659',
+        '2282','5658',
+        '2281','5657',
+        '2276','5656',
+        '2275','5655',
+        '2274','5654',
+        '2273','5653',
+        '2272','5652',
+        '2271','5651',
+        '2270','5650',
+        '2263','5614',
+        '2262','5613',
+        '2261','5612',
+        '2253','5611',
+        '2252','5610',
+        '2251','5609',
+        '2243','5608',
+        '2242','5607',
+        '2241','5606',
+        '2233','5605',
+        '2232','5604',
+        '2231','5603',
+        '2221','5602',
+        '2211','5601',
+        '2210','5600',
+        '2152','5555',
+        '2151','5554',
+        '2150','5550',
+        '2142','5557',
+        '2141','5552',
+        '2132','5556',
+        '2131','5551',
+        '2031','5403',
+        '2022','5410',
+        '2021','5409',
+        '2016','5408',
+        '2015','5407',
+        '2013','5406',
+        '2012','5405',
+        '2011','5404',
+        '2010','5400',
+        '813','7013',
+        '812','7012',
+        '811','7011',
+        '810','7010',
+        '809','7009',
+        '808','7008',
+        '807','7007',
+        '806','7006',
+        '805','7005',
+        '804','7004',
+        '803','7003',
+        '802','7002',
+        '801','7001',
+        '800','7000',
+        '296','6150',
+        '295','6156',
+        '294','6155',
+        '293','6154',
+        '292','6153',
+        '291','6152',
+        '290','6151',
+        '286','6100',
+        '285','6106',
+        '284','6105',
+        '283','6104',
+        '282','6103',
+        '281','6102',
+        '280','6101',
+        '276','6000',
+        '275','6056',
+        '274','6055',
+        '273','6054',
+        '272','6053',
+        '271','6052',
+        '270','6051',
+        '267','5902',
+        '266','5901',
+        '265','5900',
+        '263','5854',
+        '262','5853',
+        '261','5850',
+        '260','5960',
+        '259','5959',
+        '258','7000',
+        '257','5958',
+        '256','5957',
+        '255','5956',
+        '254','5955',
+        '253','5954',
+        '252','5953',
+        '251','5952',
+        '250','5951',
+        '247','5807',
+        '246','5806',
+        '245','5805',
+        '244','5804',
+        '243','5803',
+        '242','5802',
+        '241','5801',
+        '238','5755',
+        '237','5754',
+        '236','5753',
+        '235','5752',
+        '234','5751',
+        '233','5703',
+        '232','5702',
+        '231','5701',
+        '228','5657',
+        '227','5651',
+        '226','5612',
+        '225','5609',
+        '224','5606',
+        '223','5603',
+        '222','5602',
+        '221','5601',
+        '215','5553',
+        '214','5552',
+        '213','5551',
+        '212','5502',
+        '211','5501',
+        '206','5453',
+        '205','5452',
+        '204','5451',
+        '203','5403',
+        '202','5402',
+        '201','5401',
+        '194','5353',
+        '193','5352',
+        '192','5351',
+        '191','5350',
+        '187','5306',
+        '186','5305',
+        '185','5304',
+        '183','5303',
+        '182','5302',
+        '181','5301',
+        '179','5265',
+        '178','5264',
+        '177','5263',
+        '176','5262',
+        '175','5261',
+        '174','5260',
+        '173','5259',
+        '172','5258',
+        '171','5257',
+        '166','5256',
+        '165','5255',
+        '164','5254',
+        '163','5253',
+        '162','5252',
+        '161','5251',
+        '160','5209',
+        '159','5208',
+        '158','5207',
+        '157','5206',
+        '156','5205',
+        '155','5204',
+        '154','5203',
+        '153','5202',
+        '152','5201',
+        '151','5200',
+        '140','5159',
+        '139','5158',
+        '138','5157',
+        '137','5156',
+        '136','5155',
+        '135','5154',
+        '134','5153',
+        '133','5152',
+        '132','5151',
+        '131','5150',
+        '121','5110',
+        '120','5109',
+        '119','5108',
+        '118','5107',
+        '117','5106',
+        '116','5105',
+        '115','5104',
+        '114','5103',
+        '113','5102',
+        '112','5101',
+        '111','5100',
+        '108','5057',
+        '107','5056',
+        '106','5055',
+        '105','5054',
+        '104','5053',
+        '103','5052',
+        '102','5051',
+        '101','5050',
+        '100','5000'
+        )
+  FlexiLocColdFormedTubeCode:
+    - transformation: ColdFormedTube
+  FlexiLocColumnBasementCode:
+    - transformation: ColumnBasement
+  FlexiLocContentDamageabilityCode:
+    - transformation: ContentDamageability
+  FlexiLocCustomFloodSOPType:
+    - transformation: CustomFloodSOPType
+  FlexiLocDefensibleSpace:
+    - transformation: DefensibleSpace
+  FlexiLocEnhancedGeoMatchLevelCode:
+    - transformation: EnhancedGeoMatchLevelCode
+  FlexiLocFirewiseCommunityParticipation:
+    - transformation: FirewiseCommunityParticipation
+  FlexiLocFloorOfInterest:
+    - transformation: FloorOfInterest
+  FlexiLocGeocoderAccountId:
+    - transformation: GeocoderAccountId
+  FlexiLocGlassPercentCode:
+    - transformation: GlassPercent
+  FlexiLocGrossArea:
+    - transformation: GrossArea
+  FlexiLocGrossAreaUnit:
+    - transformation: |
+        replace(
+        GrossAreaUnit,
+        'SQFT','11',
+        'SQM','12',
+        'AC','13',
+        'HA','14',
+        'FT','1',
+        'M','2',
+        'KM','3',
+        'MI','4',
+        'None',''
+        )
+      when: GrossAreaUnit is not in [Null, 'NULL']
+    - transformation: "''"
+  FlexiLocIsFireSprinklerAvailable:
+    - transformation: IsFireSprinklerAvailable
+  FlexiLocISOBIN:
+    - transformation: ISOBIN
+  FlexiLocISOConstructionCode:
+    - transformation: ISOConstructionCode
+  FlexiLocISOOccupancyCode:
+    - transformation: ISOOccupancyCode
+  FlexiLocLargeMissileCode:
+    - transformation: LargeMissile
+  FlexiLocParticipation2:
+    - transformation: Participation2
+  FlexiLocPPCCode:
+    - transformation: PPCCode
+  FlexiLocProjectPhaseCode:
+    - transformation: ProjectPhaseCode
+  FlexiLocRoofHailImpactResistanceCode:
+    - transformation: RoofHailImpactResistance
+  FlexiLocSealOfApprovalCode:
+    - transformation: SealOfApproval
+  FlexiLocSubareaName:
+    - transformation: SubArea
+  FlexiLocSubarea2Name:
+    - transformation: SubArea2
+  FlexiLocTerritory:
+    - transformation: Territory
+  FlexiLocTransitionInSRCCode:
+    - transformation: TransitionInSRC
+  FlexiLocUserGeocodeMatchLevel:
+    - transformation: UserGeocodeMatchLevel
+  FlexiLocWallCode:
+    - transformation: WallType
+  FlexiLocWaterHeaterCode:
+    - transformation: WaterHeater
+  FlexiLocWeldingCode:
+    - transformation: Welding
+  FloodDefenseHeight:
+    - transformation: |
+        replace(
+        WetFloodProofing,
+        '0','0',
+        '1','0',
+        '2','1',
+        '3','3',
+        '4','4'
+        )
+  FloorArea:
+    - transformation: FloorArea
+  FloorAreaUnit:
+    - transformation: |
+        replace(
+        FloorAreaUnitCode,
+        'SQFT','11',
+        'SQM','12',
+        'AC','13',
+        'HA','14',
+        'FT','1',
+        'M','2',
+        'KM','3',
+        'MI','4',
+        'None',''
+        )
+      when: FloorAreaUnitCode is not in [Null, 'NULL']
+    - transformation: "''"
+  FloorsOccupied:
+    - transformation: FloorsOccupied
+  FoundationConnection:
+    - transformation: FoundationConnection
+  FoundationType:
+    - transformation: FoundationType
+  Geocoder:
+    - transformation: GeocoderCode
+  GeogScheme1:
+    - transformation: CRESTA
+  GlassType:
+    - transformation: GlassType
+  GroundElevation:
+    - transformation: CustomElevation
+  GroundElevationUnit:
+    - transformation:  |
+        replace(
+        CustomElevationUnit,
+        'SQFT','11',
+        'SQM','12',
+        'AC','13',
+        'HA','14',
+        'FT','1',
+        'M','2',
+        'KM','3',
+        'MI','4',
+        'None',''
+        )
+      when: CustomElevationUnit is not in [Null, 'NULL']
+    - transformation: "''"
+  InternalPartition:
+    - transformation: InternalPartition
+  IsPrimary:
+    - transformation: IsPrimary
+  IsTenant:
+    - transformation: IsTenant
+  Latitude:
+    - transformation: Latitude
+  LatticeType:
+    - transformation: LatticeType
+  LocCurrency:
+    - transformation: Currency
+  LocDed1Building:
+    - transformation: DeductBldg
+      when: DeductType is 'C'
+  LocDed2Other:
+    - transformation: DeductOther
+      when: DeductType is 'C'
+  LocDed3Contents:
+    - transformation: DeductContent
+      when: DeductType is 'C'
+  LocDed4BI:
+    - transformation: DeductTime
+      when: DeductType is 'C'
+  LocDed5PD:
+    - transformation: DeductBldg
+      when: DeductType is 'CB'
+  LocDed6All:
+    - transformation: DeductBldg
+      when: DeductType is 'S'
+  LocDedCode1Building:
+    - transformation: 0
+  LocDedCode2Other:
+    - transformation: 0
+  LocDedCode3Contents:
+    - transformation: 0
+  LocDedCode4BI:
+    - transformation: 0
+  LocDedCode5PD:
+    - transformation: 0
+  LocDedCode6All:
+    - transformation: 0
+  LocDedType1Building:
+    - transformation: 0
+      when: DeductBldg gt 1 and DeductType is 'C'
+    - transformation: 2
+      when: DeductBldg lte 1 and DeductType is 'C'
+  LocDedType2Other:
+    - transformation: 0
+      when: DeductOther gt 1 and DeductType is 'C'
+    - transformation: 2
+      when: DeductOther lte 1 and DeductType is 'C'
+  LocDedType3Contents:
+    - transformation: 0
+      when: DeductContent gt 1 and DeductType is 'C'
+    - transformation: 2
+      when: DeductContent lte 1 and DeductType is 'C'
+  LocDedType4BI:
+    - transformation: 0
+      when: DeductTime gt 1 and DeductType is 'C'
+    - transformation: 2
+      when: DeductTime lte 1 and DeductType is 'C'
+  LocDedType5PD:
+    - transformation: 0
+      when: DeductBldg gt 1 and DeductType is 'CB'
+    - transformation: 2
+      when: DeductBldg lte 1 and DeductType is 'CB'
+  LocDedType6All:
+    - transformation: 0
+      when: DeductBldg gt 1 and DeductType is 'S'
+    - transformation: 2
+      when: DeductBldg lte 1 and DeductType is 'S'
+  LocExpiryDate:
+    - transformation: ExpirationDate
+  LocNetPremium:
+    - transformation: Premium
+  LocGroup:
+    - transformation: LocationGroup
+  LocInceptionDate:
+    - transformation: InceptionDate
+  LocLimit1Building:
+    - transformation: LimitBldg
+      when: LocLimitType is 'C'
+  LocLimit2Other:
+    - transformation:  LimitOther
+      when: LocLimitType is 'C'
+  LocLimit3Contents:
+    - transformation: LimitContent
+      when: LocLimitType is 'C'
+  LocLimit4BI:
+    - transformation:  LimitTime
+      when: LocLimitType is 'C'
+  LocLimit5PD:
+    - transformation: LimitBldg
+      when: LocLimitType is 'EE'
+  LocLimit6All:
+    - transformation:  LimitBldg
+      when: LocLimitType is 'S'
+  LocLimitCode1Building:
+    - transformation: 0
+  LocLimitCode2Other:
+    - transformation: 0
+  LocLimitCode3Contents:
+    - transformation: 0
+  LocLimitCode4BI:
+    - transformation: 0
+  LocLimitCode5PD:
+    - transformation: 0
+  LocLimitCode6All:
+    - transformation: 0
+  LocLimitType1Building:
+    - transformation: 0
+  LocLimitType2Other:
+    - transformation: 0
+  LocLimitType3Contents:
+    - transformation: 0
+  LocLimitType4BI:
+    - transformation: 0
+  LocLimitType5PD:
+    - transformation: 0
+  LocLimitType6All:
+    - transformation: 0
+  LocMaxDed1Building:
+    - transformation: MaxDeduct
+      when: DeductBldg gt 0 and DeductType is 'C'
+  LocMaxDed2Other:
+    - transformation: MaxDeduct
+      when: DeductOther gt 0 and DeductType is 'C'
+  LocMaxDed3Contents:
+    - transformation: MaxDeduct
+      when: DeductContent gt 0 and DeductType is 'C'
+  LocMaxDed4BI:
+    - transformation: MaxDeduct
+      when: DeductTime gt 0 and DeductType is 'C'
+  LocMaxDed5PD:
+    - transformation: MaxDeduct
+      when: DeductBldg gt 0 and DeductType is 'CB'
+  LocMaxDed6All:
+    - transformation: MaxDeduct
+      when: DeductBldg gt 0 and DeductType is 'S'
+  LocMinDed1Building:
+    - transformation: MinDeduct
+      when: DeductBldg gt 0 and DeductType is 'C'
+  LocMinDed2Other:
+    - transformation: MinDeduct
+      when: DeductOther gt 0 and DeductType is 'C'
+  LocMinDed3Contents:
+    - transformation: MinDeduct
+      when: DeductContent gt 0 and DeductType is 'C'
+  LocMinDed4BI:
+    - transformation: MinDeduct
+      when: DeductTime gt 0 and DeductType is 'C'
+  LocMinDed5PD:
+    - transformation: MinDeduct
+      when: DeductBldg gt 0 and DeductType is 'CB'
+  LocMinDed6All:
+    - transformation: MinDeduct
+      when: DeductBldg gt 0 and DeductType is 'S'
+  LocName:
+    - transformation: LocationName
+  LocParticipation:
+    - transformation: Participation1
+  LocPeril:
+    - transformation: |
+        replace_multiple(
+          LocPerils,
+          ',', ';',
+          'CF', 'WSS',
+          'CH', 'XCH',
+          'EQ', 'QEQ',
+          'FF', 'QFF',
+          'HL', 'XHL',
+          'IF', 'ORF',
+          'LQ', 'QLF',
+          'LS', 'QLS',
+          'NC', 'BFR',
+          'PD', 'CPD',
+          'PF', 'OSF',
+          'PN', 'PNF',
+          'SB', 'CSB',
+          'SL', 'QSL',
+          'ST', 'XLT',
+          'SU', 'WSS',
+          'SW', 'XSL',
+          'TC', 'WTC',
+          'TD', 'XTD',
+          'TR', 'MTR',
+          'TS', 'QTS',
+          'WF', 'BBF',
+          'WS', 'ZST'
+        )
+      when: LocPerils is not in [Null, '', 'NULL']
+    - transformation: "'AA1'"
+  LocPerilsCovered:
+    - transformation: |
+        replace_multiple(
+          LocPerils,
+          ',', ';',
+          'CF','WSS',
+          'CH','XCH',
+          'EQ','QEQ',
+          'FF','QFF',
+          'HL','XHL',
+          'IF','ORF',
+          'LQ','QLF',
+          'LS','QLS',
+          'NC','BFR',
+          'PD','CPD',
+          'PF','OSF',
+          'PN','PNF',
+          'SB','CSB',
+          'SL','QSL',
+          'ST','XLT',
+          'SU','WSS',
+          'SW','XSL',
+          'TC','WTC',
+          'TD','XTD',
+          'TR','MTR',
+          'TS','QTS',
+          'WF','BBF',
+          'WS','ZST'
+        )
+      when: LocPerils is not in [Null, '', 'NULL']
+    - transformation: "'AA1'"
+  LocNumber:
+    - transformation: LocationID
+  LocUserDef1:
+    - transformation: UDF1
+  LocUserDef2:
+    - transformation: UDF2
+  LocUserDef3:
+    - transformation: UDF3
+  LocUserDef4:
+    - transformation: UDF4
+  LocUserDef5:
+    - transformation: UDF5
+  Longitude:
+    - transformation: Longitude
+  MultiStoryHall:
+    - transformation: MultiStoryHallType
+  NonCATGroundUpLoss:
+    - transformation: NonCATGroundUpLoss
+  NumberOfBuildings:
+    - transformation: RiskCount
+  NumberOfStoreys:
+    - transformation: NumberOfStories
+  OccupancyCode:
+    - transformation:
+        replace(
+          OccupancyCode,
+          '300','1000',
+          '301','1050',
+          '302','1051',
+          '303','1052',
+          '304','1053',
+          '305','1054',
+          '306','1055',
+          '307','1056',
+          '311','1100',
+          '312','1101',
+          '313','1102',
+          '314','1103',
+          '315','1104',
+          '316','1105',
+          '317','1108',
+          '318','1113',
+          '319','1114',
+          '321','1150',
+          '322','1151',
+          '323','1152',
+          '324','1153',
+          '325','1154',
+          '326','1155',
+          '327','1156',
+          '328','1157',
+          '329','1158',
+          '330','1159',
+          '331','1119',
+          '335','1120',
+          '336','1121',
+          '341','1200',
+          '342','1201',
+          '343','1210',
+          '344','1220',
+          '345','1230',
+          '346','1231',
+          '351','1250',
+          '352','1251',
+          '353','1252',
+          '354','1253',
+          '355','1254',
+          '356','1255',
+          '361','1300',
+          '362','1301',
+          '363','1302',
+          '364','1303',
+          '365','1304',
+          '366','1122',
+          '371','1123',
+          '372','1350',
+          '373','1351',
+          '374','1352',
+          '375','1353',
+          '400','2000',
+          '401','2050',
+          '402','2051',
+          '403','2052',
+          '404','2053',
+          '405','2054',
+          '406','2055',
+          '407','2056',
+          '408','2057',
+          '409','2058',
+          '414','2100',
+          '415','2101',
+          '416','2102',
+          '417','2103',
+          '418','2104',
+          '419','2105',
+          '420','2106',
+          '421','2107',
+          '422','2108',
+          '423','2109',
+          '424','2110',
+          '425','2111',
+          '429','2150',
+          '430','2151',
+          '431','2152',
+          '432','2153',
+          '433','2154',
+          '434','2155',
+          '438','2200',
+          '439','2201',
+          '440','2202',
+          '441','2203',
+          '442','2204',
+          '443','2205',
+          '444','2206',
+          '445','2207',
+          '446','2208',
+          '449','2250',
+          '450','2251',
+          '451','2252',
+          '452','2253',
+          '455','2300',
+          '456','2301',
+          '457','2302',
+          '458','2303',
+          '459','2304',
+          '460','2305',
+          '463','2350',
+          '464','2351',
+          '465','2352',
+          '470','2400',
+          '471','2401',
+          '472','2402',
+          '473','2403',
+          '474','2404',
+          '475','2450',
+          '476','2500',
+          '477','2510',
+          '478','2520',
+          '479','2530',
+          '480','2550',
+          '481','2560',
+          '482','2600',
+          '483','2650',
+          '484','2700',
+          '485','2750',
+          '486','2760',
+          '487','2770',
+          '488','2780',
+          '900','3000',
+          '901','3001',
+          '902','3002',
+          '903','3003',
+          '904','3004',
+          '905','3005',
+          '906','3006',
+          '907','3007',
+          '908','3008',
+          '909','3009'
+          )
+  #OrgConstructionCode:
+    #- transformation: UserConstructionCodeA
+  #OrgConstructionScheme:
+    #- transformation: UserConstructionSchemeCode
+  #OrgOccupancyCode:
+    #- transformation: UserOccupancyCode
+  #OrgOccupancyScheme:
+    #- transformation: UserOccupancySchemeCode
+  OEDVersion:
+    - transformation: "302"
+  Ornamentation:
+    - transformation: Ornamentation
+  OtherTIV:
+    - transformation: OtherValue
+  PercentComplete:
+    - transformation: ProjectCompletion
+  #PortNumber:
+    #- transformation: ExposureSetName
+  PostalCode:
+    - transformation: PostalCode
+  Pounding:
+    - transformation: Pounding
+  Redundancy:
+    - transformation: Redundancy
+  Retrofit:
+    - transformation: Retrofit
+  RoofAnchorage:
+    - transformation: RoofAnchorage
+  RoofAttachedStructures:
+    - transformation: RoofAttachedStructure
+  RoofCover:
+    - transformation: RoofCover
+  RoofCoverAttachment:
+    - transformation: RoofCoverAttachment
+  RoofDeck:
+    - transformation: RoofDeck
+  RoofDeckAttachment:
+    - transformation: RoofDeckAttachment
+  RoofGeometry:
+    - transformation: RoofGeometry
+  RoofPitch:
+    - transformation: RoofPitch
+  RoofYearBuilt:
+    - transformation: RoofYearBuilt
+  SalvageProtection:
+    - transformation: |
+        replace(
+        SalvagePotential,
+        '0','0',
+        '1','1',
+        '2','1',
+        '3','2',
+        '4','3',
+        '5','3'
+        )
+  ServiceEquipmentProtection:
+    - transformation: |
+        replace(
+        ServiceEquipmentProtection,
+        '0','0',
+        '1','1',
+        '2','2',
+        '3','1',
+        '4','1'
+        )
+  ShapeIrregularity:
+    - transformation: ShapeIrregularity
+  ShortColumn:
+    - transformation: ShortColumn
+  SmallDebris:
+    - transformation: SmallDebris
+  SoftStory:
+    - transformation: SoftStory
+  #SoilValue:
+    #- transformation: ISValueType
+  SpecialEQConstruction:
+    - transformation: SpecialConstruction
+  ValuablesStorage:
+    - transformation: |
+        replace(
+        SpecieStorage,
+        '0','0',
+        '1','1',
+        '2','0',
+        '3','0'
+        )
+  SprinklerType:
+    - transformation: |
+        replace(
+        SprinklerType,
+        '0','0',
+        '1','5',
+        '2','3'
+        )
+  StreetAddress:
+    - transformation: Street
+  TallOneStory:
+    - transformation: TallOneStory
+  Tank:
+    - transformation: Tank
+  TerrainRoughness:
+    - transformation: TerrainRoughness
+  Torsion:
+    - transformation: Torsion
+  TreeExposure:
+    - transformation: TreeExposure
+  VulnerabilitySetID:
+    - transformation: LocationDFID
+  #WallAttachedStructure:
+    #- transformation: WallAttachedStructureCode
+  WindowProtection:
+    - transformation: WindowProtection
+  YearBuilt:
+    - transformation: YearBuilt
+validation:
+  output:
+    Total:
+      fields:
+        - BuildingTIV
+        - ContentsTIV
+      operator: sum
+    TotalByAccNumber:
+      fields:
+        - BuildingTIV
+      operator: sum
+      group_by:
+        - AccNumber
+    NumRows:
+      operator: count_rows
+  input:
+    Total:
+      fields:
+        - BuildingValue
+        - ContentsValue
+      operator: sum
+    TotalByContractID:
+      fields:
+        - BuildingValue
+      operator: sum
+      group_by:
+        - ContractID
+    NumRows:
+      operator: count_rows

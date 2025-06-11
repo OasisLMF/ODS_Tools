@@ -25,7 +25,8 @@ BASE_CONFIG = {
         "path": ""
     },
     "batch_size": 150000,
-    "write_header": True
+    "write_header": True,
+    "logging": True
 }
 
 logger = logging.getLogger(__name__)
