@@ -999,20 +999,20 @@ class OdsPackageTests(TestCase):
 
             with open(config_file_path, 'w') as config_file:
                 yaml.dump({
-                        "input": {
-                            "path": str(pathlib.Path(base_test_path, 't_input.csv')),
-                            "quoting": "minimal",
-                        },
-                        "output": {
-                            "path": str(pathlib.Path(tmp_dir, 't_output.csv')),
-                            "quoting": "minimal",
-                        },
-                        "mapping": {
-                            "path": str(pathlib.Path(base_test_path, 'mapping_test.yaml')),
-                        },
-                        "batch_size": 150000,
-                        "type": "other",
-                    }, config_file)
+                    "input": {
+                        "path": str(pathlib.Path(base_test_path, 't_input.csv')),
+                        "quoting": "minimal",
+                    },
+                    "output": {
+                        "path": str(pathlib.Path(tmp_dir, 't_output.csv')),
+                        "quoting": "minimal",
+                    },
+                    "mapping": {
+                        "path": str(pathlib.Path(base_test_path, 'mapping_test.yaml')),
+                    },
+                    "batch_size": 150000,
+                    "type": "other",
+                }, config_file)
 
             # Run the transformation
             transform_result = transform_format(str(config_file_path))
