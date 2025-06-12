@@ -1,13 +1,11 @@
 import logging
 import math
 import re
-import json
 from functools import reduce
 from operator import and_, or_
 from packaging import version
 
 import pandas as pd
-from numpy import nan
 
 
 from ..transformers import run
@@ -21,6 +19,7 @@ from ..transformers.transform import (
 from ..transformers.transform_utils import replace_multiple
 from ..notset import NotSet, NotSetType
 from ..mapping.validator import Validator
+from ..mapping.mapper import get_dependencies
 
 #
 # Group Wrappers
@@ -249,7 +248,6 @@ class PandasRunner():
         :param mapping: The mapping object defining transformations.
         :return: An iterable of dictionaries, each representing a transformed row.
         """
-
         validator = Validator(mapper.validation)
         batch_size = self.config.get('batch_size', 100000)
         total_rows = 0
@@ -262,10 +260,13 @@ class PandasRunner():
                 if transformation is None:
                     available_columns = set(batch.columns)
                     transformation = mapper.get_transform(available_columns=available_columns)
+                    for when, dependency, name in get_dependencies(transformation):
+                        if when not in available_columns and (dependency in available_columns or dependency is None):
+                            raise ValueError(f"Dependency missing from file: {name} needs {when} to be determined. Also uses: {dependency}")
                     self.log("Running transformation set [{extractor.name}]", "info")
 
                 try:
-                    validation = validator.run(self.coerce_row_types(batch, transformation.types), stage=0)
+                    validation = validator.run(self.coerce_df_types(batch, transformation.types), stage=0)
                     if self.config.get('logging', False):
                         self.log(validation, "warning")
                 except Exception as e:
@@ -290,54 +291,48 @@ class PandasRunner():
         except Exception as e:
             logger.error(f"Error processing batch: {e}")
 
-    def apply_transformation_set(self, row, transformations):
+    def apply_transformation_set(self, input_df, transformations):
         """
-        Applies all the transformations to produce the output row
+        Applies all the transformations to produce the output
 
-        :param row: The current input row
-        :param transformations: The full set of column conversions and
-            transformation sets to apply to the ``row`` row.
+        :param input_df: The dataframe to transform
+        :param transformations: The full set of column conversions and transformation sets to apply to the dataframe
 
-        :return: The transformed row
+        :return: The transformed dataframe
         """
-        coerced_row = self.coerce_row_types(row, transformations.types)
-        if coerced_row is None:
-            return NotSet
+        input_df = self.coerce_df_types(input_df, transformations.types)
+        results = {}
 
-        return reduce(
-            lambda target, col_transforms: self.assign(
-                row,
-                target,
-                {
-                    col_transforms[0]: self.apply_column_transformation(
-                        coerced_row, col_transforms[1]
-                    )
-                },
-            ),
-            transformations.transformation_set.items(),
-            NotSet,
-        )
+        for column, transformation in transformations.transformation_set.items():
+            column_result = self.apply_column_transformation(input_df, transformation)
+            if not isinstance(column_result, NotSetType):
+                results[column] = column_result
 
-    def apply_column_transformation(self, row, entry_list):
+        df = pd.concat(results, axis=1)
+        return df.fillna("")  # Can remove if prefer having nans to , in output?
+
+    def apply_column_transformation(self, input_df, entry_list):
         """
         Applies all the transformations for a single output column
 
-        :param row: The current input row
-        :param entry_list: A list of all the transformations to apply to
-            generate the output series
+        :param input_df: The dataframe to transform
+        :param entry_list: A list of all the transformations to apply to generate the output
 
         :return: The transformation result
         """
-        result = reduce(
-            lambda current_column_value, entry: self.combine_column(
-                row,
-                current_column_value,
-                entry,
-            ),
-            entry_list,
-            NotSet,
-        )
-        return result
+        result = None
+
+        for entry in entry_list:
+            new_series = self.apply_transformation_entry(input_df, entry)
+
+            if isinstance(new_series, NotSetType):
+                continue
+            if result is None:
+                result = new_series
+            else:
+                result = result.combine_first(new_series)
+
+        return result if result is not None else NotSet
 
     def apply_transformation_entry(self, input_df, entry):
         """
@@ -392,17 +387,20 @@ class PandasRunner():
         else:
             return self.create_series(input_df.index, result)
 
-    def coerce_row_types(self, row, conversions):
-        coerced_row = NotSet
+    def create_series(self, index, value):
+        return self.series_type(value, index=index)
 
-        for column in row.columns:
+    def coerce_df_types(self, df, conversions):
+        coerced_df = NotSet
+
+        for column in df.columns:
             conversion = conversions.get(column)
             if not conversion:
-                coerced_column = row[column]
+                coerced_column = df[column]
                 bad_rows = None
             else:
                 coerced_column = self.row_value_conversions[conversion.type](
-                    row[column],
+                    df[column],
                     conversion.nullable,
                     conversion.null_values,
                 )
@@ -411,7 +409,7 @@ class PandasRunner():
                 )
 
                 for error, (idx, entry) in zip(
-                    coerced_column[bad_rows], row[bad_rows].iterrows()
+                    coerced_column[bad_rows], df[bad_rows].iterrows()
                 ):
                     self.log_type_coercion_error(
                         entry.to_dict(),
@@ -423,102 +421,20 @@ class PandasRunner():
 
                 coerced_column = coerced_column[~bad_rows]
 
-            if isinstance(coerced_row, NotSetType):
-                coerced_row = coerced_column.to_frame(column)
+            if isinstance(coerced_df, NotSetType):
+                coerced_df = coerced_column.to_frame(column)
             else:
-                coerced_row[column] = coerced_column
+                coerced_df[column] = coerced_column
 
             # remove the bad rows from the input row and the coerced row
             # so that no bad rows arent processed anymore and bad rows
             # arent included in the final coerced value
             if bad_rows is not None and len(bad_rows):
-                row = row[~bad_rows]
-                coerced_row = coerced_row[~bad_rows]  # type: ignore
-        # import ipdb; ipdb.set_trace()
-        return coerced_row
-
-    def create_series(self, index, value):
-        return self.series_type(value, index=index)
-
-    def combine_column(self, row, current_column_value, entry):
-        """
-        Combines the current column value with the result of the
-        transformation. If the current value is ``NotSet`` the value of the
-        current transformation will be calculated and applied.
-
-        :param row: The row loaded from the extractor
-        :param current_column_value: Series representing the current
-            transformed value
-        :param entry: The transformation to apply
-
-        :return: The combined column value
-        """
-        if not isinstance(current_column_value, NotSetType):
-            # remove any entries that have already been processed
-            row = row[
-                self.create_series(
-                    current_column_value.index, False
-                ).combine_first(self.create_series(row.index, True))
-            ]
-
-        if isinstance(row, NotSetType) or len(row) == 0:
-            return current_column_value
-
-        new_column_value = self.apply_transformation_entry(row, entry)
-
-        if isinstance(current_column_value, NotSetType):
-            return new_column_value
-        elif isinstance(new_column_value, NotSetType):
-            return current_column_value
-        else:
-            return current_column_value.combine_first(new_column_value)
-
-    def assign(self, input_row, output_row, assignments):
-        """
-        Helper function for assigning a series to a dataframe. Some
-        implementations of pandas are less efficient if we start with an empty
-        dataframe so here we allow for `None` to be passed and create the
-        initial dataframe from the first assigned series.
-
-        :param input_row: The row loaded from the extractor
-        :param output_row: The data frame to assign to or None
-        :param assignments: The assignments to apply to the dataframe
-
-        :return: The updated dataframe
-        """
-        for name, series in assignments.items():
-            if isinstance(series, NotSetType):
-                series = self.create_series(input_row.index, nan)
-
-            if isinstance(output_row, NotSetType):
-                output_row = series.to_frame(name=name)
-            else:
-                series.name = name
-                output_row, series = output_row.align(
-                    series, axis=0, fill_value=NotSet
-                )
-                output_row = output_row.infer_objects(copy=False)
-                output_row = output_row.assign(**{name: series})
-
-        return output_row
+                df = df[~bad_rows]
+                coerced_df = coerced_df[~bad_rows]  # type: ignore
+        return coerced_df
 
     def log(self, message, severity):
         if self.logging:
             log_method = getattr(logger, severity.lower(), logger.info)
             log_method(message)
-
-    @classmethod
-    def log_type_coercion_error(cls, row, column, value, to_type, reason):
-        """
-        Logs a failure of a row type coercion
-
-        :param row: The input row that failed
-        :param column: The name of the column in which the error occurred
-        :param value: The value of the failing column
-        :param to_type: The type the coercion was attempting
-        :param reason: The error message
-        """
-        logger.warning(
-            f"Cannot coerce {column} ({value}) to {to_type}. "
-            f"Reason: {reason}. Row: {json.dumps(row)}."
-        )

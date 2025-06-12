@@ -12,7 +12,7 @@ def replace_multiple(row: RowType, target, source_sep, target_sep, *pattern_repl
     Transform location perils from source to target perils.
 
     Args:
-        row (RowType): 
+        row (RowType):
         target (_type_): values to be transformed
         source_sep (_type_): delimeter in source values
         target_sep (_type_): delimeter in target values

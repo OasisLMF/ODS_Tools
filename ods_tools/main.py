@@ -21,7 +21,7 @@ from ods_tools.oed import (
 try:
     from ods_tools.odtf.controller import transform_format
 except ImportError as e:
-    logger.error("Data transformation package requirements not intalled.")
+    logger.error("Data transformation package requirements not installed.")
     logger.error(e)
 
 
