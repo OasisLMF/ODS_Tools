@@ -1,11 +1,8 @@
 input:
   path: ./cede_location_1000.csv
-  quoting: minimal
 output:
   path: ./oed_location_1000.csv
-  quoting: minimal
 mapping:
   path: ./mapping/mapping_loc_Cede-OED.yaml
 batch_size: 10000
-type: loc
 logging: True

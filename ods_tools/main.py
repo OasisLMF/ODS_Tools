@@ -107,11 +107,11 @@ def transform(**kwargs):
 
         transform_result = transform_format(path_to_config_file=kwargs.get('config_file'), input_file=kwargs.get('input_file'),
                                             output_file=kwargs.get('output_file'), mapping_file=kwargs.get('mapping_file'))
-        if not kwargs.get('nocheck'):
-            if transform_result[1] == 'location' and os.path.isfile(transform_result[0]):
-                check(location=transform_result[0])
-            elif transform_result[1] == 'account' and os.path.isfile(transform_result[0]):
-                check(account=transform_result[0])
+        if kwargs.get('check') is not None:
+            if kwargs.get('check').lower() in ["loc", "location", "locations"]:
+                check(location=transform_result)
+            elif kwargs.get('check').lower() in ["acc", "account", "accounts"]:
+                check(account=transform_result)
     except OdsException as e:
         logger.error(e)
     except NameError as e:
@@ -193,7 +193,7 @@ transform_command.add_argument('--output-file', help='Path to the output file', 
 transform_command.add_argument('--mapping-file', help='Path to the mapping file', default=None)
 transform_command.add_argument('-v', '--logging-level', help='logging level (debug:10, info:20, warning:30, error:40, critical:50)',
                                default=30, type=int)
-transform_command.add_argument('--nocheck', help='if True, OED file will not be checked after transformation', default=False, action='store_true')
+transform_command.add_argument('--check', help='if Location or Account, OED file will be checked on completion', default=None, action='store_true')
 
 
 def main():

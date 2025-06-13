@@ -1,13 +1,10 @@
 input:
   path: ./input.csv
-  quoting: minimal
 output:
   path: ./output.csv
-  quoting: minimal
 mapping:
   path: ./mapping.yml
 batch_size: 150000
-type: loc
 write_header: true
 absolute_path_database: ""
 logging: True

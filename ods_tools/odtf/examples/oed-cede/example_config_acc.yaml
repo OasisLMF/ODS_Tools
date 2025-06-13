@@ -1,11 +1,8 @@
 input:
   path: ./cede_contract_1000.csv
-  quoting: minimal
 output:
   path: ./oed_contract_1000.csv
-  quoting: minimal
 mapping:
   path: ./mapping/mapping_acc_Cede-OED.yaml
 batch_size: 10000
-type: acc
 logging: True

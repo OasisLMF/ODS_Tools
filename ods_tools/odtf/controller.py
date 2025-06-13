@@ -147,7 +147,7 @@ def transform_format(path_to_config_file=None, input_file=None, output_file=None
     controller = Controller(config)
     controller.run()
 
-    return (config["output"]["path"], config["type"])
+    return config["output"]["path"]
 
 
 def make_relative_path_from_config_absolute(dictionary, key, config_location):

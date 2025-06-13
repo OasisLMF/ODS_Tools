@@ -221,7 +221,6 @@ class PandasRunner():
         :param mapping: Mapping object describing the transformations to apply
         :param loader: The data connection to load data to
         """
-        # import ipdb; ipdb.set_trace()
         loader.load(self.transform(extractor, mapper))
 
     def transform(self, extractor, mapper):
@@ -254,8 +253,7 @@ class PandasRunner():
 
                 try:
                     validation = validator.run(self.coerce_df_types(batch, transformation.types), stage=0)
-                    if self.config.get('logging', False):
-                        self.log(validation, "warning")
+                    self.log(validation, "warning")
                 except Exception as e:
                     self.log(f"Validation failed: {e}", "warning")
 
@@ -263,8 +261,7 @@ class PandasRunner():
 
                 try:
                     validation = validator.run(batch, stage=1)
-                    if self.config.get('logging', False):
-                        self.log(validation, "warning")
+                    self.log(validation, "warning")
                 except Exception as e:
                     self.log(f"Validation failed: {e}", "warning")
 

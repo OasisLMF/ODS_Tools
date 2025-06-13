@@ -1,10 +1,8 @@
 output:
   path: ./oed_location_1000.csv
-  quoting: minimal
 batch_size: 750000
 mapping:
   path: ./mapping_loc_Cede-OED.yaml
-type: loc
 logging: True
 database:
   type: mssql # Path to the DB connection file. Other options are 'postgres' and 'sqlite'. Defaults to 'csv', when not present.

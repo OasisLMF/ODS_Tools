@@ -1001,27 +1001,23 @@ class OdsPackageTests(TestCase):
                 yaml.dump({
                     "input": {
                         "path": str(pathlib.Path(base_test_path, 't_input.csv')),
-                        "quoting": "minimal",
                     },
                     "output": {
                         "path": str(pathlib.Path(tmp_dir, 't_output.csv')),
-                        "quoting": "minimal",
                     },
                     "mapping": {
                         "path": str(pathlib.Path(base_test_path, 'mapping_test.yaml')),
                     },
                     "batch_size": 150000,
-                    "type": "other",
                 }, config_file)
 
             # Run the transformation
             transform_result = transform_format(str(config_file_path))
 
             # Assert the transformation result
-            assert transform_result[0] == str(pathlib.Path(tmp_dir, 't_output.csv'))
-            assert transform_result[1] == 'other'
+            assert transform_result == str(pathlib.Path(tmp_dir, 't_output.csv'))
 
-            output_df = pd.read_csv(transform_result[0])
+            output_df = pd.read_csv(transform_result)
 
             expected_values = {
                 'Output_int_1': [110, 120, 111, 113, 117, 155, 201, 1099, 877, 101],

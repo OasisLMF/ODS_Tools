@@ -19,7 +19,7 @@ ODS_Tools can be installed via pip by running the following command:
 pip install ods-tools
 ```
 
-If using the `transform` command, use instead 
+If using the `transform` command, use instead
 
 ```
 pip install ods-tools[extra]
@@ -252,9 +252,9 @@ To run transformations, and extra set of packages must be installed. This can be
 
 **Basic csv conversion**
 
-A simple csv-to-csv transformation can be run from the command line with 
+A simple csv-to-csv transformation can be run from the command line with
 ```
-ods_tools transform -f air-oed --input-file source.csv --output-file output.csv
+ods_tools transform -f air-oed --input-file source.csv --output-file output.csv --mapping-file mapping.csv
 ```
 
 The flag -f instructs the tool on which are the origin and destination formats (currently air and oed).
@@ -265,39 +265,22 @@ More complex transformations run with `ods_tools transform` requires a configura
 
 A configuration file must contain:
 
-- type of file to transform (location or account)
-- input format
-- output format
-- batch size
 - input file
 - output file
+- mapping file
 
 For example:
 
 ```
-transformations:
-  loc: # type of file to transform, can be "acc" or "loc"
-    input_format:
-      name: Cede_Location
-      version: 10.0.0
-    output_format:
-      name: OED_Location
-      version: 3.0.2
-    runner:
-      batch_size: 150000 # Number of rows to process in a single batch
-    extractor:
-      options:
-        path: /path/to/input.csv # Path to the input file
-        quoting: minimal
-    loader:
-      options:
-        path: /path/to/output.csv # Path to the output file
-        quoting: minimal
+input:
+  path: ./input.csv
+output:
+  path: ./output.csv
+mapping:
+  path: ./mapping.yml
+batch_size: 150000
 ```
-
-
-For a transformation to be run, the folder `./ods_tools/odtf/data/mappings` must contain the appropriate yaml configuration file that describes the transformations to perform on the input file to obtain the output (and, potentially, vice versa). Currently, only [mapping_loc_Cede-OED.yaml](./ods_tools/odtf/data/mappings/mapping_loc_Cede-OED.yaml) and
-[mapping_acc_Cede-OED.yaml](./ods_tools/odtf/data/mappings/mapping_acc_Cede-OED.yaml) are provided; they describe the transformation between AIR Cede v10.0.0 and OED 3.0.2 for location and account files respectively.
+Examples of mapping and config files can be found at `./ods_tools/odtf/examples`. Mapping files for OED-Cede files can be found at `./ods_tools/odtf/examples/oed-cede/mapping`.
 
 The transformation can be run using:
 
@@ -309,6 +292,6 @@ ods_tools transform --config-file configuration.yaml
 
 The following options can be used to adjust the process:
 
-`--nocheck` to skip the oed validation at the end of the conversion
+`--check` to add the oed validation for you file (options 'account' or 'location')
 
 `-v` to adjust the logging level (debug:10, info:20, warning:30, error:40, critical:50)
