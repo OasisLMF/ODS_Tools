@@ -1,4 +1,5 @@
 import logging
+import json
 import math
 import re
 from functools import reduce
@@ -8,18 +9,18 @@ from packaging import version
 import pandas as pd
 
 
-from ..transformers import run
-from ..transformers.transform import (
+from .transformers import run
+from .transformers.transform import (
     GroupWrapper,
     RowType,
     TransformerMapping,
     default_match,
     default_search
 )
-from ..transformers.transform_utils import replace_multiple
-from ..notset import NotSet, NotSetType
-from ..mapping.validator import Validator
-from ..mapping.mapper import get_dependencies
+from .transformers.transform_utils import replace_multiple
+from .notset import NotSet, NotSetType
+from .validator import Validator
+from .mapper import get_dependencies
 
 #
 # Group Wrappers
@@ -101,15 +102,12 @@ def not_in_transformer(row, lhs, rhs):
 
 
 class StrReplace:
-    def __init__(self, series_type):
-        self.series_type = series_type
-
     def __call__(self, row: RowType, target, *pattern_repl):
         result = target
         patterns = (re.compile(f'^{re.escape(p)}$') for i, p in enumerate(pattern_repl) if i % 2 == 0)
         repls = (r for i, r in enumerate(pattern_repl) if i % 2 != 0)
 
-        if isinstance(result, self.series_type):
+        if isinstance(result, pd.Series):
             result = result.astype(str)
             for pattern, repl in zip(patterns, repls):
                 result = result.str.replace(pattern, repl, regex=True)
@@ -121,39 +119,30 @@ class StrReplace:
 
 
 class StrMatch:
-    def __init__(self, series_type):
-        self.series_type = series_type
-
     def __call__(self, row: RowType, target, pattern: re.Pattern):
-        if isinstance(target, self.series_type):
+        if isinstance(target, pd.Series):
             return target.astype(str).str.match(pattern)
         else:
             return default_match(row, target, pattern)
 
 
 class StrSearch:
-    def __init__(self, series_type):
-        self.series_type = series_type
-
     def __call__(self, row: RowType, target, pattern: re.Pattern):
-        if isinstance(target, self.series_type):
+        if isinstance(target, pd.Series):
             return target.astype(str).str.contains(pattern)
         else:
             return default_search(row, target, pattern)
 
 
 class StrJoin:
-    def __init__(self, series_type):
-        self.series_type = series_type
-
     def to_str(self, obj):
         return (
-            obj.astype(str) if isinstance(obj, self.series_type) else str(obj)
+            obj.astype(str) if isinstance(obj, pd.Series) else str(obj)
         )
 
     def concat(self, left, right):
-        left_is_series = isinstance(left, self.series_type)
-        right_is_series = isinstance(right, self.series_type)
+        left_is_series = isinstance(left, pd.Series)
+        right_is_series = isinstance(right, pd.Series)
 
         if left_is_series or not right_is_series:
             # if the left it already a series or if the right isn't a series
@@ -219,8 +208,6 @@ class PandasRunner():
             type_converter(str, nullable, null_values),
         ),
     }
-
-    series_type = pd.Series
 
     def __init__(self, config):
         self.config = config
@@ -352,10 +339,10 @@ class PandasRunner():
             "not_in": not_in_transformer,
             "any": lambda r, values: PandasAnyWrapper(values),
             "all": lambda r, values: PandasAllWrapper(values),
-            "str_replace": StrReplace(self.series_type),
-            "str_match": StrMatch(self.series_type),
-            "str_search": StrSearch(self.series_type),
-            "str_join": StrJoin(self.series_type),
+            "str_replace": StrReplace(),
+            "str_match": StrMatch(),
+            "str_search": StrSearch(),
+            "str_join": StrJoin(),
             "replace_multiple": replace_multiple,
         }
 
@@ -364,7 +351,7 @@ class PandasRunner():
             input_df, entry.when_tree or entry.when, transformer_mapping
         )
 
-        if isinstance(filter_series, self.series_type):
+        if isinstance(filter_series, pd.Series):
             # if we have a series treat it as a row mapping
             filtered_input = input_df[filter_series]
         elif filter_series:
@@ -382,13 +369,10 @@ class PandasRunner():
             entry.transformation_tree or entry.transformation,
             transformer_mapping,
         )
-        if isinstance(result, self.series_type):
+        if isinstance(result, pd.Series):
             return result
         else:
-            return self.create_series(input_df.index, result)
-
-    def create_series(self, index, value):
-        return self.series_type(value, index=index)
+            return pd.Series(result, index=input_df.index)
 
     def coerce_df_types(self, df, conversions):
         coerced_df = NotSet
@@ -438,3 +422,20 @@ class PandasRunner():
         if self.logging:
             log_method = getattr(logger, severity.lower(), logger.info)
             log_method(message)
+
+    @classmethod
+    def log_type_coercion_error(cls, row, column, value, to_type, reason):
+        """
+        Logs a failure of a row type coercion
+
+        :param row: The input row that failed
+        :param column: The name of the column in which the error occurred
+        :param value: The value of the failing column
+        :param to_type: The type the coercion was attempting
+        :param reason: The error message
+        """
+        logger.warning(
+            f"Cannot coerce {column} ({value}) to {to_type}. "
+            f"Reason: {reason}. Row: {json.dumps(row)}."
+        )
+        raise Exception

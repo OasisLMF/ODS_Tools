@@ -7,8 +7,8 @@ from typing import Any, Type
 import yaml
 
 from .connector import BaseConnector
-from .mapping.mapper import Mapper
-from .runner.pandas import PandasRunner
+from .mapper import Mapper
+from .runner import PandasRunner
 
 # Default config when running without a config file
 BASE_CONFIG = {
