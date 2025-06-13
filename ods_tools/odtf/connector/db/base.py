@@ -86,16 +86,8 @@ class BaseDBConnector(BaseConnector):
     def __init__(self, config, **options):
         super().__init__(config, **options)
 
-        self.database = {
-            "host": options.get("host", ""),
-            "port": options.get("port", ""),
-            "database": options["database"],
-            "user": options.get("user", ""),
-            "password": options.get("password", ""),
-        }
-        self.sql_statement_path = config.absolute_path(
-            options["sql_statement"]
-        )
+        self.database = config['database']
+        self.sql_statement_path = config["database"]["sql_statement"]
 
     def _create_connection(self, database: Dict[str, str]):
         raise NotImplementedError()
