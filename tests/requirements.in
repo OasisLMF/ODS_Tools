@@ -5,6 +5,7 @@ click
 pytest
 requests
 chardet
+PyYAML
 lark
 pyodbc
 sqlparams
