@@ -20,7 +20,6 @@ from .transformers.transform import (
 from .transformers.transform_utils import replace_multiple
 from .notset import NotSet, NotSetType
 from .validator import Validator
-from .mapper import get_dependencies
 
 #
 # Group Wrappers
@@ -246,9 +245,6 @@ class PandasRunner():
                 if transformation is None:
                     available_columns = set(batch.columns)
                     transformation = mapper.get_transform(available_columns=available_columns)
-                    for when, dependency, name in get_dependencies(transformation):
-                        if when not in available_columns and (dependency in available_columns or dependency is None):
-                            raise ValueError(f"Dependency missing from file: {name} needs {when} to be determined. Also uses: {dependency}")
                     self.log("Running transformation set [{extractor.name}]", "info")
 
                 try:

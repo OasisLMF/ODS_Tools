@@ -3,8 +3,6 @@ from ods_tools.odtf.transformers.transform import parse
 from lark import Token
 from typing import NamedTuple
 from typing import Dict, Set
-from itertools import product
-import re
 
 
 class Mapper:
@@ -36,9 +34,12 @@ class Mapper:
                 missing_trans_columns = self.has_missing_columns(individual_transform.transformation_tree, missing_columns)
                 no_when_tree = individual_transform.when_tree is None
                 missing_when_columns = self.has_missing_columns(individual_transform.when_tree, missing_columns)
+                if (no_trans_tree or not missing_trans_columns):
+                    if (no_when_tree or not missing_when_columns):
+                        valid_transformations.append(individual_transform)
+                    else:
+                        raise ValueError(f"Missing dependency: {individual_transform.when} clause for {individual_transform.transformation}")
 
-                if (no_trans_tree or not missing_trans_columns) and (no_when_tree or not missing_when_columns):
-                    valid_transformations.append(individual_transform)
             if valid_transformations:
                 transformation_set[col_name] = valid_transformations
 
@@ -116,17 +117,3 @@ class Mapping(NamedTuple):
     transformation_set: Set
     types: Dict[str, ColumnConversion]
     null_values: Set = set()
-
-
-def get_dependencies(mapping):
-    dependencies = set()
-    for name, transformation_list in mapping.transformation_set.items():
-        for transformation in transformation_list:
-            if transformation.when == "True":
-                continue
-            transformation_clauses = [clause for clause in re.split(r"[,\s]+", str(transformation.transformation)) if clause in mapping.types]
-            when_clauses = [clause for clause in re.split(r"[,\s]+", str(transformation.when)) if clause in mapping.types]
-            if transformation_clauses == []:
-                transformation_clauses = [None]
-            dependencies.update(set(product(when_clauses, transformation_clauses, [name])))
-    return dependencies
