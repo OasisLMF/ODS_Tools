@@ -63,7 +63,7 @@ array: "[" [expression ("," expression)*] "]"
        | "''"  -> string
 
 IDENT: /[a-zA-Z][a-zA-Z0-9_]*/
-STRING: /((`['`])|([^']))+/
+STRING: /(\\.|[^'\\])+/
 BOOL: /True|False/
 NULL: /Null/
 
