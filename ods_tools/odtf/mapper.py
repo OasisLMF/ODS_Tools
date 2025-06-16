@@ -104,6 +104,7 @@ class TransformationEntry:
         return self.transformation == other.transformation and self.when == other.when
 
     def parse(self):
+        self.transformation_tree = parse(self.transformation)
         self.when_tree = parse(self.when)
 
 
