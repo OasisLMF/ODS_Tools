@@ -254,10 +254,8 @@ To run transformations, and extra set of packages must be installed. This can be
 
 A simple csv-to-csv transformation can be run from the command line with
 ```
-ods_tools transform -f air-oed --input-file source.csv --output-file output.csv --mapping-file mapping.csv
+ods_tools transform --input-file source.csv --output-file output.csv --mapping-file mapping.csv
 ```
-
-The flag -f instructs the tool on which are the origin and destination formats (currently air and oed).
 
 **Complex conversions**
 
