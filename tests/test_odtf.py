@@ -10,8 +10,10 @@ from ods_tools.odtf.controller import transform_format
 base_test_path = pathlib.Path(__file__).parent
 example_path = pathlib.Path(pathlib.Path(__file__).parent.parent, "ods_tools", "odtf", "examples")
 
+
 def strip_quotes(s):
     return s.strip('"') if isinstance(s, str) else s
+
 
 def test_transformation_as_expected():
     with tempfile.TemporaryDirectory() as tmp_dir:

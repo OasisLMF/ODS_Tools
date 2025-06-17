@@ -40,7 +40,7 @@ coverage.xml
 .idea
 
 # Files created by example
-ods_tools/odtf/examples/transform/output.csv
+**/output.csv
 
 # excel
 *.xlsx#

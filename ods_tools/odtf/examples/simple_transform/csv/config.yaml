@@ -6,5 +6,4 @@ mapping:
   path: ../mapping.yml
 batch_size: 150000
 write_header: true
-absolute_path_database: ""
 logging: True

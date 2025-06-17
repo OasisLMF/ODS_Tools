@@ -278,7 +278,7 @@ mapping:
   path: ./mapping.yml
 batch_size: 150000
 ```
-Examples of mapping and config files can be found at `./ods_tools/odtf/examples`. Mapping files for OED-Cede files can be found at `./ods_tools/odtf/examples/oed-cede/mapping`.
+Examples of mapping and config files can be found at `./ods_tools/odtf/examples`: a config file with every possible value is in `./ods_tools/odtf/examples/empty_config.yaml`. Mapping files for OED-Cede files can be found at `./ods_tools/odtf/examples/oed-cede/mapping`.
 
 The transformation can be run using:
 
@@ -290,6 +290,6 @@ ods_tools transform --config-file configuration.yaml
 
 The following options can be used to adjust the process:
 
-`--check` to add the oed validation for you file (options 'account' or 'location')
+`--check` to add the oed validation for your file (options 'account' or 'location')
 
 `-v` to adjust the logging level (debug:10, info:20, warning:30, error:40, critical:50)

@@ -1,0 +1,20 @@
+input:
+  format: # csv (default), sqlite, postgres, mssql
+  path: # path to file
+output: # same as input
+  format:
+  path:
+mapping:
+  path:
+batch_size: # Number of rows processed simultaneously
+write_header: # True or False
+logging: # True or False: mainly for logging validation
+database:
+  type: # sqlite
+  host:
+  port:
+  database:
+  user:
+  password:
+  sql_statement_path: # Path to command file (.sql), like 'SELECT * FROM location'
+  absolute_path_database: # Path to database

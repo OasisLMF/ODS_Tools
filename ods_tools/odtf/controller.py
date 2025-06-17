@@ -33,9 +33,9 @@ logger = logging.getLogger(__name__)
 
 CONNECTOR_MAPPINGS = {
     "csv": "ods_tools.odtf.connector.CsvConnector",
-    "mssql": "ods_tools.odtf.connector.db.mssql.SQLServerConnector",
-    "postgres": "ods_tools.odtf.connector.db.postgres.PostgresConnector",
-    "sqlite": "ods_tools.odtf.connector.db.sqlite.SQLiteConnector",
+    "mssql": "ods_tools.odtf.connector.db.SQLServerConnector",
+    "postgres": "ods_tools.odtf.connector.db.PostgresConnector",
+    "sqlite": "ods_tools.odtf.connector.db.SQLiteConnector",
 }
 
 
@@ -65,7 +65,7 @@ class Controller:
         try:
             mapper = Mapper(self.config['mapping']['path'])
 
-            extractor_type = self.config.get("extractor_type", "csv")
+            extractor_type = self.config['input'].get("format", "csv")
             if extractor_type in CONNECTOR_MAPPINGS:
                 extractor_class: Type[BaseConnector] = self._load_from_module(
                     CONNECTOR_MAPPINGS[extractor_type]
@@ -133,13 +133,7 @@ def transform_format(path_to_config_file=None, input_file=None, output_file=None
     if path_to_config_file:
         with open(path_to_config_file, 'r') as file:
             config = yaml.safe_load(file)
-
-        mapping = config['mapping']
-        input = config['input']
-        output = config['output']
-        make_relative_path_from_config_absolute(mapping, "path", path_to_config_file)
-        make_relative_path_from_config_absolute(input, "path", path_to_config_file)
-        make_relative_path_from_config_absolute(output, "path", path_to_config_file)
+        resolve_config_paths(config, path_to_config_file)
 
     else:
         config = generate_config(input_file, output_file, mapping_file)
@@ -148,6 +142,17 @@ def transform_format(path_to_config_file=None, input_file=None, output_file=None
     controller.run()
 
     return config["output"]["path"]
+
+
+def resolve_config_paths(config, path_to_config_file):
+    make_relative_path_from_config_absolute(config['mapping'], "path", path_to_config_file)
+    if config['input'].get('format', 'csv') in {'csv', 'sqlite'}:
+        make_relative_path_from_config_absolute(config['input'], "path", path_to_config_file)
+    if config['input'].get('format', 'csv') in {'csv', 'sqlite'}:
+        make_relative_path_from_config_absolute(config['input'], "path", path_to_config_file)
+    if config.get('database', {}).get('type', None) == "sqlite":
+        make_relative_path_from_config_absolute(config['database'], "absolute_path_database", path_to_config_file)
+        make_relative_path_from_config_absolute(config['database'], "sql_statement_path", path_to_config_file)
 
 
 def make_relative_path_from_config_absolute(dictionary, key, config_location):

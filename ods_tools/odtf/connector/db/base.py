@@ -87,7 +87,7 @@ class BaseDBConnector(BaseConnector):
         super().__init__(config, **options)
 
         self.database = config['database']
-        self.sql_statement_path = config["database"]["sql_statement"]
+        self.sql_statement_path = config["database"]["sql_statement_path"]
 
     def _create_connection(self, database: Dict[str, str]):
         raise NotImplementedError()
