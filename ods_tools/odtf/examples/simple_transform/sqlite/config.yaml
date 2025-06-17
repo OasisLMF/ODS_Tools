@@ -1,0 +1,11 @@
+output:
+  path: ./output.csv
+mapping:
+  path: ../mapping.yml
+batch_size: 150000
+write_header: true
+logging: True
+database:
+  type: sqlite # Path to the DB connection file. Other options are 'postgres' and 'sqlite'. Defaults to 'csv', when not present.
+  sql_statement: ./simple.sql # SQL statement to extract data
+  absolute_path_database: ./cede.db
