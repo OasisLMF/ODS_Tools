@@ -4,6 +4,7 @@ import pandas as pd
 import pathlib
 import yaml
 import pytest
+import os
 
 from ods_tools.odtf.controller import transform_format
 
@@ -83,3 +84,20 @@ def test_simple_transform(input_format):
     expected_output_df = pd.read_csv(pathlib.Path(example_path, "simple_transform", 'expected_output.csv'))
 
     pd.testing.assert_frame_equal(output_df, expected_output_df)
+    os.remove(transform_result)
+
+
+def test_simple_transform_no_config():
+    # Prepare the necessary files for the test
+    input_file_path = pathlib.Path(example_path, "simple_transform", "csv", "input.csv")
+    mapping_file_path = pathlib.Path(example_path, "simple_transform", "mapping.yml")
+    output_file_path = pathlib.Path(example_path, "simple_transform", "csv", "output.csv")
+    # Run the transformation
+    transform_format(input_file=str(input_file_path), mapping_file=str(mapping_file_path), output_file=str(output_file_path))
+
+    output_df = pd.read_csv(output_file_path)
+
+    expected_output_df = pd.read_csv(pathlib.Path(example_path, "simple_transform", "expected_output.csv"))
+
+    pd.testing.assert_frame_equal(output_df, expected_output_df)
+    os.remove(output_file_path)
