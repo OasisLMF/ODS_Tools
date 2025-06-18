@@ -7,8 +7,8 @@ output: # same as input
 mapping:
   path:
 batch_size: # Number of rows processed simultaneously
-write_header: # True or False
-logging: # True or False: mainly for logging validation
+write_header: # True (default) or False
+logging: # True (default) or False: mainly for logging validation
 database:
   type: # sqlite
   host:

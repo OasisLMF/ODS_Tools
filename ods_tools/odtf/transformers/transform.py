@@ -9,7 +9,7 @@ from lark import Transformer as _LarkTransformer
 from lark import Token, Tree
 from lark import exceptions as lark_exceptions
 from lark import v_args
-from ..transformers.transform_utils import replace_multiple
+from ..transformers.transform_utils import replace_multiple, replace_double
 
 from .errors import UnexpectedCharacters
 from .grammar import parser
@@ -524,6 +524,7 @@ def create_transformer_class(row, transformer_mapping):
         "str_match": default_match,
         "str_search": default_search,
         "replace_multiple": replace_multiple,
+        "replace_double": replace_double,
         **(transformer_mapping or {}),
     }
 
@@ -555,6 +556,7 @@ def create_transformer_class(row, transformer_mapping):
         str_match = partial(mapped_function, "str_match")
         str_search = partial(mapped_function, "str_search")
         replace_multiple = partial(mapped_function, "replace_multiple")
+        replace_double = partial(mapped_function, "replace_double")
     return TreeTransformer
 
 
