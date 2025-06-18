@@ -7,38 +7,30 @@ logger = logging.getLogger(__name__)
 RowType = Any
 
 
-def replace_multiple(row: RowType, target, source_sep, target_sep, *pattern_repl):
+def replace_multiple(row: RowType, first_column, second_column, *triplets):
     """
-    Transform location perils from source to target perils.
+    Transform `target` values using additional `context` values
+    and a list of (from, via, to) mappings.
 
     Args:
-        row (RowType):
-        target (_type_): values to be transformed
-        source_sep (_type_): delimeter in source values
-        target_sep (_type_): delimeter in target values
+        row (RowType): The row of data.
+        first_column: A pd.Series column to be transformed.
+        second_column: A pd.Series column to be transformed.
 
     Returns:
-        pd.Series: transformed values
+        pd.Series: Transformed values.
     """
-    if isinstance(target, pd.Series):
-        perils = target.apply(lambda x: [p.strip() for p in str(x).split(source_sep.strip("'"))])
-    else:
-        return target
+    mappings = list(zip(triplets[::3], triplets[1::3], triplets[2::3]))
 
-    # Create list of replacements
-    pattern_repl_list = list(zip(pattern_repl[::2], pattern_repl[1::2]))
+    if isinstance(first_column, pd.Series) and isinstance(second_column, pd.Series):
+        def apply_mapping(val, ctx):
+            for from_val, via_val, to_val in mappings:
+                if val == from_val.strip("'") and ctx == via_val.strip("'"):
+                    return to_val.strip("'")
+            return val
+        return pd.Series([
+            apply_mapping(val, ctx)
+            for val, ctx in zip(first_column, second_column)
+        ], index=first_column.index)
 
-    def transform_peril(peril_list):
-        result = []
-        for peril in peril_list:
-            for pattern, repl in pattern_repl_list:
-                # Replace if our list of replacements contains the peril
-                if peril == pattern.strip("'"):
-                    result.append(repl.strip("'"))
-                    break
-            else:
-                result.append(peril)
-        return target_sep.strip("'").join(result)
-
-    result = perils.apply(transform_peril)
-    return result
+    return first_column
