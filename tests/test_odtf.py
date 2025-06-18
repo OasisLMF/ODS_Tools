@@ -55,7 +55,8 @@ def test_transformation_as_expected():
             'Output_multistring_1': ["A;B;C", "A;J", "E;C", 'H', '', "C;I;A", "B;E;E", "J;I;I", "G;I;G", "B;A;G"],
             'Output_multistring_2': ["United Kingdom;Italy", "Germany;Brasil", "France;France", "Sweden",
                                      "Spain;Sweden", "Argentina", '', "United States;United Kingdom", '',
-                                     "Argentina;Brasil;United States"]
+                                     "Argentina;Brasil;United States"],
+            'Output_double_transform': [2, 3, 5, 7, 11, 13, 17, 19, 23, 29]
         }
 
     for column, values in expected_values.items():
