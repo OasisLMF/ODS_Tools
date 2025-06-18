@@ -148,8 +148,8 @@ def resolve_config_paths(config, path_to_config_file):
     make_relative_path_from_config_absolute(config['mapping'], "path", path_to_config_file)
     if config['input'].get('format', 'csv') in {'csv', 'sqlite'}:
         make_relative_path_from_config_absolute(config['input'], "path", path_to_config_file)
-    if config['input'].get('format', 'csv') in {'csv', 'sqlite'}:
-        make_relative_path_from_config_absolute(config['input'], "path", path_to_config_file)
+    if config['output'].get('format', 'csv') in {'csv', 'sqlite'}:
+        make_relative_path_from_config_absolute(config['output'], "path", path_to_config_file)
     if config.get('database', {}).get('type', None) == "sqlite":
         make_relative_path_from_config_absolute(config['database'], "absolute_path_database", path_to_config_file)
         make_relative_path_from_config_absolute(config['database'], "sql_statement_path", path_to_config_file)
