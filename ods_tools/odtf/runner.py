@@ -17,7 +17,7 @@ from .transformers.transform import (
     default_match,
     default_search
 )
-from .transformers.transform_utils import replace_multiple
+from .transformers.transform_utils import replace_multiple, replace_double
 from .notset import NotSet, NotSetType
 from .validator import Validator
 
@@ -337,6 +337,7 @@ class PandasRunner():
             "str_search": StrSearch(),
             "str_join": StrJoin(),
             "replace_multiple": replace_multiple,
+            "replace_double": replace_double,
         }
 
         # process the when clause to get a filter series

@@ -344,7 +344,7 @@ transform:
     - transformation: AppurtenantStructures
   AreaCode:
     - transformation: |
-        replace_multiple(
+        replace_double(
         Area,CountryISO,
         'Eisenstadt (Stadt)','AT','101',
         'Rust','AT','102',
@@ -2636,7 +2636,7 @@ transform:
     - transformation: Participation1
   LocPeril:
     - transformation: |
-        replace(
+        replace_multiple(
           LocPerils,
           ',', ';',
           'CF', 'WSS',
@@ -2668,7 +2668,7 @@ transform:
     - transformation: "'AA1'"
   LocPerilsCovered:
     - transformation: |
-        replace(
+        replace_multiple(
           LocPerils,
           ',', ';',
           'CF','WSS',

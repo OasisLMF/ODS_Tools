@@ -48,7 +48,7 @@ transform:
     - transformation: Output_string_2
   Input_multistring_1:
     - transformation: |
-        replace_multiple(
+        replace(
           Output_multistring_1,
           ';', ',',
           'letter_A','A',
@@ -65,7 +65,7 @@ transform:
       when: Output_multistring_1 is not in [Null, 'NULL']
   Input_multistring_2:
     - transformation:
-        replace_multiple(
+        replace(
           Output_multistring_2,
           ';', ',',
           'United Kingdom','UK',

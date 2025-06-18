@@ -64,7 +64,7 @@ transform:
           )
   LocPerilsCovered:
     - transformation: |
-        replace(
+        replace_multiple(
           LocPerils,
           ',', ';',
           'TC', 'WTC'

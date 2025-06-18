@@ -39,11 +39,11 @@ transform:
           'letter_C','C',
           'letter_D','D',
           'letter_E','E',
-          'letter_F', 'F',
-          'letter_G', 'G',
-          'letter_H', 'H',
-          'letter_I', 'I',
-          'letter_J', 'J'
+          'letter_F','F',
+          'letter_G','G',
+          'letter_H','H',
+          'letter_I','I',
+          'letter_J','J'
         )
       when: Input_string_1 is not in [Null, 'NULL']
     - transformation: "'THIS WAS NULL'"
@@ -53,17 +53,17 @@ transform:
     - transformation: |
         replace_multiple(
           Input_multistring_1,
-          ',', ';',
+          ',',';',
           'letter_A','A',
           'letter_B','B',
           'letter_C','C',
           'letter_D','D',
           'letter_E','E',
-          'letter_F', 'F',
-          'letter_G', 'G',
-          'letter_H', 'H',
-          'letter_I', 'I',
-          'letter_J', 'J'
+          'letter_F','F',
+          'letter_G','G',
+          'letter_H','H',
+          'letter_I','I',
+          'letter_J','J'
         )
       when: Input_multistring_1 is not in [Null, 'NULL']
     - transformation: "'THIS WAS NULL'"
