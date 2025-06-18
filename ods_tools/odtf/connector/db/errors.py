@@ -12,7 +12,3 @@ class DBQueryError(ConverterError):
         self.error = error
 
         super().__init__(f"Error running query: {query} with {data} - {error}")
-
-
-class DBInsertDataError(ConverterError):
-    pass

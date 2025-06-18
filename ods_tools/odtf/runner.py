@@ -1,192 +1,21 @@
 import logging
 import json
-import math
-import re
-from functools import reduce
-from operator import and_, or_
+from operator import add, mul, sub, truediv
 from packaging import version
+from .transformers.transform_utils import (
+    AllWrapper, AnyWrapper, StrJoin, StrMatch, StrReplace, StrSearch, ConversionError,
+    replace_double, replace_multiple, safe_lookup, logical_and_transformer, logical_or_transformer,
+    logical_not_transformer, not_in_transformer, in_transformer, type_converter
+)
 
 import pandas as pd
-
-
 from .transformers import run
-from .transformers.transform import (
-    GroupWrapper,
-    RowType,
-    TransformerMapping,
-    default_match,
-    default_search
-)
-from .transformers.transform_utils import replace_multiple, replace_double
 from .notset import NotSet, NotSetType
 from .validator import Validator
 
-#
-# Group Wrappers
-#
 if version.parse(pd.__version__) >= version.parse("2.1.9"):
     pd.set_option('future.no_silent_downcasting', True)
 logger = logging.getLogger(__name__)
-
-
-class PandasGroupWrapper(GroupWrapper):
-    """
-    Base class for the pandas implementation for any and all groups
-    """
-
-    def in_operator(self, x, y):
-        return reduce(or_, (x == c for c in y), False)
-
-    def not_in_operator(self, x, y):
-        return reduce(and_, (x != c for c in y), True)
-
-
-class PandasAnyWrapper(PandasGroupWrapper):
-    """
-    Pandas specific implementation of the ``any`` expression
-    """
-
-    def check_fn(self, values):
-        return reduce(or_, values, False)
-
-
-class PandasAllWrapper(PandasGroupWrapper):
-    """
-    Pandas specific implementation of the ``all`` expression
-    """
-
-    def check_fn(self, values):
-        return reduce(and_, values, True)
-
-
-#
-# Transformer overrides
-#
-
-
-def logical_and_transformer(row, lhs, rhs):
-    return lhs & rhs
-
-
-def logical_or_transformer(row, lhs, rhs):
-    return lhs | rhs
-
-
-def logical_not_transformer(row, value):
-    try:
-        return not bool(value)
-    except ValueError:
-        # assume we are dealing with series or
-        # dataframe is we get a value error
-        return value.apply(lambda v: not bool(v))
-
-
-def in_transformer(row, lhs, rhs):
-    if hasattr(lhs, "is_in"):
-        return lhs.is_in(rhs)
-    else:
-        return reduce(or_, map(lambda s: lhs == s, rhs))
-
-
-def not_in_transformer(row, lhs, rhs):
-    if hasattr(lhs, "is_not_in"):
-        return lhs.is_not_in(rhs)
-    else:
-        return reduce(and_, map(lambda s: lhs != s, rhs))
-
-
-#
-# String Manipulations
-#
-
-
-class StrReplace:
-    def __call__(self, row: RowType, target, *pattern_repl):
-        result = target
-        patterns = (re.compile(f'^{re.escape(p)}$') for i, p in enumerate(pattern_repl) if i % 2 == 0)
-        repls = (r for i, r in enumerate(pattern_repl) if i % 2 != 0)
-
-        if isinstance(result, pd.Series):
-            result = result.astype(str)
-            for pattern, repl in zip(patterns, repls):
-                result = result.str.replace(pattern, repl, regex=True)
-        else:
-            for pattern, repl in zip(patterns, repls):
-                result = pattern.sub(repl, str(result))
-
-        return result
-
-
-class StrMatch:
-    def __call__(self, row: RowType, target, pattern: re.Pattern):
-        if isinstance(target, pd.Series):
-            return target.astype(str).str.match(pattern)
-        else:
-            return default_match(row, target, pattern)
-
-
-class StrSearch:
-    def __call__(self, row: RowType, target, pattern: re.Pattern):
-        if isinstance(target, pd.Series):
-            return target.astype(str).str.contains(pattern)
-        else:
-            return default_search(row, target, pattern)
-
-
-class StrJoin:
-    def to_str(self, obj):
-        return (
-            obj.astype(str) if isinstance(obj, pd.Series) else str(obj)
-        )
-
-    def concat(self, left, right):
-        left_is_series = isinstance(left, pd.Series)
-        right_is_series = isinstance(right, pd.Series)
-
-        if left_is_series or not right_is_series:
-            # if the left it already a series or if the right isn't a series
-            # the strings will be concatenated in the correct order
-            return self.to_str(left) + self.to_str(right)
-        else:
-            # if right is a series and left isnt force the join to prepend left
-            return self.to_str(right).apply(lambda x: self.to_str(left) + x)
-
-    def join(self, left, join, right):
-        return self.concat(self.concat(left, join), right)
-
-    def __call__(self, row: RowType, join, *elements):
-        if not elements:
-            return ""
-        elif len(elements) == 1:
-            return self.to_str(elements[0])
-        else:
-            return reduce(
-                lambda reduced, element: self.join(reduced, join, element),
-                elements[1:],
-                elements[0],
-            )
-
-
-class ConversionError:
-    def __init__(self, value=None, reason=None):
-        self.reason = reason
-        self.value = value
-
-
-def type_converter(to_type, nullable, null_values):
-    def _converter(value):
-        try:
-            if nullable and (
-                value in null_values
-                or (isinstance(value, float) and math.isnan(value))
-                or value is None
-            ):
-                return None
-            return to_type(value)
-        except Exception as e:
-            return ConversionError(value, e)
-
-    return _converter
 
 
 class PandasRunner():
@@ -324,18 +153,29 @@ class PandasRunner():
 
         :return: The transformation result
         """
-        transformer_mapping: TransformerMapping = {
+        transformer_mapping = {
             "logical_and": logical_and_transformer,
             "logical_or": logical_or_transformer,
             "logical_not": logical_not_transformer,
             "is_in": in_transformer,
             "not_in": not_in_transformer,
-            "any": lambda r, values: PandasAnyWrapper(values),
-            "all": lambda r, values: PandasAllWrapper(values),
+            "any": lambda r, values: AnyWrapper(values),
+            "all": lambda r, values: AllWrapper(values),
             "str_replace": StrReplace(),
             "str_match": StrMatch(),
             "str_search": StrSearch(),
             "str_join": StrJoin(),
+            "add": lambda r, lhs, rhs: add(lhs, rhs),
+            "subtract": lambda r, lhs, rhs: sub(lhs, rhs),
+            "multiply": lambda r, lhs, rhs: mul(lhs, rhs),
+            "divide": lambda r, lhs, rhs: truediv(lhs, rhs),
+            "eq": lambda r, lhs, rhs: lhs == rhs,
+            "not_eq": lambda r, lhs, rhs: lhs != rhs,
+            "gt": lambda r, lhs, rhs: lhs > rhs,
+            "gte": lambda r, lhs, rhs: lhs >= rhs,
+            "lt": lambda r, lhs, rhs: lhs < rhs,
+            "lte": lambda r, lhs, rhs: lhs <= rhs,
+            "lookup": safe_lookup,
             "replace_multiple": replace_multiple,
             "replace_double": replace_double,
         }
