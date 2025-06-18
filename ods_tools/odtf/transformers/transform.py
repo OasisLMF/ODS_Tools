@@ -21,6 +21,7 @@ class BaseTreeTransformer(_LarkTransformer):
     """
     Tree transformer class without the transforms added
     """
+
     def string(self, value=""):
         """
         Parses a string from the transformer language and performs any
