@@ -1,11 +1,12 @@
 import tempfile
 import numpy as np
 import pandas as pd
+import pandas.testing as pdt
 import pathlib
 import yaml
 import pytest
 import os
-import filecmp
+import sqlite3
 
 from ods_tools.odtf.controller import transform_format
 
@@ -97,8 +98,16 @@ def test_simple_transform_to_csv(input_format):
 def test_simple_transform_to_db(input_format):
     config_file_path = pathlib.Path(example_path, "simple_transform", input_format, 'config_to_db.yaml')
     transform_result = transform_format(str(config_file_path))
+
     expected_result = pathlib.Path(example_path, "simple_transform", 'expected_output.db')
-    filecmp.cmp(transform_result, expected_result)
+    with sqlite3.connect(transform_result) as con1, sqlite3.connect(expected_result) as con2:
+        df1 = pd.read_sql("SELECT * FROM output", con1).convert_dtypes()
+        df2 = pd.read_sql("SELECT * FROM output", con2).convert_dtypes()
+
+    df1_sorted = df1.sort_index(axis=1).sort_values(by=df1.columns.tolist()).reset_index(drop=True)
+    df2_sorted = df2.sort_index(axis=1).sort_values(by=df2.columns.tolist()).reset_index(drop=True)
+
+    pdt.assert_frame_equal(df1_sorted, df2_sorted, check_dtype=False)
     os.remove(transform_result)
 
 
