@@ -18,3 +18,4 @@ database:
   password:
   sql_statement_path: # Path to command file (.sql), like 'SELECT * FROM location'
   absolute_path_database: # Path to database
+  output_table: # Output (default) Name of output table

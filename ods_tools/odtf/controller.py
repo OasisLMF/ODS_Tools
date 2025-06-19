@@ -72,11 +72,11 @@ class Controller:
                 )
             extractor: BaseConnector = extractor_class(self.config, isExtractor=True)
 
-            loader_class: Type[BaseConnector] = self._load_from_module(
-                self.config.get(
-                    "loader_type", "ods_tools.odtf.connector.CsvConnector"
+            loader_type = self.config['output'].get("format", "csv")
+            if loader_type in CONNECTOR_MAPPINGS:
+                loader_class: Type[BaseConnector] = self._load_from_module(
+                    CONNECTOR_MAPPINGS[loader_type]
                 )
-            )
             loader: BaseConnector = loader_class(self.config, isExtractor=False)
 
             runner = PandasRunner(self.config)
@@ -151,7 +151,6 @@ def resolve_config_paths(config, path_to_config_file):
     if config['output'].get('format', 'csv') in {'csv', 'sqlite'}:
         make_relative_path_from_config_absolute(config['output'], "path", path_to_config_file)
     if config.get('database', {}).get('type', None) == "sqlite":
-        make_relative_path_from_config_absolute(config['database'], "absolute_path_database", path_to_config_file)
         make_relative_path_from_config_absolute(config['database'], "sql_statement_path", path_to_config_file)
 
 

@@ -16,7 +16,7 @@ class BaseConnector:
     name = "Base Connector"
     options_schema = {"type": "object", "properties": {}}
 
-    def __init__(self, config, isExtractor=True):
+    def __init__(self, config, isExtractor):
         self.config = config
         self.isExtractor = isExtractor
 

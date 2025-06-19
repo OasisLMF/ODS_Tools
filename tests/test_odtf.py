@@ -5,6 +5,7 @@ import pathlib
 import yaml
 import pytest
 import os
+import filecmp
 
 from ods_tools.odtf.controller import transform_format
 
@@ -70,10 +71,10 @@ def test_transformation_as_expected():
 
 @pytest.mark.parametrize(
     "input_format",
-    ["sqlite", "csv", ],
+    ["sqlite", "csv"],
     ids=["simple_transform_sqlite", "simple_transform_csv"],
 )
-def test_simple_transform(input_format):
+def test_simple_transform_to_csv(input_format):
     # Prepare the necessary files for the test
     config_file_path = pathlib.Path(example_path, "simple_transform", input_format, 'config.yaml')
 
@@ -85,6 +86,19 @@ def test_simple_transform(input_format):
     expected_output_df = pd.read_csv(pathlib.Path(example_path, "simple_transform", 'expected_output.csv'))
 
     pd.testing.assert_frame_equal(output_df, expected_output_df)
+    os.remove(transform_result)
+
+
+@pytest.mark.parametrize(
+    "input_format",
+    ["sqlite", "csv"],
+    ids=["simple_transform_sqlite", "simple_transform_csv"],
+)
+def test_simple_transform_to_db(input_format):
+    config_file_path = pathlib.Path(example_path, "simple_transform", input_format, 'config_to_db.yaml')
+    transform_result = transform_format(str(config_file_path))
+    expected_result = pathlib.Path(example_path, "simple_transform", 'expected_output.db')
+    filecmp.cmp(transform_result, expected_result)
     os.remove(transform_result)
 
 

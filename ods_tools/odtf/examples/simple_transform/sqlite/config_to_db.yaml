@@ -2,6 +2,7 @@ input:
   format: sqlite
   path: ./input.db
 output:
+  format: sqlite
   path: ./output.db
 mapping:
   path: ../mapping.yml

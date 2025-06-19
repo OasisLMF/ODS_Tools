@@ -41,6 +41,7 @@ coverage.xml
 
 # Files created by example
 **/output.csv
+**/output.db
 
 # excel
 *.xlsx#

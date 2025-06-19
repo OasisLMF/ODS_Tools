@@ -10,9 +10,10 @@ from pathlib import Path
 root_dir = Path(__file__).parent
 
 df = pd.read_csv(Path(root_dir, 'csv', 'input.csv'))
-
-
 con = sqlite3.connect(Path(root_dir, 'sqlite', 'input.db'))
 df.to_sql("location", con, if_exists="replace")
 
+df = pd.read_csv(Path(root_dir, 'expected_output.csv'))
+con = sqlite3.connect(Path(root_dir, 'expected_output.db'))
+df.to_sql("output", con, if_exists="replace")
 print('sqlite db created successfully')

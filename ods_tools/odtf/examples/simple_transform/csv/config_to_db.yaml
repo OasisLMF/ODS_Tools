@@ -1,7 +1,7 @@
 input:
-  format: sqlite
-  path: ./input.db
+  path: ./input.csv
 output:
+  format: sqlite
   path: ./output.db
 mapping:
   path: ../mapping.yml
