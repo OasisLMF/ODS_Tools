@@ -2,7 +2,7 @@ input:
   format: sqlite
   path: ./input.db
 output:
-  path: ./output.db
+  path: ./output.csv
 mapping:
   path: ../mapping.yml
 batch_size: 150000
