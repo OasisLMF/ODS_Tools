@@ -26,7 +26,7 @@ types:
   ExpirationDate:
     type: string
   Perils:
-    type: int
+    type: string
   LOB:
     type: string
   Form:
@@ -145,11 +145,48 @@ types:
     type: string
   SublimitAggregateDedAmt:
     type: float
+  ExposureSetName:
+    type: string
 null_values:
   - "''"
   - Null
   - NULL
 transform:
+  PortNumber:
+    - transformation: ExposureSetName
+      when: ExposureSetName
+    - transformation: "'1'"
+  PolNumber:
+    - transformation: "'1'"
+  PolPerilsCovered:
+    - transformation: |
+        replace(
+          Perils,
+          'CF','WSS',
+          'CH','XCH',
+          'EQ','QEQ',
+          'FF','QFF',
+          'HL','XHL',
+          'IF','ORF',
+          'LQ','QLF',
+          'LS','QLS',
+          'NC','BFR',
+          'PD','CPD',
+          'PF','OSF',
+          'PN','PNF',
+          'SB','CSB',
+          'SL','QSL',
+          'ST','XLT',
+          'SU','WSS',
+          'SW','XSL',
+          'TC','WTC',
+          'TD','XTD',
+          'TR','MTR',
+          'TS','QTS',
+          'WF','BBF',
+          'WS','ZST',
+          ',', ';'
+        )
   AccCurrency:
     - transformation: Currency
   AccUserDef1:
