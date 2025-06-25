@@ -1,15 +1,7 @@
 from ..errors import ConverterError
 
 
-class ParserError(ConverterError):
-    """
-    Error raised whenever there's an error in the transformation.
-    """
-
-    pass
-
-
-class UnexpectedCharacters(ParserError):
+class UnexpectedCharacters(ConverterError):
     """
     Error raised when there's an unexpected character in the transformation.
     """

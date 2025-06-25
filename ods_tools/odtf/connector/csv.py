@@ -58,11 +58,13 @@ class CsvConnector(BaseConnector):
         "required": ["path"],
     }
 
-    def __init__(self, config, **options):
-        super().__init__(config, **options)
-
-        self.file_path = config.absolute_path(options["path"])
-        self.write_header = options.get("write_header", True)
+    def __init__(self, config, isExtractor):
+        super().__init__(config, isExtractor)
+        if isExtractor:
+            self.file_path = config['input']['path']
+        else:
+            self.file_path = config['output']['path']
+        self.write_header = config.get("write_header", True)
 
     def _data_serializer(self, row):
         def process_value(v):
@@ -78,7 +80,7 @@ class CsvConnector(BaseConnector):
     def load(self, data: Iterable[Dict[str, Any]]):
         first_batch = True
 
-        with open(self.file_path, "a", newline="") as f:
+        with open(self.file_path, "w", newline="") as f:
             for batch in data:
                 fieldnames = list(batch.keys())
 

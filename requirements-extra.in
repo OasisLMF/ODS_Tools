@@ -1,6 +1,5 @@
 PyYAML
 lark
-networkx
 pyodbc
 sqlparams
 sqlparse

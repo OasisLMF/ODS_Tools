@@ -49,6 +49,7 @@ array: "[" [expression ("," expression)*] "]"
 ?string_manip: "join(" string [("," expression)*] ")" -> str_join
              | "replace(" expression [("," pattern "," expression)+] ")" -> str_replace
              | "replace_multiple(" expression "," string "," string ("," string "," string)* ")" -> replace_multiple
+             | "replace_double(" expression "," expression ("," string "," string "," string)+ ")" -> replace_double
              | "match(" expression "," pattern ")" -> str_match
              | "search(" expression "," pattern ")" -> str_search
 
@@ -63,7 +64,7 @@ array: "[" [expression ("," expression)*] "]"
        | "''"  -> string
 
 IDENT: /[a-zA-Z][a-zA-Z0-9_]*/
-STRING: /((`['`])|([^']))+/
+STRING: /(\\.|[^'\\])+/
 BOOL: /True|False/
 NULL: /Null/
 

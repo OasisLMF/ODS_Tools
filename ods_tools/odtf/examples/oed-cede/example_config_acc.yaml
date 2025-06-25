@@ -1,0 +1,8 @@
+input:
+  path: ./cede_contract_1000.csv
+output:
+  path: ./oed_contract_1000.csv
+mapping:
+  path: ./mapping/mapping_acc_Cede-OED.yaml
+batch_size: 10000
+logging: True

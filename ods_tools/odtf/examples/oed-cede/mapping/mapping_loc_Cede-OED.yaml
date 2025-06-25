@@ -1,0 +1,3004 @@
+# MAPPING VERSION: CEDEDB_OED_Test
+# CREATOR: Ben Hayes
+# MODEL VERSIONS: OED 3.0.2 | AIR CEDE (database) v10.0.0
+# MAP FILETYPE: SQL Server DB extract file to Flat File
+# LICENSE: BSD 3 clause license
+# SOURCE: https://github.com/OasisLMF/OpenDataTransform/
+# COMMENTS: Full example to demonstrate Sql Server DB extract to Flat File
+
+types:
+  AdjacentBuildingHeight:
+    type: int
+  AppurtenantStructures:
+    type: int
+  Area:
+    type: string
+  AreaName:
+    type: string
+  BaseFloodElevation:
+    type: float
+  BaseFloodElevationUnit:
+    type: string
+  BasementFinishType:
+    type: int
+  BasementLevelCount:
+    type: int
+  BrickVeneer:
+    type: int
+  BuildingCondition:
+    type: int
+  BuildingExteriorOpening:
+    type: int
+  BuildingHeight:
+    type: int
+  BuildingHeightUnitCode:
+    type: string
+  BuildingShape:
+    type: int
+  BuildingValue:
+    type: float
+  CargoPacking:
+    type: int
+  CargoProtection:
+    type: int
+  Cede Field:
+    type: ODTF Data Type
+  CertifiedStructuresIBHS:
+    type: int
+  Chimney:
+    type: int
+  City:
+    type: string
+  Cladding:
+    type: int
+  ColdFormedTube:
+    type: int
+  ColumnBasement:
+    type: int
+  ContentDamageability:
+    type: int
+  ContentsValue:
+    type: float
+  ContentVulnerability:
+    type: int
+  ContractID:
+    type: string
+  ConstructionCode:
+    type: string
+  ConstructionOther:
+    type: int
+  CRESTA:
+    type: string
+  CountryISO:
+    type: string
+  Currency:
+    type: string
+  CustomElevation:
+    type: float
+  CustomElevationUnit:
+    type: string
+  CustomFloodSOP:
+    type: float
+  CustomFloodSOPType:
+    type: string
+  CustomFloodZone:
+    type: int
+  DaysCovered:
+    type: int
+  DeductBldg:
+    type: float
+  DeductOther:
+    type: float
+  DeductContent:
+    type: float
+  DeductTime:
+    type: float
+  DeductType:
+    type: string
+  DefensibleSpace:
+    type: int
+  EnhancedGeoMatchLevelCode:
+    type: string
+  Equipment:
+    type: string
+  ExpirationDate:
+    type: string
+  ExposureSetName:
+    type: string
+  ExternalDoors:
+    type: int
+  FirewiseCommunityParticipation:
+    type: int
+  FIRMCompliance:
+    type: int
+  FirstFloorHeight:
+    type: float
+  FirstFloorHeightUnit:
+    type: string
+  FloorArea:
+    type: int
+  FloorAreaUnitCode:
+    type: string
+  FloorsOccupied:
+    type: string
+  FloorOfInterest:
+    type: int
+  FoundationType:
+    type: int
+  FoundationConnection:
+    type: int
+  GeocoderCode:
+    type: string
+  GeocoderAccountId:
+    type: string
+  GeoMatchLevelCode:
+    type: string
+  GlassPercent:
+    type: int
+  GlassType:
+    type: int
+  GrossArea:
+    type: float
+  GrossAreaUnit:
+    type: string
+  ISOBIN:
+    type: string
+  ISOConstructionCode:
+    type: string
+  ISOOccupancyCode:
+    type: string
+  InceptionDate:
+    type: string
+  InternalPartition:
+    type: int
+  IsFireSprinklerAvailable:
+    type: int
+  IsPrimary:
+    type: int
+  IsTenant:
+    type: int
+  #ISValueType:
+    #type: float
+  LargeMissile:
+    type: int
+  Latitude:
+    type: float
+  LatticeType:
+    type: int
+  LimitBldg:
+    type: float
+  LimitContent:
+    type: float
+  LimitOther:
+    type: float
+  LimitTime:
+    type: float
+  LocationDFID:
+    type: string
+  LocationGroup:
+    type: string
+  LocationID:
+    type: string
+  LocationName:
+    type: string
+  LocLimitType:
+    type: string
+  LocPerils:
+    type: string
+  Longitude:
+    type: float
+  MaxDeduct:
+    type: float
+  MinDeduct:
+    type: float
+  MinMaxDeductType:
+    type: string
+  MinDeduct:
+    type: float
+  MultiStoryHallType:
+    type: int
+  NonCATGroundUpLoss:
+    type: float
+  NumberOfStories:
+    type: int
+  OccupancyCode:
+    type: int
+  OEDVersion:
+    type: string
+  Ornamentation:
+    type: int
+  OtherValue:
+    type: float
+  Participation1:
+    type: float
+  Participation2:
+    type: float
+  PostalCode:
+    type: string
+  Pounding:
+    type: int
+  PPCCode:
+    type: string
+  Premium:
+    type: float
+  ProjectCompletion:
+    type: float
+  ProjectPhaseCode:
+    type: int
+  Redundancy:
+    type: int
+  TimeElementValue:
+    type: float
+  Retrofit:
+    type: int
+  RiskCount:
+    type: string
+  RoofAnchorage:
+    type: int
+  RoofAttachedStructure:
+    type: int
+  RoofCoverAttachment:
+    type: int
+  RoofCover:
+    type: int
+  RoofDeckAttachment:
+    type: int
+  RoofDeck:
+    type: int
+  RoofGeometry:
+    type: int
+  RoofHailImpactResistance:
+    type: int
+  RoofPitch:
+    type: int
+  RoofYearBuilt:
+    type: int
+  SalvagePotential:
+    type: int
+  SealOfApproval:
+    type: int
+  ServiceEquipmentProtection:
+    type: int
+  ShapeIrregularity:
+    type: int
+  ShortColumn:
+    type: int
+  SmallDebris:
+    type: int
+  SoftStory:
+    type: int
+  SpecialConstruction:
+    type: int
+  SpecieStorage:
+    type: int
+  SprinklerType:
+    type: int
+  Street:
+    type: string
+  SubArea:
+    type: string
+  SubArea2:
+    type: string
+  SublimitArea:
+    type: string
+  TallOneStory:
+    type: int
+  Tank:
+    type: int
+  TerrainRoughness:
+    type: int
+  Territory:
+    type: string
+  Torsion:
+    type: int
+  TransitionInSRC:
+    type: int
+  TreeExposure:
+    type: int
+  #UserConstructionCodeA:
+    #type: string
+  #UserConstructionSchemeCode:
+    #type: string
+  UserGeocodeMatchLevel:
+    type: string
+  UDF1:
+    type: string
+  UDF2:
+    type: string
+  UDF3:
+    type: string
+  UDF4:
+    type: string
+  UDF5:
+    type: string
+  #UserOccupancyCode:
+    #type: string
+  #UserOccupancySchemeCode:
+    #type: string
+  WetFloodProofing:
+    type: int
+  #WallAttachedStructureCode:
+    #type: string
+  WallSiding:
+    type: int
+  WallSidingCode:
+    type: int
+  WallType:
+    type: int
+  WaterHeater:
+    type: int
+  Welding:
+    type: int
+  WindowProtection:
+    type: int
+  YearBuilt:
+    type: int
+null_values:
+  - "''"
+  - Null
+  - NULL
+transform:
+  AccNumber:
+    - transformation: ContractID
+  AppurtenantStructure:
+    - transformation: AppurtenantStructures
+  AreaCode:
+    - transformation: |
+        replace_double(
+        Area,CountryISO,
+        'Eisenstadt (Stadt)','AT','101',
+        'Rust','AT','102',
+        'Eisenstadt (Land)','AT','103',
+        'Güssing','AT','104',
+        'Jennersdorf','AT','105',
+        'Mattersburg','AT','106',
+        'Neusiedl am See','AT','107',
+        'Oberpullendorf','AT','108',
+        'Oberwart','AT','109',
+        'Klagenfurt (Stadt)','AT','201',
+        'Villach (Stadt)','AT','202',
+        'Hermagor','AT','203',
+        'Klagenfurt Land','AT','204',
+        'Sankt Veit an der Glan','AT','205',
+        'Spittal an der Drau','AT','206',
+        'Villach Land','AT','207',
+        'Völkermarkt','AT','208',
+        'Wolfsberg','AT','209',
+        'Feldkirchen','AT','210',
+        'Krems an der Donau (Stadt)','AT','301',
+        'St. Pölten (Stadt)','AT','302',
+        'Waidhofen an der Ybbs','AT','303',
+        'Wiener Neustadt (Stadt)','AT','304',
+        'Amstetten','AT','305',
+        'Baden','AT','306',
+        'Bruck an der Leitha','AT','307',
+        'Gänserndorf','AT','308',
+        'Gmünd','AT','309',
+        'Hollabrunn','AT','310',
+        'Horn','AT','311',
+        'Korneuburg','AT','312',
+        'Krems an der Donau (Land)','AT','313',
+        'Lilienfeld','AT','314',
+        'Melk','AT','315',
+        'Mistelbach','AT','316',
+        'Mödling','AT','317',
+        'Neunkirchen','AT','318',
+        'St. Pölten (Land)','AT','319',
+        'Scheibbs','AT','320',
+        'Tulln','AT','321',
+        'Waidhofen an der Thaya','AT','322',
+        'Wiener Neustadt (Land)','AT','323',
+        'Wien-Umgebung','AT','324',
+        'Zwettl','AT','325',
+        'Linz','AT','401',
+        'Steyr','AT','402',
+        'Wels','AT','403',
+        'Braunau am Inn','AT','404',
+        'Eferding','AT','405',
+        'Freistadt','AT','406',
+        'Gmunden','AT','407',
+        'Grieskirchen','AT','408',
+        'Kirchdorf an der Krems','AT','409',
+        'Linz-Land','AT','410',
+        'Perg','AT','411',
+        'Ried im Innkreis','AT','412',
+        'Rohrbach','AT','413',
+        'Schärding','AT','414',
+        'Steyr-Land','AT','415',
+        'Urfahr-Umgebung','AT','416',
+        'Vöcklabruck','AT','417',
+        'Wels-Land','AT','418',
+        'Salzburg','AT','501',
+        'Hallein','AT','502',
+        'Salzburg-Umgebung','AT','503',
+        'Sankt Johann im Pongau','AT','504',
+        'Tamsweg','AT','505',
+        'Zell am See','AT','506',
+        'Graz','AT','601',
+        'Bruck an der Mur','AT','602',
+        'Deutschlandsberg','AT','603',
+        'Feldbach','AT','604',
+        'Fürstenfeld','AT','605',
+        'Graz-Umgebung','AT','606',
+        'Hartberg','AT','607',
+        'Judenburg','AT','608',
+        'Knittelfeld','AT','609',
+        'Leibnitz','AT','610',
+        'Leoben','AT','611',
+        'Liezen','AT','612',
+        'Mürzzuschlag','AT','613',
+        'Murau','AT','614',
+        'Bad Radkersburg','AT','615',
+        'Voitsberg','AT','616',
+        'Weiz','AT','617',
+        'Innsbruck-Stadt','AT','701',
+        'Imst','AT','702',
+        'Innsbruck-Land','AT','703',
+        'Kitzbühel','AT','704',
+        'Kufstein','AT','705',
+        'Landeck','AT','706',
+        'Lienz','AT','707',
+        'Reutte','AT','708',
+        'Schwaz','AT','709',
+        'Bludenz','AT','801',
+        'Bregenz','AT','802',
+        'Dornbirn','AT','803',
+        'Feldkirch','AT','804',
+        'Wien I Innere Stadt','AT','901',
+        'Wien II Leopoldstadt','AT','902',
+        'Wien III Landstraße','AT','903',
+        'Wien IV Wieden','AT','904',
+        'Wien V Margareten','AT','905',
+        'Wien VI Mariahilf','AT','906',
+        'Wien VII Neubau','AT','907',
+        'Wien VIII Josefstadt','AT','908',
+        'Wien IX Alsergrund','AT','909',
+        'Wien X Favoriten','AT','910',
+        'Wien XI Simmering','AT','911',
+        'Wien XII Meidling','AT','912',
+        'Wien XIII Hietzing','AT','913',
+        'Wien XIV Penzing','AT','914',
+        'Wien XV Rudolfsheim-Fünfhaus','AT','915',
+        'Wien XVI Ottakring','AT','916',
+        'Wien XVII Hernals','AT','917',
+        'Wien XVIII Währing','AT','918',
+        'Wien XIX Döbling','AT','919',
+        'Wien XX Brigittenau','AT','920',
+        'Wien XXI Floridsdorf','AT','921',
+        'Wien XXII Dounaustadt','AT','922',
+        'Wien XXIII Liesing','AT','923',
+        'Australian Capital Territory','AU','ACT',
+        'New South Wales','AU','NSW',
+        'Northern Territory','AU','NT',
+        'Queensland','AU','QLD',
+        'South Australia','AU','SA',
+        'Tasmania','AU','TAS',
+        'Victoria','AU','VIC',
+        'Western Australia','AU','WA',
+        'Australian Overseas Territories','AU','OT',
+        'Christ Church','BB','1',
+        'St. Philip','BB','10',
+        'St. Thomas','BB','11',
+        'St. Andrew','BB','2',
+        'St. George','BB','3',
+        'St. James','BB','4',
+        'St. John','BB','5',
+        'St. Joseph','BB','6',
+        'St. Lucy','BB','7',
+        'St. Michael','BB','8',
+        'St. Peter','BB','9',
+        'Antwerpen','BE','11',
+        'Mechelen','BE','12',
+        'Turnhout','BE','13',
+        'Brussel-Hoofdstad','BE','21',
+        'Halle-Vilvoorde','BE','23',
+        'Leuven','BE','24',
+        'Nijvel','BE','25',
+        'Brugge','BE','31',
+        'Diksmuide','BE','32',
+        'Ieper','BE','33',
+        'Kortrijk','BE','34',
+        'Oostende','BE','35',
+        'Roeselare','BE','36',
+        'Tielt','BE','37',
+        'Veurne','BE','38',
+        'Aalst','BE','41',
+        'Dendermonde','BE','42',
+        'Eeklo','BE','43',
+        'Gent','BE','44',
+        'Oudenaarde','BE','45',
+        'Sint-Niklaas','BE','46',
+        'Aat','BE','51',
+        'Charleroi','BE','52',
+        'Bergen','BE','53',
+        'Moeskroen','BE','54',
+        'Zinnik','BE','55',
+        'Thuin','BE','56',
+        'Doornik','BE','57',
+        'Hoei','BE','61',
+        'Luik','BE','62',
+        'Verviers','BE','63',
+        'Borgworm','BE','64',
+        'Hasselt','BE','71',
+        'Maaseik','BE','72',
+        'Tongeren','BE','73',
+        'Aarlen','BE','81',
+        'Bastenaken','BE','82',
+        'Marche-en-Famenne','BE','83',
+        'Neufchâteau','BE','84',
+        'Virton','BE','85',
+        'Dinant','BE','91',
+        'Namen','BE','92',
+        'Philippeville','BE','93',
+        'New Providence','BH','1',
+        'Eleuthra','BH','10',
+        'Exuma and Cays','BH','11',
+        'Long Island','BH','12',
+        'Harbour Island','BH','13',
+        'Inagua','BH','14',
+        'Mayaguana','BH','15',
+        'Ragged Island','BH','16',
+        'Rum Cay','BH','17',
+        'San Salvador','BH','18',
+        'Spanish Wells','BH','19',
+        'Grand Bahama','BH','2',
+        'Abaco','BH','3',
+        'Acklins','BH','4',
+        'Andros','BH','5',
+        'Berry Islands','BH','6',
+        'Biminis','BH','7',
+        'Cat Island','BH','8',
+        'Crooked Island','BH','9',
+        'Sandys','BM','1',
+        'Southampton','BM','2',
+        'Warwick','BM','3',
+        'Paget','BM','4',
+        'Pembroke','BM','5',
+        'Devonshire','BM','6',
+        'Smith\'s','BM','7',
+        'Hamilton','BM','8',
+        'St.George\'s','BM','9',
+        'Newfoundland','CA','NL',
+        'Prince Edward Island','CA','PE',
+        'Nova Scotia','CA','NS',
+        'New Brunswick','CA','NB',
+        'Quebec','CA','QC',
+        'Ontario','CA','ON',
+        'Manitoba','CA','MB',
+        'Saskatchewan','CA','SK',
+        'Alberta','CA','AB',
+        'British Columbia','CA','BC',
+        'Yukon','CA','YT',
+        'North West Territories','CA','NT',
+        'Nunavut','CA','NU',
+        'Zürich','CH','01',
+        'Bern','CH','02',
+        'Luzern','CH','03',
+        'Uri','CH','04',
+        'Schwyz','CH','05',
+        'Obwalden','CH','06',
+        'Nidwalden','CH','07',
+        'Glarus','CH','08',
+        'Zug','CH','09',
+        'Fribourg','CH','10',
+        'Solothurn','CH','11',
+        'Basel-Stadt','CH','12',
+        'Basel-Land','CH','13',
+        'Schaffhausen','CH','14',
+        'Appenzell A.Rh.','CH','15',
+        'Appenzell I.Rh.','CH','16',
+        'St. Gallen','CH','17',
+        'Graubünden','CH','18',
+        'Aargau','CH','19',
+        'Thurgau','CH','20',
+        'Ticino','CH','21',
+        'Vaud','CH','22',
+        'Valais','CH','23',
+        'Neuchâtel','CH','24',
+        'Genève','CH','25',
+        'Jura','CH','26',
+        'Tarapacá','CL','01',
+        'Antofagasta','CL','02',
+        'Atacama','CL','03',
+        'Coquimbo','CL','04',
+        'Valparaíso','CL','05',
+        'O\'Higgins','CL','06',
+        'Maule','CL','07',
+        'Biobío','CL','08',
+        'Araucanía','CL','09',
+        'Los Lagos','CL','10',
+        'Aisén','CL','11',
+        'Magallanes y la Antártica','CL','12',
+        'Metropolitana','CL','13',
+        'Beijing','CN','11',
+        'Tianjin','CN','12',
+        'Hebei','CN','13',
+        'Shanxi','CN','14',
+        'Inner Mongolia','CN','15',
+        'Liaoning','CN','21',
+        'Jilin','CN','22',
+        'Heilongjiang','CN','23',
+        'Shanghai','CN','31',
+        'Jiangsu','CN','32',
+        'Zhejiang','CN','33',
+        'Anhui','CN','34',
+        'Fujian','CN','35',
+        'Jiangxi','CN','36',
+        'Shandong','CN','37',
+        'Henan','CN','41',
+        'Hubei','CN','42',
+        'Hunan','CN','43',
+        'Guangdong','CN','44',
+        'Guangxi','CN','45',
+        'Hainan','CN','46',
+        'Chongqing','CN','50',
+        'Sichuan','CN','51',
+        'Guizhou','CN','52',
+        'Yunnan','CN','53',
+        'Xizang','CN','54',
+        'Shaanxi','CN','61',
+        'Gansu','CN','62',
+        'Qinghai','CN','63',
+        'Ningxia','CN','64',
+        'Xinjiang','CN','65',
+        'Antioquia','CO','05',
+        'Atlántico','CO','08',
+        'Bogotá','CO','11',
+        'Bolívar','CO','13',
+        'Boyacá','CO','15',
+        'Caldas','CO','17',
+        'Caquetá','CO','18',
+        'Cauca','CO','19',
+        'Cesar','CO','20',
+        'Córdoba','CO','23',
+        'Cundinamarca','CO','25',
+        'Chocó','CO','27',
+        'Huila','CO','41',
+        'Guajira','CO','44',
+        'Magdalena','CO','47',
+        'Meta','CO','50',
+        'Nariño','CO','52',
+        'Norte de Santander','CO','54',
+        'Quindío','CO','63',
+        'Risaralda','CO','66',
+        'Santander','CO','68',
+        'Sucre','CO','70',
+        'Tolima','CO','73',
+        'Valle del Cauca','CO','76',
+        'Arauca','CO','81',
+        'Casanare','CO','85',
+        'Putumayo','CO','86',
+        'San Andrés and Providenci','CO','88',
+        'Amazonas','CO','91',
+        'Guainía','CO','94',
+        'Guaviare','CO','95',
+        'Vaupés','CO','97',
+        'Vichada','CO','99',
+        'Camagüey','CU','1',
+        'Matanzas','CU','10',
+        'Pinar del Rio','CU','11',
+        'Sancti Spíritus','CU','12',
+        'Santiago de Cuba','CU','13',
+        'Villa Clara','CU','14',
+        'Ciego de Avila','CU','2',
+        'Cienfuegos','CU','3',
+        'Granma','CU','4',
+        'Guantánamo','CU','5',
+        'Holguin','CU','6',
+        'Isla de la Juventud','CU','7',
+        'La Habana','CU','8',
+        'Las Tunas','CU','9',
+        'Schleswig-Holstein','DE','01',
+        'Hamburg','DE','02',
+        'Niedersachsen','DE','03',
+        'Bremen','DE','04',
+        'Nordrhein-Westfalen','DE','05',
+        'Hessen','DE','06',
+        'Rheinland-Pfalz','DE','07',
+        'Baden-Württemberg','DE','08',
+        'Bayern','DE','09',
+        'Saarland','DE','10',
+        'Berlin','DE','11',
+        'Brandenburg','DE','12',
+        'Mecklenburg-Vorpommern','DE','13',
+        'Sachsen','DE','14',
+        'Sachsen-Anhalt','DE','15',
+        'Thueringen','DE','16',
+        'København','DK','101',
+        'Frederiksberg','DK','102',
+        'Københavns Amt','DK','150',
+        'Frederiksborg Amt','DK','200',
+        'Roskilde Amt','DK','250',
+        'Vestsjællands Amt','DK','300',
+        'Storstrøms Amt','DK','350',
+        'Bornholms Amt','DK','400',
+        'Fyns Amt','DK','420',
+        'Sønderjyllands Amt','DK','500',
+        'Ribe Amt','DK','550',
+        'Vejle Amt','DK','600',
+        'Ringkøbing Amt','DK','650',
+        'Århus Amt','DK','700',
+        'Viborg Amt','DK','760',
+        'Nordjyllands Amt','DK','800',
+        'Azua','DO','1',
+        'Hato Mayor','DO','10',
+        'Independencia','DO','11',
+        'La Altagracia','DO','12',
+        'La Romana','DO','13',
+        'La Vega','DO','14',
+        'Maria Trinidad Sánchez','DO','15',
+        'Monsenor Nouel','DO','16',
+        'Monte Cristi','DO','17',
+        'Monte Plata','DO','18',
+        'Pedernales','DO','19',
+        'Bahoruco','DO','2',
+        'Peravia','DO','20',
+        'Puerto Plata','DO','21',
+        'Salcedo','DO','22',
+        'Samana','DO','23',
+        'Sánchez Ramirez','DO','24',
+        'San Cristobal','DO','25',
+        'San Juan','DO','26',
+        'San Pedro de Macoris','DO','27',
+        'Santiago','DO','28',
+        'Santiago Rodriguez','DO','29',
+        'Barahona','DO','3',
+        'Valverde','DO','30',
+        'Dajabon','DO','4',
+        'Distrito National','DO','5',
+        'Duarte','DO','6',
+        'Elias Pina','DO','7',
+        'El Seibo','DO','8',
+        'Espaillat','DO','9',
+        'Azuay','EC','01',
+        'Bolivar','EC','02',
+        'Canar','EC','03',
+        'Carchi','EC','04',
+        'Cotopaxi','EC','05',
+        'Chimborazo','EC','06',
+        'El Oro','EC','07',
+        'Esmeraldas','EC','08',
+        'Guayas','EC','09',
+        'Imbabura','EC','10',
+        'Loja','EC','11',
+        'Los Rios','EC','12',
+        'Manabi','EC','13',
+        'Morona Santiago','EC','14',
+        'Napo','EC','15',
+        'Pastaza','EC','16',
+        'Pichincha','EC','17',
+        'Tungurahua','EC','18',
+        'Zamora Chinchipe','EC','19',
+        'Galapagos','EC','20',
+        'Sucumbios','EC','21',
+        'Orellana','EC','22',
+        'Santo Domingo de los Tsachilas','EC','23',
+        'Santa Elena','EC','24',
+        'Zonas No Delimitadas','EC','90',
+        'Ain','FR','01',
+        'Aisne','FR','02',
+        'Allier','FR','03',
+        'Alpes-de-Haute-Provence','FR','04',
+        'Hautes-Alpes','FR','05',
+        'Alpes-Maritimes','FR','06',
+        'Ardèche','FR','07',
+        'Ardennes','FR','08',
+        'Ariège','FR','09',
+        'Aube','FR','10',
+        'Aude','FR','11',
+        'Aveyron','FR','12',
+        'Bouches-du-Rhône','FR','13',
+        'Calvados','FR','14',
+        'Cantal','FR','15',
+        'Charente','FR','16',
+        'Charente-Maritime','FR','17',
+        'Cher','FR','18',
+        'Corrèze','FR','19',
+        'Côte-d\'Or','FR','21',
+        'Côtes-du-Nord','FR','22',
+        'Creuse','FR','23',
+        'Dordogne','FR','24',
+        'Doubs','FR','25',
+        'Drôme','FR','26',
+        'Eure','FR','27',
+        'Eure-et-Loir','FR','28',
+        'Finistère','FR','29',
+        'Corse-du-Sud','FR','2A',
+        'Haute-Corse','FR','2B',
+        'Gard','FR','30',
+        'Haute-Garonne','FR','31',
+        'Gers','FR','32',
+        'Gironde','FR','33',
+        'Hérault','FR','34',
+        'Ille-et-Vilaine','FR','35',
+        'Indre','FR','36',
+        'Indre-et-Loire','FR','37',
+        'Isère','FR','38',
+        'Jura','FR','39',
+        'Landes','FR','40',
+        'Loir-et-Cher','FR','41',
+        'Loire','FR','42',
+        'Haute-Loire','FR','43',
+        'Loire-Atlantique','FR','44',
+        'Loiret','FR','45',
+        'Lot','FR','46',
+        'Lot-et-Garonne','FR','47',
+        'Lozère','FR','48',
+        'Maine-et-Loire','FR','49',
+        'Manche','FR','50',
+        'Marne','FR','51',
+        'Haute-Marne','FR','52',
+        'Mayenne','FR','53',
+        'Meurthe-et-Moselle','FR','54',
+        'Meuse','FR','55',
+        'Morbihan','FR','56',
+        'Moselle','FR','57',
+        'Nièvre','FR','58',
+        'Nord','FR','59',
+        'Oise','FR','60',
+        'Orne','FR','61',
+        'Pas-de-Calais','FR','62',
+        'Puy-de-Dôme','FR','63',
+        'Pyrénées-Atlantiques','FR','64',
+        'Hautes-Pyrénées','FR','65',
+        'Pyrénées-Orientales','FR','66',
+        'Bas-Rhin','FR','67',
+        'Haut-Rhin','FR','68',
+        'Rhône','FR','69',
+        'Haute-Saône','FR','70',
+        'Saône-et-Loire','FR','71',
+        'Sarthe','FR','72',
+        'Savoie','FR','73',
+        'Haute-Savoie','FR','74',
+        'Ville-de-Paris','FR','75',
+        'Seine-Maritime','FR','76',
+        'Seine-et-Marne','FR','77',
+        'Yvelines','FR','78',
+        'Deux-Sèvres','FR','79',
+        'Somme','FR','80',
+        'Tarn','FR','81',
+        'Tarn-et-Garonne','FR','82',
+        'Var','FR','83',
+        'Vaucluse','FR','84',
+        'Vendée','FR','85',
+        'Vienne','FR','86',
+        'Haute-Vienne','FR','87',
+        'Vosges','FR','88',
+        'Yonne','FR','89',
+        'Territoire-de-Belfort','FR','90',
+        'Essonne','FR','91',
+        'Hauts-de-Seine','FR','92',
+        'Seine-Saint-Denis','FR','93',
+        'Val-de-Marne','FR','94',
+        'Val-d\'Oise','FR','95',
+        'Monaco','FR','99',
+        'Alabama','G2','01',
+        'Florida','G2','12',
+        'Louisiana','G2','22',
+        'Mississippi','G2','28',
+        'Texas','G2','48',
+        'Outer Continental Shelf','G2','OCS',
+        'Aberdeen','GB','AB',
+        'St Albans','GB','AL',
+        'Birmingham','GB','B',
+        'Bath','GB','BA',
+        'Blackburn','GB','BB',
+        'Bradford','GB','BD',
+        'Bournemouth','GB','BH',
+        'Bolton','GB','BL',
+        'Brighton','GB','BN',
+        'Bromley','GB','BR',
+        'Bristol','GB','BS',
+        'Northern Ireland','GB','BT',
+        'Carlisle','GB','CA',
+        'Cambridge','GB','CB',
+        'Cardiff','GB','CF',
+        'Chester','GB','CH',
+        'Chelmsford','GB','CM',
+        'Colchester','GB','CO',
+        'Croydon','GB','CR',
+        'Canterbury','GB','CT',
+        'Coventry','GB','CV',
+        'Crewe','GB','CW',
+        'Dartford','GB','DA',
+        'Dundee','GB','DD',
+        'Derby','GB','DE',
+        'Dumfries','GB','DG',
+        'Durham','GB','DH',
+        'Darlington','GB','DL',
+        'Doncaster','GB','DN',
+        'Dorchester','GB','DT',
+        'Dudley','GB','DY',
+        'London E','GB','E',
+        'London EC','GB','EC',
+        'Edinburgh','GB','EH',
+        'Enfield','GB','EN',
+        'Exeter','GB','EX',
+        'Falkirk','GB','FK',
+        'Blackpool','GB','FY',
+        'Glasgow','GB','G',
+        'Gloucester','GB','GL',
+        'Guildford','GB','GU',
+        'Guernsey','GB','GY',
+        'Harrow','GB','HA',
+        'Huddersfield','GB','HD',
+        'Harrogate','GB','HG',
+        'Hemel Hempstead','GB','HP',
+        'Hereford','GB','HR',
+        'Outer Hebrides','GB','HS',
+        'Hull','GB','HU',
+        'Halifax','GB','HX',
+        'Channel Islands','GB','IC',
+        'Ilford','GB','IG',
+        'Isle of Man','GB','IM',
+        'Ipswich','GB','IP',
+        'Inverness','GB','IV',
+        'Jersey','GB','JE',
+        'Kilmarnock','GB','KA',
+        'Kingston upon Thames','GB','KT',
+        'Kirkwall','GB','KW',
+        'Kirkcaldy','GB','KY',
+        'Liverpool','GB','L',
+        'Lancaster','GB','LA',
+        'Llandrindod Wells','GB','LD',
+        'Leicester','GB','LE',
+        'Llandudno','GB','LL',
+        'Lincoln','GB','LN',
+        'Leeds','GB','LS',
+        'Luton','GB','LU',
+        'Manchester','GB','M',
+        'Medway','GB','ME',
+        'Milton Keynes','GB','MK',
+        'Motherwell','GB','ML',
+        'London N','GB','N',
+        'Newcastle upon Tyne','GB','NE',
+        'Nottingham','GB','NG',
+        'Northampton','GB','NN',
+        'Newport','GB','NP',
+        'Norwich','GB','NR',
+        'London NW','GB','NW',
+        'Oldham','GB','OL',
+        'Oxford','GB','OX',
+        'Paisley','GB','PA',
+        'Peterborough','GB','PE',
+        'Perth','GB','PH',
+        'Plymouth','GB','PL',
+        'Portsmouth','GB','PO',
+        'Preston','GB','PR',
+        'Reading','GB','RG',
+        'Redhill','GB','RH',
+        'Romford','GB','RM',
+        'Sheffield','GB','S',
+        'Swansea','GB','SA',
+        'London SE','GB','SE',
+        'Stevenage','GB','SG',
+        'Stockport','GB','SK',
+        'Slough','GB','SL',
+        'Sutton','GB','SM',
+        'Swindon','GB','SN',
+        'Southampton','GB','SO',
+        'Salisbury','GB','SP',
+        'Sunderland','GB','SR',
+        'Southend-on-Sea','GB','SS',
+        'Stoke-on-Trent','GB','ST',
+        'London SW','GB','SW',
+        'Shrewsbury','GB','SY',
+        'Taunton','GB','TA',
+        'Galashiels','GB','TD',
+        'Telford','GB','TF',
+        'Tonbridge','GB','TN',
+        'Torquay','GB','TQ',
+        'Truro','GB','TR',
+        'Cleveland','GB','TS',
+        'Twickenham','GB','TW',
+        'Southall','GB','UB',
+        'London W','GB','W',
+        'Warrington','GB','WA',
+        'London WC','GB','WC',
+        'Watford','GB','WD',
+        'Wakefield','GB','WF',
+        'Wigan','GB','WN',
+        'Worcester','GB','WR',
+        'Walsall','GB','WS',
+        'Wolverhampton','GB','WV',
+        'York','GB','YO',
+        'Lerwick','GB','ZE',
+        'Aitolias Kai Akarnanias','GR','01',
+        'Voiotia','GR','03',
+        'Eivoias','GR','04',
+        'Evritania','GR','05',
+        'Fthiotida','GR','06',
+        'Fokida','GR','07',
+        'Argolidos','GR','11',
+        'Arkadias','GR','12',
+        'Ahaia','GR','13',
+        'Ilia','GR','14',
+        'Korinthos','GR','15',
+        'Lakonia','GR','16',
+        'Messinia','GR','17',
+        'Zakinthos','GR','21',
+        'Kerkira (Corfu)','GR','22',
+        'Kefallonia','GR','23',
+        'Lefkada','GR','24',
+        'Arta','GR','31',
+        'Thesprotia','GR','32',
+        'Ioannina','GR','33',
+        'Preveza','GR','34',
+        'Karditsa','GR','41',
+        'Larissa','GR','42',
+        'Magnisias','GR','43',
+        'Trikala','GR','44',
+        'Grevena','GR','51',
+        'Drama','GR','52',
+        'Imathia','GR','53',
+        'Thessaloniki','GR','54',
+        'Kavala','GR','55',
+        'Kastoria','GR','56',
+        'Kilkis','GR','57',
+        'Kozani','GR','58',
+        'Pela','GR','59',
+        'Pieria','GR','61',
+        'Seres','GR','62',
+        'Florina','GR','63',
+        'Halkida','GR','64',
+        'Agion Opos','GR','65',
+        'Evros','GR','71',
+        'Xanthi','GR','72',
+        'Rodopi','GR','73',
+        'Dodekanissa (Dodecanese)','GR','81',
+        'Kiklades (Cyclades)','GR','82',
+        'Lesvos','GR','83',
+        'Samos','GR','84',
+        'Hios','GR','85',
+        'Iraklio','GR','91',
+        'Lasithioi','GR','92',
+        'Rethimno','GR','93',
+        'Hania','GR','94',
+        'Athina (Athens)','GR','A1',
+        'Anatoliki Attiki','GR','A2',
+        'Ditiki Attiki','GR','A3',
+        'Peiria','GR','A4',
+        'Artibonite','HT','1',
+        'Centre','HT','2',
+        'Grand\' Anse','HT','3',
+        'Nord','HT','4',
+        'Nord-Est','HT','5',
+        'Nord-Ouest','HT','6',
+        'Ouest','HT','7',
+        'Sud','HT','8',
+        'Sud-Est','HT','9',
+        'Nanggroe Aceh Darussalam','ID','11',
+        'Sumatera Utara','ID','12',
+        'Sumatera Barat','ID','13',
+        'Riau','ID','14',
+        'Jambi','ID','15',
+        'Sumatera Selatan','ID','16',
+        'Bengkulu','ID','17',
+        'Lampung','ID','18',
+        'Kepulauan Bangka Belitung','ID','19',
+        'Kepulauan Riau','ID','21',
+        'DKI Jakarta','ID','31',
+        'Jawa Barat','ID','32',
+        'Jawa Tengah','ID','33',
+        'DI Yogyakarta','ID','34',
+        'Jawa Timur','ID','35',
+        'Banten','ID','36',
+        'Bali','ID','51',
+        'Nusa Tenggara Barat','ID','52',
+        'Nusa Tenggara Timur','ID','53',
+        'Kalimantan Barat','ID','61',
+        'Kalimantan Tengah','ID','62',
+        'Kalimantan Selatan','ID','63',
+        'Kalimantan Timur','ID','64',
+        'Sulawesi Utara','ID','71',
+        'Sulawesi Tengah','ID','72',
+        'Sulawesi Selatan','ID','73',
+        'Sulawesi Tenggara','ID','74',
+        'Gorontalo','ID','75',
+        'Sulawesi Barat','ID','76',
+        'Maluku','ID','81',
+        'Maluku Utara','ID','82',
+        'Papua Barat','ID','91',
+        'Papua','ID','94',
+        'Carlow','IE','01',
+        'Dublin County Borough','IE','02',
+        'South Dublin','IE','03',
+        'Fingal','IE','04',
+        'Dun Laoghaire-Rathdown','IE','05',
+        'Kildare','IE','06',
+        'Kilkenny','IE','07',
+        'Laoighis','IE','08',
+        'Longford','IE','09',
+        'Louth','IE','10',
+        'Meath','IE','11',
+        'Offaly','IE','12',
+        'Westmeath','IE','13',
+        'Wexford','IE','14',
+        'Wicklow','IE','15',
+        'Clare','IE','16',
+        'Cork County Borough','IE','18',
+        'Cork','IE','19',
+        'Kerry','IE','20',
+        'Limerick County Borough','IE','22',
+        'Limerick','IE','23',
+        'Tipperary North Riding','IE','24',
+        'Tipperay South Riding','IE','25',
+        'Waterford County Borough','IE','27',
+        'Waterford','IE','28',
+        'Galway','IE','29',
+        'Leitrim','IE','30',
+        'Mayo','IE','31',
+        'Roscommon','IE','32',
+        'Sligo','IE','33',
+        'Cavan','IE','34',
+        'Donegal','IE','35',
+        'Monaghan','IE','36',
+        'Galway County Borough','IE','37',
+        'Akko','IL','01',
+        'Ashqelon','IL','02',
+        'Beer Sheva','IL','03',
+        'Gaza Area','IL','04',
+        'Golan','IL','05',
+        'Hadera','IL','06',
+        'Haifa','IL','07',
+        'Jericho','IL','08',
+        'Jerusalem','IL','09',
+        'Kinneret','IL','10',
+        'Petah Tiqwa','IL','11',
+        'Ramla','IL','12',
+        'Rehovot','IL','13',
+        'Sharon','IL','14',
+        'Tel Aviv','IL','15',
+        'Yizreel','IL','16',
+        'Zefat','IL','17',
+        'Torino','IT','001',
+        'Vercelli','IT','002',
+        'Novara','IT','003',
+        'Cuneo','IT','004',
+        'Asti','IT','005',
+        'Alessandria','IT','006',
+        'Valle dAosta','IT','007',
+        'Imperia','IT','008',
+        'Savona','IT','009',
+        'Genova','IT','010',
+        'La Spezia','IT','011',
+        'Varese','IT','012',
+        'Como','IT','013',
+        'Sondrio','IT','014',
+        'Milano','IT','015',
+        'Bergamo','IT','016',
+        'Brescia','IT','017',
+        'Pavia','IT','018',
+        'Cremona','IT','019',
+        'Mantova','IT','020',
+        'Bolzano','IT','021',
+        'Trento','IT','022',
+        'Verona','IT','023',
+        'Vicenza','IT','024',
+        'Belluno','IT','025',
+        'Treviso','IT','026',
+        'Venezia','IT','027',
+        'Padova','IT','028',
+        'Rovigo','IT','029',
+        'Udine','IT','030',
+        'Gorizia','IT','031',
+        'Trieste','IT','032',
+        'Piacenza','IT','033',
+        'Parma','IT','034',
+        'Reggio Emilia','IT','035',
+        'Modena','IT','036',
+        'Bologna','IT','037',
+        'Ferrara','IT','038',
+        'Ravenna','IT','039',
+        'Forli-Cesena','IT','040',
+        'Pesaro E Urbino','IT','041',
+        'Ancona','IT','042',
+        'Macerata','IT','043',
+        'Ascoli Piceno','IT','044',
+        'Massa Carrara','IT','045',
+        'Lucca','IT','046',
+        'Pistoia','IT','047',
+        'Firenze','IT','048',
+        'Livorno','IT','049',
+        'Pisa','IT','050',
+        'Arezzo','IT','051',
+        'Siena','IT','052',
+        'Grosseto','IT','053',
+        'Perugia','IT','054',
+        'Terni','IT','055',
+        'Viterbo','IT','056',
+        'Rieti','IT','057',
+        'Roma','IT','058',
+        'Latina','IT','059',
+        'Frosinone','IT','060',
+        'Caserta','IT','061',
+        'Benevento','IT','062',
+        'Napoli','IT','063',
+        'Avellino','IT','064',
+        'Salerno','IT','065',
+        'L\'Aquila','IT','066',
+        'Teramo','IT','067',
+        'Pescara','IT','068',
+        'Chieti','IT','069',
+        'Campobasso','IT','070',
+        'Foggia','IT','071',
+        'Bari','IT','072',
+        'Taranto','IT','073',
+        'Brindisi','IT','074',
+        'Lecce','IT','075',
+        'Potenza','IT','076',
+        'Matera','IT','077',
+        'Cosenza','IT','078',
+        'Catanzaro','IT','079',
+        'Reggio Calabria','IT','080',
+        'Trapani','IT','081',
+        'Palermo','IT','082',
+        'Messina','IT','083',
+        'Agrigento','IT','084',
+        'Caltanissetta','IT','085',
+        'Enna','IT','086',
+        'Catania','IT','087',
+        'Ragusa','IT','088',
+        'Siracusa','IT','089',
+        'Sassari','IT','090',
+        'Nuoro','IT','091',
+        'Cagliari','IT','092',
+        'Pordenone','IT','093',
+        'Isernia','IT','094',
+        'Oristano','IT','095',
+        'Biella','IT','096',
+        'Lecco','IT','097',
+        'Lodi','IT','098',
+        'Rimini','IT','099',
+        'Prato','IT','100',
+        'Crotone','IT','101',
+        'Vibo Valentia','IT','102',
+        'Verbano-Cusio-Ossola','IT','103',
+        'Olbia-Tempio','IT','104',
+        'Ogliastra','IT','105',
+        'Medio Campidano','IT','106',
+        'Carbonia-Iglesias','IT','107',
+        'Citta del Vaticano','IT','888',
+        'San Marino','IT','999',
+        'Clarendon','JM','1',
+        'St. James','JM','10',
+        'St. Mary','JM','11',
+        'St. Thomas','JM','12',
+        'Trelawny','JM','13',
+        'Westmoreland','JM','14',
+        'Hanover','JM','2',
+        'Kingston','JM','3',
+        'Manchester','JM','4',
+        'Portland','JM','5',
+        'St. Andrew','JM','6',
+        'St. Ann','JM','7',
+        'St. Catherine','JM','8',
+        'St. Elizabeth','JM','9',
+        'Hokkaido','JP','100',
+        'Kagawa','JP','1010',
+        'Tokushima','JP','1020',
+        'Ehime','JP','1030',
+        'Kochi','JP','1040',
+        'Fukuoka','JP','1110',
+        'Saga','JP','1120',
+        'Nagasaki','JP','1130',
+        'Kumamoto','JP','1140',
+        'Oita','JP','1150',
+        'Miyazaki','JP','1160',
+        'Kagoshima','JP','1170',
+        'Okinawa','JP','1200',
+        'Aomori','JP','210',
+        'Akita','JP','220',
+        'Yamagata','JP','230',
+        'Niigata','JP','240',
+        'Iwate','JP','310',
+        'Miyagi','JP','320',
+        'Fukushima','JP','330',
+        'Gumma','JP','410',
+        'Tochigi','JP','420',
+        'Saitama','JP','430',
+        'Ibaraki','JP','440',
+        'Chiba','JP','510',
+        'Tokyo','JP','520',
+        'Kanagawa','JP','530',
+        'Gifu','JP','610',
+        'Nagano','JP','620',
+        'Yamanashi','JP','630',
+        'Shizuoka','JP','640',
+        'Aichi','JP','650',
+        'Mie','JP','660',
+        'Toyama','JP','710',
+        'Ishikawa','JP','720',
+        'Fukui','JP','730',
+        'Hyogo','JP','810',
+        'Kyoto','JP','820',
+        'Shiga','JP','830',
+        'Osaka','JP','840',
+        'Nara','JP','850',
+        'Wakayama','JP','860',
+        'Tottori','JP','910',
+        'Okayama','JP','920',
+        'Hiroshima','JP','930',
+        'Shimane','JP','940',
+        'Yamaguchi','JP','950',
+        'Seoul','KR','11',
+        'Busan','KR','21',
+        'Daegu','KR','22',
+        'Incheon','KR','23',
+        'Gwangju','KR','24',
+        'Daejeon','KR','25',
+        'Ulsan','KR','26',
+        'Gyeonggi-do','KR','31',
+        'Gangwon-do','KR','32',
+        'Chungcheongbuk-do','KR','33',
+        'Chungcheongnam-do','KR','34',
+        'Jeollabuk-do','KR','35',
+        'Jeollanam-do','KR','36',
+        'Gyeongsangbuk-do','KR','37',
+        'Gyeongsangnam-do','KR','38',
+        'Jeju-do','KR','39',
+        'Bodden Town','KY','1',
+        'East End','KY','2',
+        'George Town','KY','3',
+        'North Side','KY','4',
+        'West Bay','KY','5',
+        'Little Cayman','KY','6',
+        'Cayman Brac','KY','7',
+        'Luxembourg-ville','LU','01',
+        'Capellen','LU','02',
+        'Esch-Alzette','LU','03',
+        'Mersch','LU','05',
+        'Clervaux','LU','06',
+        'Diekirch','LU','07',
+        'Redange','LU','08',
+        'Wiltz','LU','09',
+        'Vianden','LU','10',
+        'Echternach','LU','11',
+        'Grevenmacher','LU','12',
+        'Remich','LU','13',
+        'Luxembourg-Campagne','LU','40',
+        'Aguascalientes','MX','01',
+        'Baja California','MX','02',
+        'Baja California Sur','MX','03',
+        'Campeche','MX','04',
+        'Coahuila','MX','05',
+        'Colima','MX','06',
+        'Chiapas','MX','07',
+        'Chihuahua','MX','08',
+        'Mexico City / Distrito Federal','MX','09',
+        'Durango','MX','10',
+        'Guanajuato','MX','11',
+        'Guerrero','MX','12',
+        'Hidalgo','MX','13',
+        'Jalisco','MX','14',
+        'Mexico','MX','15',
+        'Michoacan','MX','16',
+        'Morelos','MX','17',
+        'Nayarit','MX','18',
+        'Nuevo Leon','MX','19',
+        'Oaxaca','MX','20',
+        'Puebla','MX','21',
+        'Queretaro','MX','22',
+        'Quintana Roo','MX','23',
+        'San Luis Potosi','MX','24',
+        'Sinaloa','MX','25',
+        'Sonora','MX','26',
+        'Tabasco','MX','27',
+        'Tamaulipas','MX','28',
+        'Tlaxcala','MX','29',
+        'Veracruz','MX','30',
+        'Yucatan','MX','31',
+        'Zacatecas','MX','32',
+        'Groningen','NL','20',
+        'Friesland','NL','21',
+        'Drenthe','NL','22',
+        'Overijssel','NL','23',
+        'Flevoland','NL','24',
+        'Gelderland','NL','25',
+        'Utrecht','NL','26',
+        'Noord-Holland','NL','27',
+        'Zuid-Holland','NL','28',
+        'Zeeland','NL','29',
+        'Noord-Brabant','NL','30',
+        'Limburg','NL','31',
+        'Østfold','NO','01',
+        'Akershus','NO','02',
+        'Oslo','NO','03',
+        'Hedmark','NO','04',
+        'Oppland','NO','05',
+        'Buskerud','NO','06',
+        'Vestfold','NO','07',
+        'Telemark','NO','08',
+        'Aust-Agder','NO','09',
+        'Vest-Agder','NO','10',
+        'Rogaland','NO','11',
+        'Hordaland','NO','12',
+        'Sogn og Fjordane','NO','14',
+        'Møre og Romsdal','NO','15',
+        'Sør-Trøndelag','NO','16',
+        'Nord-Trøndelag','NO','17',
+        'Nordland','NO','18',
+        'Troms','NO','19',
+        'Finnmark','NO','20',
+        'Svalbard and Jan Mayen Islands','NO','SJ',
+        'Amazonas','PE','01',
+        'Ancash','PE','02',
+        'Apurímac','PE','03',
+        'Arequipa','PE','04',
+        'Ayacucho','PE','05',
+        'Cajamarca','PE','06',
+        'Callao','PE','07',
+        'Cusco','PE','08',
+        'Huancavelica','PE','09',
+        'Huánuco','PE','10',
+        'Ica','PE','11',
+        'Junín','PE','12',
+        'La Libertad','PE','13',
+        'Lambayeque','PE','14',
+        'Lima','PE','15',
+        'Loreto','PE','16',
+        'Madre de Dios','PE','17',
+        'Moquegua','PE','18',
+        'Pasco','PE','19',
+        'Piura','PE','20',
+        'Puno','PE','21',
+        'San Martín','PE','22',
+        'Tacna','PE','23',
+        'Tumbes','PE','24',
+        'Ucayali','PE','25',
+        'Ilocos Region','PH','01',
+        'Cagayan Valley','PH','02',
+        'Central Luzon','PH','03',
+        'Calabarzon','PH','04',
+        'Bicol Region','PH','05',
+        'Western Visayas','PH','06',
+        'Central Visayas','PH','07',
+        'Eastern Visayas','PH','08',
+        'Zamboanga Peninsula','PH','09',
+        'Northern Mindanao','PH','10',
+        'Davao Region','PH','11',
+        'Soccsksargen','PH','12',
+        'National Capital Region (NCR)','PH','13',
+        'Cordillera Administrative Region (CAR)','PH','14',
+        'Autonomous Region In Muslim Mindanao (ARMM)','PH','15',
+        'Caraga','PH','16',
+        'Mimaropa','PH','17',
+        'Adjuntas','PR','1',
+        'Morovis','PR','101',
+        'Naguabo','PR','103',
+        'Naranjito','PR','105',
+        'Orocovis','PR','107',
+        'Patillas','PR','109',
+        'Anasco','PR','11',
+        'Penuelas','PR','111',
+        'Ponce','PR','113',
+        'Quebradillas','PR','115',
+        'Rincon','PR','117',
+        'Rio Grande','PR','119',
+        'Sabana Grande','PR','121',
+        'Salinas','PR','123',
+        'San German','PR','125',
+        'San Juan','PR','127',
+        'San Lorenzo','PR','129',
+        'Arecibo','PR','13',
+        'San Sebastian','PR','131',
+        'Santa Isabel','PR','133',
+        'Toa Alta','PR','135',
+        'Toa Baja','PR','137',
+        'Trujillo Alto','PR','139',
+        'Utuado','PR','141',
+        'Vega Alta','PR','143',
+        'Vega Baja','PR','145',
+        'Vieques','PR','147',
+        'Villalba','PR','149',
+        'Arroyo','PR','15',
+        'Yabucoa','PR','151',
+        'Yauco','PR','153',
+        'Barceloneta','PR','17',
+        'Barranquitas','PR','19',
+        'Bayamon','PR','21',
+        'Cabo Rojo','PR','23',
+        'Caguas','PR','25',
+        'Camuy','PR','27',
+        'Canovanas','PR','29',
+        'Aguada','PR','3',
+        'Carolina','PR','31',
+        'Catano','PR','33',
+        'Cayey','PR','35',
+        'Ceiba','PR','37',
+        'Ciales','PR','39',
+        'Cidra','PR','41',
+        'Coamo','PR','43',
+        'Comerio','PR','45',
+        'Corozal','PR','47',
+        'Culebra','PR','49',
+        'Aguadilla','PR','5',
+        'Dorado','PR','51',
+        'Fajardo','PR','53',
+        'Florida','PR','54',
+        'Guanica','PR','55',
+        'Guayama','PR','57',
+        'Guayanilla','PR','59',
+        'Guaynabo','PR','61',
+        'Gurabo','PR','63',
+        'Hatillo','PR','65',
+        'Hormigueros','PR','67',
+        'Humacao','PR','69',
+        'Aguas Buenas','PR','7',
+        'Isabela','PR','71',
+        'Jayuya','PR','73',
+        'Juana Diaz','PR','75',
+        'Juncos','PR','77',
+        'Lajas','PR','79',
+        'Lares','PR','81',
+        'Las Marias','PR','83',
+        'Las Piedras','PR','85',
+        'Loiza','PR','87',
+        'Luquillo','PR','89',
+        'Aibonito','PR','9',
+        'Manati','PR','91',
+        'Maricao','PR','93',
+        'Maunabo','PR','95',
+        'Mayaguez','PR','97',
+        'Moca','PR','99',
+        'Aveiro','PT','01',
+        'Beja','PT','02',
+        'Braga','PT','03',
+        'Braganta','PT','04',
+        'Castelo Branco','PT','05',
+        'Coimbra','PT','06',
+        'Évora','PT','07',
+        'Faro','PT','08',
+        'Guarda','PT','09',
+        'Leiria','PT','10',
+        'Lisboa','PT','11',
+        'Portalegre','PT','12',
+        'Porto','PT','13',
+        'SantarTm','PT','14',
+        'Setúbal','PT','15',
+        'Viana do Castelo','PT','16',
+        'Vila Real','PT','17',
+        'Viseu','PT','18',
+        'Ilha da Madeira','PT','31',
+        'Ilha de Porto Santo','PT','32',
+        'Ilha de Santa Maria','PT','41',
+        'Ilha de Spo Miguel','PT','42',
+        'Ilha Terceira','PT','43',
+        'Ilha da Graciosa','PT','44',
+        'Ilha de Spo Jorge','PT','45',
+        'Ilha do Pico','PT','46',
+        'Ilha do Faial','PT','47',
+        'Ilha das Flores','PT','48',
+        'Ilha do Corvo','PT','49',
+        'Stockholms län','SE','01',
+        'Uppsala län','SE','02',
+        'Södermanlands län','SE','04',
+        'Östergötlands län','SE','05',
+        'Jönköpings län','SE','06',
+        'Kronobergs län','SE','07',
+        'Kalmar län','SE','08',
+        'Gotlands län','SE','09',
+        'Blekinge län','SE','10',
+        'Skåne län','SE','12',
+        'Hallands län','SE','13',
+        'Västra Götalands län','SE','14',
+        'Värmlands län','SE','17',
+        'Örebro län','SE','18',
+        'Västmanlands län','SE','19',
+        'Dalarnas län','SE','20',
+        'Gävleborgs län','SE','21',
+        'Västernorrlands län','SE','22',
+        'Jämtlands län','SE','23',
+        'Västerbottens län','SE','24',
+        'Norrbottens län','SE','25',
+        'Caicos','TC','1',
+        'Grand Turk Island','TC','2',
+        'Salt Cay','TC','3',
+        'Adana','TR','01',
+        'Adýyaman','TR','02',
+        'Afyonkarahisar','TR','03',
+        'Aðrý','TR','04',
+        'Amasya','TR','05',
+        'Ankara','TR','06',
+        'Antalya','TR','07',
+        'Artvin','TR','08',
+        'Aydýn','TR','09',
+        'Balýkesir','TR','10',
+        'Bilecik','TR','11',
+        'Bingöl','TR','12',
+        'Bitlis','TR','13',
+        'Bolu','TR','14',
+        'Burdur','TR','15',
+        'Bursa','TR','16',
+        'Çanakkale','TR','17',
+        'Çankýrý','TR','18',
+        'Çorum','TR','19',
+        'Denizli','TR','20',
+        'Diyarbakýr','TR','21',
+        'Edirne','TR','22',
+        'Elazýð','TR','23',
+        'Erzincan','TR','24',
+        'Erzurum','TR','25',
+        'Eskiþehir','TR','26',
+        'Gaziantep','TR','27',
+        'Giresun','TR','28',
+        'Gümüþhane','TR','29',
+        'Hakkari','TR','30',
+        'Hatay','TR','31',
+        'Isparta','TR','32',
+        'Mersin','TR','33',
+        'Ýstanbul','TR','34',
+        'Ýzmir','TR','35',
+        'Kars','TR','36',
+        'Kastamonu','TR','37',
+        'Kayseri','TR','38',
+        'Kýrklareli','TR','39',
+        'Kýrþehir','TR','40',
+        'Kocaeli','TR','41',
+        'Konya','TR','42',
+        'Kütahya','TR','43',
+        'Malatya','TR','44',
+        'Manisa','TR','45',
+        'Kahramanmaraþ','TR','46',
+        'Mardin','TR','47',
+        'Muðla','TR','48',
+        'Muþ','TR','49',
+        'Nevþehir','TR','50',
+        'Niðde','TR','51',
+        'Ordu','TR','52',
+        'Rize','TR','53',
+        'Sakarya','TR','54',
+        'Samsun','TR','55',
+        'Siirt','TR','56',
+        'Sinop','TR','57',
+        'Sivas','TR','58',
+        'Tekirdað','TR','59',
+        'Tokat','TR','60',
+        'Trabzon','TR','61',
+        'Tunceli','TR','62',
+        'Þanlýurfa','TR','63',
+        'Uþak','TR','64',
+        'Van','TR','65',
+        'Yozgat','TR','66',
+        'Zonguldak','TR','67',
+        'Aksaray','TR','68',
+        'Bayburt','TR','69',
+        'Karaman','TR','70',
+        'Kýrýkkale','TR','71',
+        'Batman','TR','72',
+        'Þýrnak','TR','73',
+        'Bartýn','TR','74',
+        'Ardahan','TR','75',
+        'Iðdýr','TR','76',
+        'Yalova','TR','77',
+        'Karabük','TR','78',
+        'Kilis','TR','79',
+        'Osmaniye','TR','80',
+        'Düzce','TR','81',
+        'Caroni','TT','1',
+        'Mayaro','TT','2',
+        'Nariva','TT','3',
+        'St. Andrew','TT','4',
+        'St. David','TT','5',
+        'St. George','TT','6',
+        'St. Patrick','TT','7',
+        'Victoria','TT','8',
+        'Tobago','TT','9',
+        'Taipei County','TW','01',
+        'Yilan County','TW','02',
+        'Taoyuan County','TW','03',
+        'Hsinchu County','TW','04',
+        'Miaoli County','TW','05',
+        'Taichung County','TW','06',
+        'Changhua County','TW','07',
+        'Nantou County','TW','08',
+        'Yunlin County','TW','09',
+        'Chiayi County','TW','10',
+        'Tainan County','TW','11',
+        'Kaohsiung County','TW','12',
+        'Pingtung County','TW','13',
+        'Taitung County','TW','14',
+        'Hualien County','TW','15',
+        'Penghu County','TW','16',
+        'Keelung City','TW','17',
+        'Hsinchu City','TW','18',
+        'Taichung City','TW','19',
+        'Chiayi City','TW','20',
+        'Tainan City','TW','21',
+        'Taipei City','TW','63',
+        'Kaohsiung City','TW','64',
+        'Lienchiang County','TW','71',
+        'Kinmen County','TW','72',
+        'Alaska','US','AK',
+        'Alabama','US','AL',
+        'Arkansas','US','AR',
+        'Arizona','US','AZ',
+        'California','US','CA',
+        'Colorado','US','CO',
+        'Connecticut','US','CT',
+        'Dist of Columbia','US','DC',
+        'Delaware','US','DE',
+        'Florida','US','FL',
+        'Georgia','US','GA',
+        'Hawaii','US','HI',
+        'Iowa','US','IA',
+        'Idaho','US','ID',
+        'Illinois','US','IL',
+        'Indiana','US','IN',
+        'Kansas','US','KS',
+        'Kentucky','US','KY',
+        'Louisiana','US','LA',
+        'Massachusetts','US','MA',
+        'Maryland','US','MD',
+        'Maine','US','ME',
+        'Michigan','US','MI',
+        'Minnesota','US','MN',
+        'Missouri','US','MO',
+        'Mississippi','US','MS',
+        'Montana','US','MT',
+        'North Carolina','US','NC',
+        'North Dakota','US','ND',
+        'Nebraska','US','NE',
+        'New Hampshire','US','NH',
+        'New Jersey','US','NJ',
+        'New Mexico','US','NM',
+        'Nevada','US','NV',
+        'New York','US','NY',
+        'Ohio','US','OH',
+        'Oklahoma','US','OK',
+        'Oregon','US','OR',
+        'Pennsylvania','US','PA',
+        'Rhode Island','US','RI',
+        'South Carolina','US','SC',
+        'South Dakota','US','SD',
+        'Tennessee','US','TN',
+        'Texas','US','TX',
+        'Utah','US','UT',
+        'Virginia','US','VA',
+        'Vermont','US','VT',
+        'Washington','US','WA',
+        'Wisconsin','US','WI',
+        'West Virginia','US','WV',
+        'Wyoming','US','WY',
+        'Saint Vincent','VC','1',
+        'The Grenadines','VC','2',
+        'Distrito Capital','VE','01',
+        'Amazonas','VE','02',
+        'Anzoátegui','VE','03',
+        'Apure','VE','04',
+        'Aragua','VE','05',
+        'Barinas','VE','06',
+        'Bolívar','VE','07',
+        'Carabobo','VE','08',
+        'Cojedes','VE','09',
+        'Delta Amacuro','VE','10',
+        'Falcón','VE','11',
+        'Guárico','VE','12',
+        'Lara','VE','13',
+        'Mérida','VE','14',
+        'Miranda','VE','15',
+        'Monagas','VE','16',
+        'Nueva Esparta','VE','17',
+        'Portuguesa','VE','18',
+        'Sucre','VE','19',
+        'Táchira','VE','20',
+        'Trujillo','VE','21',
+        'Yaracuy','VE','22',
+        'Zulia','VE','23',
+        'Vargas','VE','24',
+        'Anegada','VG','1',
+        'Cooper Island','VG','2',
+        'Great Camanoe','VG','3',
+        'Jost van Dyke','VG','4',
+        'Peter Island','VG','5',
+        'Tortola','VG','6',
+        'Virgin Gorda','VG','7',
+        'St. Croix','VI','10',
+        'St. John','VI','20',
+        'St. Thomas','VI','30',
+        'None','None',' '
+        )
+  AreaName:
+    - transformation: Area
+  BaseFloodElevation:
+    - transformation: BaseFloodElevation
+  BaseFloodElevationUnit:
+    - transformation: |
+        replace(
+        BaseFloodElevationUnit,
+        'SQFT','11',
+        'SQM','12',
+        'AC','13',
+        'HA','14',
+        'FT','1',
+        'M','2',
+        'KM','3',
+        'MI','4',
+        'None',''
+        )
+      when: BaseFloodElevationUnit is not in [Null, 'NULL']
+    - transformation: "''"
+  Basement:
+    - transformation: BasementFinishType
+  BasementLevelCount:
+    - transformation: BasementLevelCount
+  BIPOI:
+    - transformation: DaysCovered
+  BITIV:
+    - transformation: TimeElementValue
+  BrickVeneer:
+    - transformation: BrickVeneer
+  # BuildingCondition:
+  #   - transformation: |
+  #       replace(
+  #       BuildingCondition,
+  #       '0','A',
+  #       '1','B',
+  #       '2','C',
+  #       '3','D',
+  #       '4','D'
+  #       )
+  BuildingCondition:
+    - transformation: BuildingCondition
+  BuildingExteriorOpening:
+    - transformation: BuildingExteriorOpening
+  BuildingHeight:
+    - transformation: BuildingHeight
+  BuildingHeightUnit:
+    - transformation: |
+        replace(
+        BuildingHeightUnitCode,
+        'SQFT','11',
+        'SQM','12',
+        'AC','13',
+        'HA','14',
+        'FT','1',
+        'M','2',
+        'KM','3',
+        'MI','4',
+        'None',''
+        )
+      when: BuildingHeightUnitCode is not in [Null, 'NULL']
+    - transformation: "''"
+  BuildingShape:
+    - transformation: BuildingShape
+  BuildingTIV:
+    - transformation: BuildingValue
+  Packaging:
+    - transformation: |
+        replace(
+        CargoPacking,
+        '0','0',
+        '1','3',
+        '2','2',
+        '3','1'
+        )
+  Protection:
+    - transformation: |
+        replace(
+        CargoProtection,
+        '0','0',
+        '1','3',
+        '2','2',
+        '3','1'
+        )
+  Chimney:
+    - transformation: Chimney
+  City:
+    - transformation: City
+  Cladding:
+    - transformation: WallSidingCode
+  CondTag:
+    - transformation: SublimitArea
+  ConstructionQuality:
+    - transformation: CertifiedStructuresIBHS
+  ConstructionCode:
+    - transformation: |
+        replace(
+          ConstructionCode,
+          '2286','5662',
+          '2285','5661',
+          '2284','5660',
+          '2283','5659',
+          '2282','5658',
+          '2281','5657',
+          '2276','5656',
+          '2275','5655',
+          '2274','5654',
+          '2273','5653',
+          '2272','5652',
+          '2271','5651',
+          '2270','5650',
+          '2263','5614',
+          '2262','5613',
+          '2261','5612',
+          '2253','5611',
+          '2252','5610',
+          '2251','5609',
+          '2243','5608',
+          '2242','5607',
+          '2241','5606',
+          '2233','5605',
+          '2232','5604',
+          '2231','5603',
+          '2221','5602',
+          '2211','5601',
+          '2210','5600',
+          '2152','5555',
+          '2151','5554',
+          '2150','5550',
+          '2142','5557',
+          '2141','5552',
+          '2132','5556',
+          '2131','5551',
+          '2031','5403',
+          '2022','5410',
+          '2021','5409',
+          '2016','5408',
+          '2015','5407',
+          '2013','5406',
+          '2012','5405',
+          '2011','5404',
+          '2010','5400',
+          '813','7013',
+          '812','7012',
+          '811','7011',
+          '810','7010',
+          '809','7009',
+          '808','7008',
+          '807','7007',
+          '806','7006',
+          '805','7005',
+          '804','7004',
+          '803','7003',
+          '802','7002',
+          '801','7001',
+          '800','7000',
+          '296','6150',
+          '295','6156',
+          '294','6155',
+          '293','6154',
+          '292','6153',
+          '291','6152',
+          '290','6151',
+          '286','6100',
+          '285','6106',
+          '284','6105',
+          '283','6104',
+          '282','6103',
+          '281','6102',
+          '280','6101',
+          '276','6000',
+          '275','6056',
+          '274','6055',
+          '273','6054',
+          '272','6053',
+          '271','6052',
+          '270','6051',
+          '267','5902',
+          '266','5901',
+          '265','5900',
+          '263','5854',
+          '262','5853',
+          '261','5850',
+          '260','5960',
+          '259','5959',
+          '258','7000',
+          '257','5958',
+          '256','5957',
+          '255','5956',
+          '254','5955',
+          '253','5954',
+          '252','5953',
+          '251','5952',
+          '250','5951',
+          '247','5807',
+          '246','5806',
+          '245','5805',
+          '244','5804',
+          '243','5803',
+          '242','5802',
+          '241','5801',
+          '238','5755',
+          '237','5754',
+          '236','5753',
+          '235','5752',
+          '234','5751',
+          '233','5703',
+          '232','5702',
+          '231','5701',
+          '228','5657',
+          '227','5651',
+          '226','5612',
+          '225','5609',
+          '224','5606',
+          '223','5603',
+          '222','5602',
+          '221','5601',
+          '215','5553',
+          '214','5552',
+          '213','5551',
+          '212','5502',
+          '211','5501',
+          '206','5453',
+          '205','5452',
+          '204','5451',
+          '203','5403',
+          '202','5402',
+          '201','5401',
+          '194','5353',
+          '193','5352',
+          '192','5351',
+          '191','5350',
+          '187','5306',
+          '186','5305',
+          '185','5304',
+          '183','5303',
+          '182','5302',
+          '181','5301',
+          '179','5265',
+          '178','5264',
+          '177','5263',
+          '176','5262',
+          '175','5261',
+          '174','5260',
+          '173','5259',
+          '172','5258',
+          '171','5257',
+          '166','5256',
+          '165','5255',
+          '164','5254',
+          '163','5253',
+          '162','5252',
+          '161','5251',
+          '160','5209',
+          '159','5208',
+          '158','5207',
+          '157','5206',
+          '156','5205',
+          '155','5204',
+          '154','5203',
+          '153','5202',
+          '152','5201',
+          '151','5200',
+          '140','5159',
+          '139','5158',
+          '138','5157',
+          '137','5156',
+          '136','5155',
+          '135','5154',
+          '134','5153',
+          '133','5152',
+          '132','5151',
+          '131','5150',
+          '121','5110',
+          '120','5109',
+          '119','5108',
+          '118','5107',
+          '117','5106',
+          '116','5105',
+          '115','5104',
+          '114','5103',
+          '113','5102',
+          '112','5101',
+          '111','5100',
+          '108','5057',
+          '107','5056',
+          '106','5055',
+          '105','5054',
+          '104','5053',
+          '103','5052',
+          '102','5051',
+          '101','5050',
+          '100','5000'
+          )
+  ContentsFloodVuln:
+    - transformation: |
+        replace(
+        ContentVulnerability,
+        '0','0',
+        '1','3',
+        '2','4',
+        '3','5',
+        '4','6'
+        )
+  ContentsTIV:
+    - transformation: ContentsValue
+  CountryCode:
+    - transformation: CountryISO
+  CustomFloodSOP:
+    - transformation: |
+        replace(
+        CustomFloodSOP,
+        '-999.0','0'
+        )
+  CustomFloodZone:
+    - transformation: CustomFloodZone
+  EquipmentBracing:
+    - transformation: Equipment
+  ExternalDoors:
+    - transformation: ExternalDoors
+  FEMACompliance:
+    - transformation: FIRMCompliance
+  FirstFloorHeight:
+    - transformation: FirstFloorHeight
+  FirstFloorHeightUnit:
+    - transformation: |
+        replace(
+        FirstFloorHeightUnit,
+        'SQFT','11',
+        'SQM','12',
+        'AC','13',
+        'HA','14',
+        'FT','1',
+        'M','2',
+        'KM','3',
+        'MI','4',
+        'None',''
+        )
+      when: FirstFloorHeightUnit is not in [Null, 'NULL']
+    - transformation: "''"
+  FlexiLocAdjacentBuildingHeight:
+    - transformation: AdjacentBuildingHeight
+  FlexiLocConstructionOther:
+    - transformation: |
+        replace(
+        ConstructionOther,
+        '2286','5662',
+        '2285','5661',
+        '2284','5660',
+        '2283','5659',
+        '2282','5658',
+        '2281','5657',
+        '2276','5656',
+        '2275','5655',
+        '2274','5654',
+        '2273','5653',
+        '2272','5652',
+        '2271','5651',
+        '2270','5650',
+        '2263','5614',
+        '2262','5613',
+        '2261','5612',
+        '2253','5611',
+        '2252','5610',
+        '2251','5609',
+        '2243','5608',
+        '2242','5607',
+        '2241','5606',
+        '2233','5605',
+        '2232','5604',
+        '2231','5603',
+        '2221','5602',
+        '2211','5601',
+        '2210','5600',
+        '2152','5555',
+        '2151','5554',
+        '2150','5550',
+        '2142','5557',
+        '2141','5552',
+        '2132','5556',
+        '2131','5551',
+        '2031','5403',
+        '2022','5410',
+        '2021','5409',
+        '2016','5408',
+        '2015','5407',
+        '2013','5406',
+        '2012','5405',
+        '2011','5404',
+        '2010','5400',
+        '813','7013',
+        '812','7012',
+        '811','7011',
+        '810','7010',
+        '809','7009',
+        '808','7008',
+        '807','7007',
+        '806','7006',
+        '805','7005',
+        '804','7004',
+        '803','7003',
+        '802','7002',
+        '801','7001',
+        '800','7000',
+        '296','6150',
+        '295','6156',
+        '294','6155',
+        '293','6154',
+        '292','6153',
+        '291','6152',
+        '290','6151',
+        '286','6100',
+        '285','6106',
+        '284','6105',
+        '283','6104',
+        '282','6103',
+        '281','6102',
+        '280','6101',
+        '276','6000',
+        '275','6056',
+        '274','6055',
+        '273','6054',
+        '272','6053',
+        '271','6052',
+        '270','6051',
+        '267','5902',
+        '266','5901',
+        '265','5900',
+        '263','5854',
+        '262','5853',
+        '261','5850',
+        '260','5960',
+        '259','5959',
+        '258','7000',
+        '257','5958',
+        '256','5957',
+        '255','5956',
+        '254','5955',
+        '253','5954',
+        '252','5953',
+        '251','5952',
+        '250','5951',
+        '247','5807',
+        '246','5806',
+        '245','5805',
+        '244','5804',
+        '243','5803',
+        '242','5802',
+        '241','5801',
+        '238','5755',
+        '237','5754',
+        '236','5753',
+        '235','5752',
+        '234','5751',
+        '233','5703',
+        '232','5702',
+        '231','5701',
+        '228','5657',
+        '227','5651',
+        '226','5612',
+        '225','5609',
+        '224','5606',
+        '223','5603',
+        '222','5602',
+        '221','5601',
+        '215','5553',
+        '214','5552',
+        '213','5551',
+        '212','5502',
+        '211','5501',
+        '206','5453',
+        '205','5452',
+        '204','5451',
+        '203','5403',
+        '202','5402',
+        '201','5401',
+        '194','5353',
+        '193','5352',
+        '192','5351',
+        '191','5350',
+        '187','5306',
+        '186','5305',
+        '185','5304',
+        '183','5303',
+        '182','5302',
+        '181','5301',
+        '179','5265',
+        '178','5264',
+        '177','5263',
+        '176','5262',
+        '175','5261',
+        '174','5260',
+        '173','5259',
+        '172','5258',
+        '171','5257',
+        '166','5256',
+        '165','5255',
+        '164','5254',
+        '163','5253',
+        '162','5252',
+        '161','5251',
+        '160','5209',
+        '159','5208',
+        '158','5207',
+        '157','5206',
+        '156','5205',
+        '155','5204',
+        '154','5203',
+        '153','5202',
+        '152','5201',
+        '151','5200',
+        '140','5159',
+        '139','5158',
+        '138','5157',
+        '137','5156',
+        '136','5155',
+        '135','5154',
+        '134','5153',
+        '133','5152',
+        '132','5151',
+        '131','5150',
+        '121','5110',
+        '120','5109',
+        '119','5108',
+        '118','5107',
+        '117','5106',
+        '116','5105',
+        '115','5104',
+        '114','5103',
+        '113','5102',
+        '112','5101',
+        '111','5100',
+        '108','5057',
+        '107','5056',
+        '106','5055',
+        '105','5054',
+        '104','5053',
+        '103','5052',
+        '102','5051',
+        '101','5050',
+        '100','5000'
+        )
+  FlexiLocColdFormedTubeCode:
+    - transformation: ColdFormedTube
+  FlexiLocColumnBasementCode:
+    - transformation: ColumnBasement
+  FlexiLocContentDamageabilityCode:
+    - transformation: ContentDamageability
+  FlexiLocCustomFloodSOPType:
+    - transformation: CustomFloodSOPType
+  FlexiLocDefensibleSpace:
+    - transformation: DefensibleSpace
+  FlexiLocEnhancedGeoMatchLevelCode:
+    - transformation: EnhancedGeoMatchLevelCode
+  FlexiLocFirewiseCommunityParticipation:
+    - transformation: FirewiseCommunityParticipation
+  FlexiLocFloorOfInterest:
+    - transformation: FloorOfInterest
+  FlexiLocGeocoderAccountId:
+    - transformation: GeocoderAccountId
+  FlexiLocGlassPercentCode:
+    - transformation: GlassPercent
+  FlexiLocGrossArea:
+    - transformation: GrossArea
+  FlexiLocGrossAreaUnit:
+    - transformation: |
+        replace(
+        GrossAreaUnit,
+        'SQFT','11',
+        'SQM','12',
+        'AC','13',
+        'HA','14',
+        'FT','1',
+        'M','2',
+        'KM','3',
+        'MI','4',
+        'None',''
+        )
+      when: GrossAreaUnit is not in [Null, 'NULL']
+    - transformation: "''"
+  FlexiLocIsFireSprinklerAvailable:
+    - transformation: IsFireSprinklerAvailable
+  FlexiLocISOBIN:
+    - transformation: ISOBIN
+  FlexiLocISOConstructionCode:
+    - transformation: ISOConstructionCode
+  FlexiLocISOOccupancyCode:
+    - transformation: ISOOccupancyCode
+  FlexiLocLargeMissileCode:
+    - transformation: LargeMissile
+  FlexiLocParticipation2:
+    - transformation: Participation2
+  FlexiLocPPCCode:
+    - transformation: PPCCode
+  FlexiLocProjectPhaseCode:
+    - transformation: ProjectPhaseCode
+  FlexiLocRoofHailImpactResistanceCode:
+    - transformation: RoofHailImpactResistance
+  FlexiLocSealOfApprovalCode:
+    - transformation: SealOfApproval
+  FlexiLocSubareaName:
+    - transformation: SubArea
+  FlexiLocSubarea2Name:
+    - transformation: SubArea2
+  FlexiLocTerritory:
+    - transformation: Territory
+  FlexiLocTransitionInSRCCode:
+    - transformation: TransitionInSRC
+  FlexiLocUserGeocodeMatchLevel:
+    - transformation: UserGeocodeMatchLevel
+  FlexiLocWallCode:
+    - transformation: WallType
+  FlexiLocWaterHeaterCode:
+    - transformation: WaterHeater
+  FlexiLocWeldingCode:
+    - transformation: Welding
+  FloodDefenseHeight:
+    - transformation: |
+        replace(
+        WetFloodProofing,
+        '0','0',
+        '1','0',
+        '2','1',
+        '3','3',
+        '4','4'
+        )
+  FloorArea:
+    - transformation: FloorArea
+  FloorAreaUnit:
+    - transformation: |
+        replace(
+        FloorAreaUnitCode,
+        'SQFT','11',
+        'SQM','12',
+        'AC','13',
+        'HA','14',
+        'FT','1',
+        'M','2',
+        'KM','3',
+        'MI','4',
+        'None',''
+        )
+      when: FloorAreaUnitCode is not in [Null, 'NULL']
+    - transformation: "''"
+  FloorsOccupied:
+    - transformation: FloorsOccupied
+  FoundationConnection:
+    - transformation: FoundationConnection
+  FoundationType:
+    - transformation: FoundationType
+  Geocoder:
+    - transformation: GeocoderCode
+  GeogScheme1:
+    - transformation: CRESTA
+  GlassType:
+    - transformation: GlassType
+  GroundElevation:
+    - transformation: CustomElevation
+  GroundElevationUnit:
+    - transformation:  |
+        replace(
+        CustomElevationUnit,
+        'SQFT','11',
+        'SQM','12',
+        'AC','13',
+        'HA','14',
+        'FT','1',
+        'M','2',
+        'KM','3',
+        'MI','4',
+        'None',''
+        )
+      when: CustomElevationUnit is not in [Null, 'NULL']
+    - transformation: "''"
+  InternalPartition:
+    - transformation: InternalPartition
+  IsPrimary:
+    - transformation: IsPrimary
+  IsTenant:
+    - transformation: IsTenant
+  Latitude:
+    - transformation: Latitude
+  LatticeType:
+    - transformation: LatticeType
+  LocCurrency:
+    - transformation: Currency
+  LocDed1Building:
+    - transformation: DeductBldg
+      when: DeductType is 'C'
+  LocDed2Other:
+    - transformation: DeductOther
+      when: DeductType is 'C'
+  LocDed3Contents:
+    - transformation: DeductContent
+      when: DeductType is 'C'
+  LocDed4BI:
+    - transformation: DeductTime
+      when: DeductType is 'C'
+  LocDed5PD:
+    - transformation: DeductBldg
+      when: DeductType is 'CB'
+  LocDed6All:
+    - transformation: DeductBldg
+      when: DeductType is 'S'
+  LocDedCode1Building:
+    - transformation: 0
+  LocDedCode2Other:
+    - transformation: 0
+  LocDedCode3Contents:
+    - transformation: 0
+  LocDedCode4BI:
+    - transformation: 0
+  LocDedCode5PD:
+    - transformation: 0
+  LocDedCode6All:
+    - transformation: 0
+  LocDedType1Building:
+    - transformation: 0
+      when: DeductBldg gt 1 and DeductType is 'C'
+    - transformation: 2
+      when: DeductBldg lte 1 and DeductType is 'C'
+  LocDedType2Other:
+    - transformation: 0
+      when: DeductOther gt 1 and DeductType is 'C'
+    - transformation: 2
+      when: DeductOther lte 1 and DeductType is 'C'
+  LocDedType3Contents:
+    - transformation: 0
+      when: DeductContent gt 1 and DeductType is 'C'
+    - transformation: 2
+      when: DeductContent lte 1 and DeductType is 'C'
+  LocDedType4BI:
+    - transformation: 0
+      when: DeductTime gt 1 and DeductType is 'C'
+    - transformation: 2
+      when: DeductTime lte 1 and DeductType is 'C'
+  LocDedType5PD:
+    - transformation: 0
+      when: DeductBldg gt 1 and DeductType is 'CB'
+    - transformation: 2
+      when: DeductBldg lte 1 and DeductType is 'CB'
+  LocDedType6All:
+    - transformation: 0
+      when: DeductBldg gt 1 and DeductType is 'S'
+    - transformation: 2
+      when: DeductBldg lte 1 and DeductType is 'S'
+  LocExpiryDate:
+    - transformation: ExpirationDate
+  LocNetPremium:
+    - transformation: Premium
+  LocGroup:
+    - transformation: LocationGroup
+  LocInceptionDate:
+    - transformation: InceptionDate
+  LocLimit1Building:
+    - transformation: LimitBldg
+      when: LocLimitType is 'C'
+  LocLimit2Other:
+    - transformation:  LimitOther
+      when: LocLimitType is 'C'
+  LocLimit3Contents:
+    - transformation: LimitContent
+      when: LocLimitType is 'C'
+  LocLimit4BI:
+    - transformation:  LimitTime
+      when: LocLimitType is 'C'
+  LocLimit5PD:
+    - transformation: LimitBldg
+      when: LocLimitType is 'EE'
+  LocLimit6All:
+    - transformation:  LimitBldg
+      when: LocLimitType is 'S'
+  LocLimitCode1Building:
+    - transformation: 0
+  LocLimitCode2Other:
+    - transformation: 0
+  LocLimitCode3Contents:
+    - transformation: 0
+  LocLimitCode4BI:
+    - transformation: 0
+  LocLimitCode5PD:
+    - transformation: 0
+  LocLimitCode6All:
+    - transformation: 0
+  LocLimitType1Building:
+    - transformation: 0
+  LocLimitType2Other:
+    - transformation: 0
+  LocLimitType3Contents:
+    - transformation: 0
+  LocLimitType4BI:
+    - transformation: 0
+  LocLimitType5PD:
+    - transformation: 0
+  LocLimitType6All:
+    - transformation: 0
+  LocMaxDed1Building:
+    - transformation: MaxDeduct
+      when: DeductBldg gt 0 and DeductType is 'C'
+  LocMaxDed2Other:
+    - transformation: MaxDeduct
+      when: DeductOther gt 0 and DeductType is 'C'
+  LocMaxDed3Contents:
+    - transformation: MaxDeduct
+      when: DeductContent gt 0 and DeductType is 'C'
+  LocMaxDed4BI:
+    - transformation: MaxDeduct
+      when: DeductTime gt 0 and DeductType is 'C'
+  LocMaxDed5PD:
+    - transformation: MaxDeduct
+      when: DeductBldg gt 0 and DeductType is 'CB'
+  LocMaxDed6All:
+    - transformation: MaxDeduct
+      when: DeductBldg gt 0 and DeductType is 'S'
+  LocMinDed1Building:
+    - transformation: MinDeduct
+      when: DeductBldg gt 0 and DeductType is 'C'
+  LocMinDed2Other:
+    - transformation: MinDeduct
+      when: DeductOther gt 0 and DeductType is 'C'
+  LocMinDed3Contents:
+    - transformation: MinDeduct
+      when: DeductContent gt 0 and DeductType is 'C'
+  LocMinDed4BI:
+    - transformation: MinDeduct
+      when: DeductTime gt 0 and DeductType is 'C'
+  LocMinDed5PD:
+    - transformation: MinDeduct
+      when: DeductBldg gt 0 and DeductType is 'CB'
+  LocMinDed6All:
+    - transformation: MinDeduct
+      when: DeductBldg gt 0 and DeductType is 'S'
+  LocName:
+    - transformation: LocationName
+  LocParticipation:
+    - transformation: Participation1
+  LocPeril:
+    - transformation: |
+        replace_multiple(
+          LocPerils,
+          ',', ';',
+          'CF', 'WSS',
+          'CH', 'XCH',
+          'EQ', 'QEQ',
+          'FF', 'QFF',
+          'HL', 'XHL',
+          'IF', 'ORF',
+          'LO', 'QLS',
+          'LQ', 'QLF',
+          'LS', 'QLS',
+          'NC', 'BFR',
+          'PD', 'CPD',
+          'PF', 'OSF',
+          'PN', 'PNF',
+          'SB', 'CSB',
+          'SL', 'QSL',
+          'ST', 'XLT',
+          'SU', 'WSS',
+          'SW', 'XSL',
+          'TC', 'WTC',
+          'TD', 'XTD',
+          'TR', 'MTR',
+          'TS', 'QTS',
+          'WF', 'BBF',
+          'WS', 'ZST'
+        )
+      when: LocPerils is not in [Null, '', 'NULL']
+    - transformation: "'AA1'"
+  LocPerilsCovered:
+    - transformation: |
+        replace_multiple(
+          LocPerils,
+          ',', ';',
+          'CF','WSS',
+          'CH','XCH',
+          'EQ','QEQ',
+          'FF','QFF',
+          'HL','XHL',
+          'IF','ORF',
+          'LO','QLS',
+          'LQ','QLF',
+          'LS','QLS',
+          'NC','BFR',
+          'PD','CPD',
+          'PF','OSF',
+          'PN','PNF',
+          'SB','CSB',
+          'SL','QSL',
+          'ST','XLT',
+          'SU','WSS',
+          'SW','XSL',
+          'TC','WTC',
+          'TD','XTD',
+          'TR','MTR',
+          'TS','QTS',
+          'WF','BBF',
+          'WS','ZST'
+        )
+      when: LocPerils is not in [Null, '', 'NULL']
+    - transformation: "'AA1'"
+  LocNumber:
+    - transformation: LocationID
+  LocUserDef1:
+    - transformation: UDF1
+  LocUserDef2:
+    - transformation: UDF2
+  LocUserDef3:
+    - transformation: UDF3
+  LocUserDef4:
+    - transformation: UDF4
+  LocUserDef5:
+    - transformation: UDF5
+  Longitude:
+    - transformation: Longitude
+  MultiStoryHall:
+    - transformation: MultiStoryHallType
+  NonCATGroundUpLoss:
+    - transformation: NonCATGroundUpLoss
+  NumberOfBuildings:
+    - transformation: RiskCount
+  NumberOfStoreys:
+    - transformation: NumberOfStories
+  OccupancyCode:
+    - transformation:
+        replace(
+          OccupancyCode,
+          '300','1000',
+          '301','1050',
+          '302','1051',
+          '303','1052',
+          '304','1053',
+          '305','1054',
+          '306','1055',
+          '307','1056',
+          '311','1100',
+          '312','1101',
+          '313','1102',
+          '314','1103',
+          '315','1104',
+          '316','1105',
+          '317','1108',
+          '318','1113',
+          '319','1114',
+          '321','1150',
+          '322','1151',
+          '323','1152',
+          '324','1153',
+          '325','1154',
+          '326','1155',
+          '327','1156',
+          '328','1157',
+          '329','1158',
+          '330','1159',
+          '331','1119',
+          '335','1120',
+          '336','1121',
+          '341','1200',
+          '342','1201',
+          '343','1210',
+          '344','1220',
+          '345','1230',
+          '346','1231',
+          '351','1250',
+          '352','1251',
+          '353','1252',
+          '354','1253',
+          '355','1254',
+          '356','1255',
+          '361','1300',
+          '362','1301',
+          '363','1302',
+          '364','1303',
+          '365','1304',
+          '366','1122',
+          '371','1123',
+          '372','1350',
+          '373','1351',
+          '374','1352',
+          '375','1353',
+          '400','2000',
+          '401','2050',
+          '402','2051',
+          '403','2052',
+          '404','2053',
+          '405','2054',
+          '406','2055',
+          '407','2056',
+          '408','2057',
+          '409','2058',
+          '414','2100',
+          '415','2101',
+          '416','2102',
+          '417','2103',
+          '418','2104',
+          '419','2105',
+          '420','2106',
+          '421','2107',
+          '422','2108',
+          '423','2109',
+          '424','2110',
+          '425','2111',
+          '429','2150',
+          '430','2151',
+          '431','2152',
+          '432','2153',
+          '433','2154',
+          '434','2155',
+          '438','2200',
+          '439','2201',
+          '440','2202',
+          '441','2203',
+          '442','2204',
+          '443','2205',
+          '444','2206',
+          '445','2207',
+          '446','2208',
+          '449','2250',
+          '450','2251',
+          '451','2252',
+          '452','2253',
+          '455','2300',
+          '456','2301',
+          '457','2302',
+          '458','2303',
+          '459','2304',
+          '460','2305',
+          '463','2350',
+          '464','2351',
+          '465','2352',
+          '470','2400',
+          '471','2401',
+          '472','2402',
+          '473','2403',
+          '474','2404',
+          '475','2450',
+          '476','2500',
+          '477','2510',
+          '478','2520',
+          '479','2530',
+          '480','2550',
+          '481','2560',
+          '482','2600',
+          '483','2650',
+          '484','2700',
+          '485','2750',
+          '486','2760',
+          '487','2770',
+          '488','2780',
+          '900','3000',
+          '901','3001',
+          '902','3002',
+          '903','3003',
+          '904','3004',
+          '905','3005',
+          '906','3006',
+          '907','3007',
+          '908','3008',
+          '909','3009'
+          )
+  #OrgConstructionCode:
+    #- transformation: UserConstructionCodeA
+  #OrgConstructionScheme:
+    #- transformation: UserConstructionSchemeCode
+  #OrgOccupancyCode:
+    #- transformation: UserOccupancyCode
+  #OrgOccupancyScheme:
+    #- transformation: UserOccupancySchemeCode
+  OEDVersion:
+    - transformation: "302"
+  Ornamentation:
+    - transformation: Ornamentation
+  OtherTIV:
+    - transformation: OtherValue
+  PercentComplete:
+    - transformation: ProjectCompletion
+  PortNumber:
+    - transformation: ExposureSetName
+      when: ExposureSetName
+    - transformation: "'1'"
+  PostalCode:
+    - transformation: PostalCode
+  Pounding:
+    - transformation: Pounding
+  Redundancy:
+    - transformation: Redundancy
+  Retrofit:
+    - transformation: Retrofit
+  RoofAnchorage:
+    - transformation: RoofAnchorage
+  RoofAttachedStructures:
+    - transformation: RoofAttachedStructure
+  RoofCover:
+    - transformation: RoofCover
+  RoofCoverAttachment:
+    - transformation: RoofCoverAttachment
+  RoofDeck:
+    - transformation: RoofDeck
+  RoofDeckAttachment:
+    - transformation: RoofDeckAttachment
+  RoofGeometry:
+    - transformation: RoofGeometry
+  RoofPitch:
+    - transformation: RoofPitch
+  RoofYearBuilt:
+    - transformation: RoofYearBuilt
+  SalvageProtection:
+    - transformation: |
+        replace(
+        SalvagePotential,
+        '0','0',
+        '1','1',
+        '2','1',
+        '3','2',
+        '4','3',
+        '5','3'
+        )
+  ServiceEquipmentProtection:
+    - transformation: |
+        replace(
+        ServiceEquipmentProtection,
+        '0','0',
+        '1','1',
+        '2','2',
+        '3','1',
+        '4','1'
+        )
+  ShapeIrregularity:
+    - transformation: ShapeIrregularity
+  ShortColumn:
+    - transformation: ShortColumn
+  SmallDebris:
+    - transformation: SmallDebris
+  SoftStory:
+    - transformation: SoftStory
+  #SoilValue:
+    #- transformation: ISValueType
+  SpecialEQConstruction:
+    - transformation: SpecialConstruction
+  ValuablesStorage:
+    - transformation: |
+        replace(
+        SpecieStorage,
+        '0','0',
+        '1','1',
+        '2','0',
+        '3','0'
+        )
+  SprinklerType:
+    - transformation: |
+        replace(
+        SprinklerType,
+        '0','0',
+        '1','5',
+        '2','3'
+        )
+  StreetAddress:
+    - transformation: Street
+  TallOneStory:
+    - transformation: TallOneStory
+  Tank:
+    - transformation: Tank
+  TerrainRoughness:
+    - transformation: TerrainRoughness
+  Torsion:
+    - transformation: Torsion
+  TreeExposure:
+    - transformation: TreeExposure
+  VulnerabilitySetID:
+    - transformation: LocationDFID
+  #WallAttachedStructure:
+    #- transformation: WallAttachedStructureCode
+  WindowProtection:
+    - transformation: WindowProtection
+  YearBuilt:
+    - transformation: YearBuilt
+validation:
+  output:
+    Total:
+      fields:
+        - BuildingTIV
+        - ContentsTIV
+      operator: sum
+    TotalByAccNumber:
+      fields:
+        - BuildingTIV
+      operator: sum
+      group_by:
+        - AccNumber
+    NumRows:
+      operator: count_rows
+  input:
+    Total:
+      fields:
+        - BuildingValue
+        - ContentsValue
+      operator: sum
+    TotalByContractID:
+      fields:
+        - BuildingValue
+      operator: sum
+      group_by:
+        - ContractID
+    NumRows:
+      operator: count_rows

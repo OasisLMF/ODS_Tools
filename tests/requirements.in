@@ -7,7 +7,6 @@ requests
 chardet
 PyYAML
 lark
-networkx
 pyodbc
 sqlparams
 sqlparse
