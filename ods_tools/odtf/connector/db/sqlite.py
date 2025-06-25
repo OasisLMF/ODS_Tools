@@ -1,5 +1,3 @@
-from typing import Dict
-
 import pandas as pd
 import sqlite3
 from sqlite3 import Error
@@ -38,17 +36,23 @@ class SQLiteConnector(BaseDBConnector):
         "required": ["database", "select_statement", "insert_statement"],
     }
 
-    def _create_connection(self, database: Dict[str, str]):
+    def __init__(self, config, **options):
+        super().__init__(config, **options)
+        if self.isExtractor:
+            self.path = config['input']['path']
+        else:
+            self.path = config['output']['path']
+
+    def _create_connection(self, database):
         """
         Create database connection to the SQLite database specified in database
-        :param database: Dict object with connection info
+        :param database: used in all other db connectors, unnecessary here
 
         :return: Connection object
         """
-
         try:
             conn = sqlite3.connect(
-                self.config.absolute_path(database["database"])
+                self.path
             )
         except Error:
             raise DBConnectionError()
@@ -56,7 +60,7 @@ class SQLiteConnector(BaseDBConnector):
         conn.row_factory = sqlite3.Row
         return conn
 
-    def fetch_data(self, batch_size: int):
+    def fetch_data(self, batch_size):
         """
         Fetch data from the database in batches.
 
@@ -64,7 +68,6 @@ class SQLiteConnector(BaseDBConnector):
 
         :yield: Data batches as pandas DataFrames
         """
-
         with open(self.sql_statement_path, 'r') as file:
             sql_query = file.read()
 

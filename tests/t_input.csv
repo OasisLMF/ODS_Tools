@@ -1,11 +1,11 @@
-Line,Input_int_1,Input_int_2,Input_string_1,Input_string_2,Input_multistring_1,Input_multistring_2,Input_float_1,Input_float_2
-1,10,10,letter_A,letter_A,"letter_A, letter_B, letter_C","UK, ITA",0.5,0.5
-2,20,20,letter_B,letter_B,"letter_A, letter_J","DEU, BRA",1.5,1.5
-3,11,11,letter_C,letter_C,"letter_E, letter_C","FRA,FRA",2.5,2.5
-4,13,13,letter_D,letter_D,letter_H,SWE,3.6,3.6
-5,17,17,letter_E,letter_E,,"ESP, SWE",4.8,4.8
-6,55,55,letter_F,letter_F,"letter_C, letter_I, letter_A",ARG,5.2,5.2
-7,101,101,letter_G,letter_G,"letter_B, letter_E, letter_E",,7.9,7.9
-8,999,999,letter_H,letter_H,"letter_J, letter_I, letter_I","USA, UK",111.11,111.11
-9,777,777,letter_I,letter_I,"letter_G, letter_I, letter_G",,0.001,0.001
-10,1,1,,,"letter_B, letter_A, letter_G","ARG, BRA, USA",,
+Line,Input_int_1,Input_int_2,Input_string_1,Input_string_2,Input_multistring_1,Input_multistring_2,Input_float_1,Input_float_2,Double_Transform_1,Double_Transform_2
+1,10,10,letter_A,letter_A,"letter_A, letter_B, letter_C","UK, ITA",0.5,0.5,1,1
+2,20,20,letter_B,letter_B,"letter_A, letter_J","DEU, BRA",1.5,1.5,1,2
+3,11,11,letter_C,letter_C,"letter_E, letter_C","FRA,FRA",2.5,2.5,1,3
+4,13,13,letter_D,letter_D,letter_H,SWE,3.6,3.6,1,4
+5,17,17,letter_E,letter_E,,"ESP, SWE",4.8,4.8,1,5
+6,55,55,letter_F,letter_F,"letter_C, letter_I, letter_A",ARG,5.2,5.2,2,1
+7,101,101,letter_G,letter_G,"letter_B, letter_E, letter_E",,7.9,7.9,2,2
+8,999,999,letter_H,letter_H,"letter_J, letter_I, letter_I","USA, UK",111.11,111.11,2,3
+9,777,777,letter_I,letter_I,"letter_G, letter_I, letter_G",,0.001,0.001,2,4
+10,1,1,,,"letter_B, letter_A, letter_G","ARG, BRA, USA",,,2,5
