@@ -157,7 +157,7 @@ transform:
       when: ExposureSetName
     - transformation: "'1'"
   PolNumber:
-    - transformation: "'1'"
+    - transformation: LayerID
   PolPerilsCovered:
     - transformation: |
         replace(
