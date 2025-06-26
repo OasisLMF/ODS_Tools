@@ -1,0 +1,14 @@
+input:
+  format: sqlite
+  path: ./input.db
+output:
+  path: ./output.csv
+mapping:
+  path: ../mapping.yml
+batch_size: 150000
+write_header: true
+logging: True
+database:
+  type: sqlite
+  sql_statement_path: ./simple.sql
+  output_table: output

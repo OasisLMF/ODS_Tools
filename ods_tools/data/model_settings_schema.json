@@ -337,7 +337,6 @@
             "numeric_parameters": {
                "title": "unbounded numeric paramters",
                "type": "array",
-               "description": "WARNING: option flagged for removal, superseded by `integer_parameters` and `float_parameters`",
                "uniqueItems": true,
                "items": {
                   "type": "object",
@@ -1390,6 +1389,14 @@
                "description": "Legacy - moved to 'computation_settings'",
                "default": true,
                "deprecated": true
+           },
+           "summary_report_fields": {
+               "type":"array",
+               "title":"Additional summary report fields",
+               "description":"If set, the exposure summary report will include additional breakdowns from the listed fields. Note that the field must exists in the exposure file.",
+               "items":{
+                  "type":"string"
+               }
            },
            "string_parameters":{
                "$ref": "#/definition/extensible_parameters/properties/string_parameters"

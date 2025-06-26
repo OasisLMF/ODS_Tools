@@ -7,7 +7,6 @@ import shutil
 import urllib
 
 import sys
-import yaml
 
 import pandas as pd
 import numpy as np
@@ -21,7 +20,6 @@ sys.path.append(sys.path.pop(0))
 from ods_tools.main import convert
 from ods_tools.oed import (OedExposure, OedSchema, OdsException, ModelSettingSchema, AnalysisSettingSchema, OED_TYPE_TO_NAME, UnknownColumnSaveOption,
                            ClassOfBusiness)
-from ods_tools.odtf.controller import transform_format
 
 logger = logging.getLogger(__file__)
 
@@ -54,10 +52,6 @@ input_file_names = {
 def _is_non_empty_file(fp):
     # print(f'{fp} not empty: {os.path.getsize(fp) > 0}')
     return os.path.getsize(fp) > 0
-
-
-def strip_quotes(s):
-    return s.strip('"') if isinstance(s, str) else s
 
 
 class OdsPackageTests(TestCase):
@@ -302,10 +296,10 @@ class OdsPackageTests(TestCase):
             csv_as_parquet = open(os.path.join(tmp_run_dir, 'SourceLocOEDPiWind.parquet'), 'rb')
             parquet_as_csv = open(os.path.join(tmp_run_dir, 'SourceAccOEDPiWind.csv'))
 
-            with self.assertRaises(OdsException) as ex:
-                exposure = OedExposure(**{'location': csv_as_parquet})
-            with self.assertRaises(OdsException) as ex:
-                exposure = OedExposure(**{'account': parquet_as_csv})
+            with self.assertRaises(OdsException):
+                OedExposure(**{'location': csv_as_parquet})
+            with self.assertRaises(OdsException):
+                OedExposure(**{'account': parquet_as_csv})
 
     def test_reporting_currency(self):
         config = {
@@ -990,77 +984,3 @@ class OdsPackageTests(TestCase):
 
         self.assertEqual(expected_list, global__valid_output_metrics)
         self.assertEqual(expected_list, event_set__valid_metrics)
-
-    def test_transformation_as_expected(self):
-        with tempfile.TemporaryDirectory() as tmp_dir:
-
-            # Prepare the necessary files for the test
-            config_file_path = pathlib.Path(tmp_dir, 'config.yaml')
-
-            with open(config_file_path, 'w') as config_file:
-                yaml.dump({
-                    'transformations': {
-                        'loc': {
-                            'input_format': {
-                                'name': 'Test_input',
-                                'version': '1.0.0'
-                            },
-                            'output_format': {
-                                'name': 'Test_output',
-                                'version': '1.2.3'
-                            },
-                            'runner': {
-                                'batch_size': 10000
-                            },
-                            'mapping': {
-                                'options': {
-                                    'search_paths': str(pathlib.Path(base_test_path))
-                                }
-                            },
-                            'extractor': {
-                                'options': {
-                                    'path': str(pathlib.Path(base_test_path, 't_input.csv')),
-                                    'quoting': 'minimal'
-                                }
-                            },
-                            'loader': {
-                                'options': {
-                                    'path': str(pathlib.Path(tmp_dir, 't_output.csv')),
-                                    'quoting': 'minimal'
-                                }
-                            }
-                        }
-                    }
-                }, config_file)
-
-            # Run the transformation
-            transform_result = transform_format(str(config_file_path))
-
-            # Assert the transformation result
-            assert len(transform_result) == 1
-            assert transform_result[0][0] == str(pathlib.Path(tmp_dir, 't_output.csv'))
-            assert transform_result[0][1] == 'other'
-
-            output_df = pd.read_csv(transform_result[0][0])
-
-            expected_values = {
-                'Output_int_1': [110, 120, 111, 113, 117, 155, 201, 1099, 877, 101],
-                'Output_int_2': [20, 30, 21, 23, 27, 65, 111, 1009, 787, 11],
-                'Output_string_1': ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', ''],
-                'Output_float_1': [1.57, 4.71, 7.85, 11.304, 15.072, 16.328, 24.806, 348.8854, 0.00314, np.nan],
-                'Output_float_2': [0.159235668789809, 0.477707006369427, 0.796178343949045, 1.14649681528662,
-                                   1.52866242038217, 1.65605095541401, 2.51592356687898, 35.3853503184713,
-                                   0.000318471337579618, np.nan],
-                'Output_multistring_1': ["A;B;C", "A;J", "E;C", 'H', '', "C;I;A", "B;E;E", "J;I;I", "G;I;G", "B;A;G"],
-                'Output_multistring_2': ["United Kingdom;Italy", "Germany;Brasil", "France;France", "Sweden",
-                                         "Spain;Sweden", "Argentina", '', "United States;United Kingdom", '',
-                                         "Argentina;Brasil;United States"]
-            }
-
-        for column, values in expected_values.items():
-            if 'float' in column.lower():
-                assert np.allclose(output_df[column].tolist(), values, equal_nan=True, rtol=1e-5, atol=1e-5)
-            elif 'string' in column.lower():
-                assert [strip_quotes(s) for s in output_df[column].fillna('').tolist()] == values
-            else:
-                assert output_df[column].tolist() == values
