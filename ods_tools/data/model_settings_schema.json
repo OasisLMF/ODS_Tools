@@ -337,7 +337,6 @@
             "numeric_parameters": {
                "title": "unbounded numeric paramters",
                "type": "array",
-               "description": "WARNING: option flagged for removal, superseded by `integer_parameters` and `float_parameters`",
                "uniqueItems": true,
                "items": {
                   "type": "object",
