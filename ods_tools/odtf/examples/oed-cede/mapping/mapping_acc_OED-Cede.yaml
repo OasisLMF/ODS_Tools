@@ -1,0 +1,173 @@
+types:
+  AccCurrency:
+    type: string
+  AccName:
+    type: string
+  AccNumber:
+    type: string
+  AccPeril:
+    type: string
+  AccStatus:
+    type: string
+  AccUserDef1:
+    type: string
+  AccUserDef2:
+    type: string
+  AccUserDef3:
+    type: string
+  AccUserDef4:
+    type: string
+  AccUserDef5:
+    type: string
+  BranchName:
+    type: string
+  CondDed1Building:
+    type: float
+  CondDed2Other:
+    type: float
+  CondDed3Contents:
+    type: float
+  CondDed4BI:
+    type: float
+  CondDed5PD:
+    type: float
+  CondDed6All:
+    type: float
+  CondName:
+    type: string
+  CondPeril:
+    type: string
+  ExpiringAccNumber:
+    type: string
+  FlexiAccPolicyForm:
+    type: string
+  LayerAttachment:
+    type: float
+  LayerNumber:
+    type: int
+  LOB:
+    type: string
+  PolDed1Building:
+    type: float
+  PolDed2Other:
+    type: float
+  PolDed3Contents:
+    type: float
+  PolDed4BI:
+    type: float
+  PolDed5PD:
+    type: float
+  PolDed6All:
+    type: float
+  PolExpiryDate:
+    type: string
+  PolInceptionDate:
+    type: string
+  ProducerName:
+    type: string
+  PolNetPremium:
+    type: float
+  Underwriter:
+    type: string
+null_values:
+  - "''"
+  - Null
+  - NULL
+transform:
+  AttachmentPoint:
+    - transformation: LayerAttachment
+  Branch:
+    - transformation: BranchName
+  ContractID:
+    - transformation: AccNumber
+  CurrencyCode:
+    - transformation: AccCurrency
+  ExpirationDate:
+    - transformation: PolExpiryDate
+  ExpiringContractID:
+    - transformation: ExpiringAccNumber
+  InsuredName:
+    - transformation: AccName
+  InceptionDate:
+    - transformation: PolInceptionDate
+  LayerConditionName:
+    - transformation: CondName
+  LayerID:
+    - transformation: LayerNumber
+  LayerPerils:
+    - transformation: AccPeril
+  Perils:
+    - transformation: AccPeril
+  PolicyForm:
+    - transformation: FlexiAccPolicyForm
+  Premium:
+    - transformation: PolNetPremium
+  ProducerName:
+    - transformation: ProducerName
+  StatusCode:
+    - transformation: AccStatus
+  SublimitLimitA:
+    #- transformation: CondLimit1Building
+    # when: CondLimit1Building gt 0
+    #- transformation: CondLimit5PD
+    # when: CondLimit5PD gt 0
+    #- transformation: CondLimit6All
+    #  when: CondLimit6All gt 0
+    - transformation: "''"
+  SublimitLimitB:
+    - transformation: CondLimit2Other
+  SublimitLimitC:
+    - transformation: CondLimit3Contents
+  SublimitLimitD:
+    - transformation: CondLimit4BI
+  SubLimitLimitType:
+    #- transformation: "'C'"
+    #  when: CondLimit1Building gt 0 and CondLimit2Other lte 0 and CondLimit3Contents lte 0 and CondLimit4BI lte 0 and CondLimit5PD lte 0 and CondLimit6All lte 0
+    #- transformation: "'C'"
+    #  when: CondLimit2Other gt 0 and CondLimit1Building lte 0 and CondLimit3Contents lte 0 and CondLimit4BI lte 0 and CondLimit5PD lte 0 and CondLimit6All lte 0
+    #- transformation: "'C'"
+    #  when: CondLimitContents gt 0 and CondLimit1Building lte 0 and CondLimit2Other lte 0 and CondLimit4BI lte 0 and CondLimit5PD lte 0 and CondLimit6All lte 0
+    #- transformation: "'C'"
+    #  when: CondLimit4BI gt 0 and CondLimit1Building lte 0 and CondLimit2Other lte 0 and CondLimit3Contents lte 0 and CondLimit5PD lte 0 and CondLimit6All lte 0
+    #- transformation: "'CB'"
+    #  when: CondLimit5PD gt 0 and CondLimit1Building lte 0 and CondLimit2Other lte 0 and CondLimit3Contents lte 0 and CondLimit4BI lte 0 and CondLimit6All lte 0
+    - transformation: "''"
+  SublimitPerils:
+    - transformation: CondPeril
+  UserDefined1:
+    - transformation: AccUserDef1
+  UserDefined2:
+    - transformation: AccUserDef2
+  UserDefined3:
+    - transformation: AccUserDef3
+  UserDefined4:
+    - transformation: AccUserDef4
+  UserDefined5:
+    - transformation: AccUserDef5
+  Underwriter:
+    - transformation: Underwriter
+  UserLineOfBusiness:
+    - transformation: LOB
+validation:
+  output:
+    Total:
+      fields:
+        - AttachmentPoint
+      operator: sum
+    UniqueContractID:
+      fields:
+        - ContractID
+      operator: count_unique
+    NumRows:
+      operator: count_rows
+  input:
+    Total:
+      fields:
+        - LayerAttachment
+      operator: sum
+    UniqueAccNumbers:
+      fields:
+        - AccNumber
+      operator: count_unique
+    NumRows:
+      operator: count_rows

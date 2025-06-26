@@ -1,7 +1,4 @@
-from typing import Any, Dict, Iterable, List
-
-import sqlparams
-import sqlparse
+from typing import Any, Dict, Iterable
 
 from ods_tools.odtf.connector import BaseConnector
 
@@ -86,16 +83,10 @@ class BaseDBConnector(BaseConnector):
     def __init__(self, config, **options):
         super().__init__(config, **options)
 
-        self.database = {
-            "host": options.get("host", ""),
-            "port": options.get("port", ""),
-            "database": options["database"],
-            "user": options.get("user", ""),
-            "password": options.get("password", ""),
-        }
-        self.sql_statement_path = config.absolute_path(
-            options["sql_statement"]
-        )
+        self.database = config['database']
+        if self.database['output_table'] is None:
+            self.database['output_table'] = 'output'
+        self.sql_statement_path = config["database"]["sql_statement_path"]
 
     def _create_connection(self, database: Dict[str, str]):
         raise NotImplementedError()
@@ -115,35 +106,46 @@ class BaseDBConnector(BaseConnector):
 
         return select_statement
 
-    def _get_insert_statements(self) -> List[str]:
+    def _get_insert_statements(self, columns):
         """
         SQL string(s) to insert the data into the DB
 
-        :return: List of sql statements
+        :return: Sql statements
         """
-        with open(self.sql_statement_path) as f:
-            sql = f.read()
+        columns_sql = ', '.join(columns)
+        placeholders = ', '.join(f':{col}' for col in columns)
+        return f"INSERT INTO output ({columns_sql}) VALUES ({placeholders});"
 
-        return sqlparse.split(sql)
+    def _create_table(self, row):
+        def infer_sql_type(value):
+            if isinstance(value, int):
+                return "INTEGER"
+            elif isinstance(value, float):
+                return "REAL"
+            else:
+                return "TEXT"
 
-    def load(self, data: Iterable[Dict[str, Any]]):
-        insert_sql = self._get_insert_statements()
-        data = list(
-            data
-        )  # convert iterable to list as we reuse it based on number of queries
+        types = {col: infer_sql_type(value) for col, value in row.items()}
+        columns = ", ".join(f"{col} {types[col]}" for col in row)
+        return f"CREATE TABLE IF NOT EXISTS {self.database['output_table']} ({columns});"
+
+    def load(self, generator):
+        first_row = next(generator)
+
+        create_sql = self._create_table(first_row)
+        insert_sql = self._get_insert_statements(first_row.keys())
+
         conn = self._create_connection(self.database)
-
         with conn:
-            cur = self._get_cursor(conn)
-            query = sqlparams.SQLParams("named", self.sql_params_output)
+            try:
+                cur = conn.cursor()
+                cur.execute("DROP TABLE IF EXISTS output")
+                cur.execute(create_sql)
+                cur.execute(insert_sql, first_row)
+                cur.executemany(insert_sql, generator)
 
-            # insert query can contain more than 1 statement
-            for line in insert_sql:
-                sql, params = query.formatmany(line, data)
-                try:
-                    cur.executemany(sql, params)
-                except Exception as e:
-                    raise DBQueryError(sql, e, data=data)
+            except Exception as e:
+                raise DBQueryError("Insert/Create Table", e, first_row)
 
     def row_to_dict(self, row):
         """

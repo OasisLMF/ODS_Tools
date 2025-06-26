@@ -1,0 +1,15 @@
+output:
+  path: ./oed_location_1000.csv
+batch_size: 750000
+mapping:
+  path: ./mapping_loc_Cede-OED.yaml
+logging: True
+database:
+  type: mssql # Path to the DB connection file. Other options are 'postgres' and 'sqlite'. Defaults to 'csv', when not present.
+  host: localhost
+  port: 1433
+  database: AIRExposure_CEDE
+  user: username
+  password: password
+  sql_statement: ./sql/cede_location.sql # SQL statement to extract data
+  absolute_path_database: ""
