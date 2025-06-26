@@ -1,6 +1,14 @@
 ODS_Tools Changelog
 ===================
 
+`4.0.2`_
+ ---------
+* [#185](https://github.com/OasisLMF/ODS_Tools/pull/185) - Reworked ODTF
+* [#187](https://github.com/OasisLMF/ODS_Tools/pull/187) - Change of pol number swap
+* [#188](https://github.com/OasisLMF/ODS_Tools/pull/188) - add summary_report_fields to model settings
+* [#182](https://github.com/OasisLMF/ODS_Tools/pull/189) - Missleading description for numeric_parameters
+.. _`4.0.2`:  https://github.com/OasisLMF/ODS_Tools/compare/4.0.1...4.0.2
+
 `4.0.1`_
  ---------
 * [#173](https://github.com/OasisLMF/ODS_Tools/pull/173) - Feature/v4 integration
