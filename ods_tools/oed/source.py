@@ -386,7 +386,7 @@ class OedSource:
                 oed_df = self.prepare_df(oed_df, column_to_field, ods_fields)
 
             else:  # default we assume it is csv like
-                read_params = {'keep_default_na': False,
+                read_params = {'keep_default_na': False, 'skipinitialspace': True,
                                'na_values': PANDAS_DEFAULT_NULL_VALUES.difference({'NA'})}
                 read_params.update(source.get('read_param', {}))
                 oed_df = self.read_csv(filepath, self.exposure.get_input_fields(self.oed_type), filter=self.filters, **read_params)
