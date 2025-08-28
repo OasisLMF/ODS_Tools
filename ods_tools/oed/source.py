@@ -538,11 +538,13 @@ class OedSource:
             with open(filepath_or_buffer, 'rb') as f:
                 df = get_df_reader(
                     filepath_or_buffer,
+                    dtype=str, # prevent inferring type
                     **kwargs
                 ).filter(filter).as_pandas()
         else:
             df = get_df_reader(
                 filepath_or_buffer,
+                dtype=str, # prevent inferring type
                 **kwargs
             ).filter(filter).as_pandas()
 
