@@ -465,6 +465,7 @@ class OdsPackageTests(TestCase):
         original_exposure.location.dataframe.loc[[2], 'BITIV'] = None
         original_exposure.location.dataframe.loc[[3], 'BITIV'] = pd.NaT
         original_exposure.location.dataframe.loc[[4], 'BITIV'] = ''
+        original_exposure.location.dataframe.loc[[5], 'BITIV'] = ' '
 
         original_exposure.ri_info.dataframe.drop(columns='RiskLevel', inplace=True)
         original_exposure.ri_info.dataframe['RiskLevel'] = pd.NA
