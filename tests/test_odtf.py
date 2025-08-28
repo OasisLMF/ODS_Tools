@@ -84,9 +84,9 @@ def test_simple_transform_to_csv(input_format):
 
     output_df = pd.read_csv(transform_result)
 
-    expected_output_df = pd.read_csv(pathlib.Path(example_path, "simple_transform", 'expected_output.csv'))
+    expected_df = pd.read_csv(pathlib.Path(example_path, "simple_transform", 'expected_output.csv'))
 
-    pd.testing.assert_frame_equal(output_df, expected_output_df)
+    pd.testing.assert_frame_equal(output_df, expected_df)
     os.remove(transform_result)
 
 
