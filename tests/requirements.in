@@ -11,3 +11,4 @@ pyodbc
 sqlparams
 sqlparse
 psycopg2
+tqdm

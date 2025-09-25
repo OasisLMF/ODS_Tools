@@ -2,6 +2,7 @@ import functools
 import json
 import numpy as np
 import logging
+import tqdm
 
 from pathlib import Path
 from collections.abc import Iterable
@@ -65,7 +66,7 @@ class Validator:
             raise OdsException("Unsupported validation type")
 
         invalid_data_group = {}
-        for check in validation:
+        for check in tqdm.tqdm(validation, desc="oed check"):
             check_fct = getattr(self, 'check_' + str(check['name']), None)
             if check.get('on_error') not in VALIDATOR_ON_ERROR_ACTION:
                 raise OdsException('Unknown check on_error action' + str(check.get('on_error')))
