@@ -1,6 +1,13 @@
 ODS_Tools Changelog
 ===================
 
+`4.0.3`_
+ ---------
+* [#191](https://github.com/OasisLMF/ODS_Tools/pull/192) - OED validation does not correctly handle spaces in numeric columns
+* [#193](https://github.com/OasisLMF/ODS_Tools/pull/193) - Feature/validation progress
+* [#196](https://github.com/OasisLMF/ODS_Tools/pull/196) - Add tqdm to requirements.in
+.. _`4.0.3`:  https://github.com/OasisLMF/ODS_Tools/compare/4.0.2...4.0.3
+
 `4.0.2`_
  ---------
 * [#185](https://github.com/OasisLMF/ODS_Tools/pull/185) - Reworked ODTF

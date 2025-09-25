@@ -533,29 +533,22 @@ class OedSource:
         else:
             header = read_or_try_encoding_read(df_engine, filepath_or_buffer, **header_read_arg).columns
 
-        # match header column name to oed field name and prepare pd_dtype used to read the data
-        pd_dtype = {}
-        column_to_field = OedSchema.column_to_field(header, ods_fields)
-        for col in header:
-            if col in column_to_field:
-                field_info = column_to_field[col]
-                pd_dtype[col] = field_info['pd_dtype']
-            else:
-                pd_dtype[col] = 'category'
-
         # read the oed file
         if kwargs.get('compression') == 'gzip':
             with open(filepath_or_buffer, 'rb') as f:
                 df = get_df_reader(
                     filepath_or_buffer,
-                    dtype=pd_dtype,
+                    dtype=str,  # prevent inferring type
                     **kwargs
                 ).filter(filter).as_pandas()
         else:
             df = get_df_reader(
                 filepath_or_buffer,
-                dtype=pd_dtype,
+                dtype=str,  # prevent inferring type
                 **kwargs
             ).filter(filter).as_pandas()
+
+        column_to_field = OedSchema.column_to_field(header, ods_fields)
+        df = cls.as_oed_type(df, column_to_field)
 
         return cls.prepare_df(df, column_to_field, ods_fields)
