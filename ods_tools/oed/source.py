@@ -533,14 +533,7 @@ class OedSource:
                 header = df_engine.read(f, **header_read_arg).columns
 
         else:
-            # here
             header = read_or_try_encoding_read(df_engine, filepath_or_buffer, **header_read_arg).columns
-        df_reader = get_df_reader(
-            filepath_or_buffer,
-            dtype=str,  # prevent inferring type
-            **kwargs,
-            df_engine=df_engine
-        )
         # read the oed file
         if kwargs.get('compression') == 'gzip':
             with open(filepath_or_buffer, 'rb') as f:
@@ -554,7 +547,8 @@ class OedSource:
             df = get_df_reader(
                 filepath_or_buffer,
                 dtype=str,  # prevent inferring type
-                **kwargs
+                **kwargs,
+                df_engine=df_engine
             ).filter(filter).as_pandas()
 
         column_to_field = OedSchema.column_to_field(header, ods_fields)
