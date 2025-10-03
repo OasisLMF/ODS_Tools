@@ -379,7 +379,8 @@ class OedSource:
             if extension == '.parquet':
                 oed_df = get_df_reader(
                     filepath,
-                    **source.get('read_param', {})
+                    **source.get('read_param', {}),
+                    df_engine=engine
                 ).filter(self.filters).as_pandas()
                 ods_fields = self.exposure.get_input_fields(self.oed_type)
                 column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
