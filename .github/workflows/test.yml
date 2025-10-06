@@ -7,6 +7,9 @@ on:
       oed_spec_branch:
         description: 'Branch of OED spec'
         required: false
+      odm_branch:
+        description: 'Branch of Oasis Data Manager'
+        required: false
 
 jobs:
   build-ods:
@@ -19,7 +22,7 @@ jobs:
     uses: OasisLMF/OasisDataManager/.github/workflows/build.yml@main
     secrets: inherit
     with:
-      odm_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' ||  inputs.ods_branch }}
+      odm_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' ||  inputs.odm_branch }}
 
   test:
     name: Run Pytest
