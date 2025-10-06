@@ -8,7 +8,7 @@ on:
         description: 'Branch of OED spec'
         required: false
       odm_branch:
-        description: 'Branch of OED spec'
+        description: 'Branch of Oasis Data Manager'
         required: false
 
 jobs:
