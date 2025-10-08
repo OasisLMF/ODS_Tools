@@ -2,7 +2,7 @@ import io
 import os
 import re
 import setuptools
-
+from urllib.error import HTTPError
 
 import setuptools.command.install as orig
 
@@ -55,7 +55,7 @@ class DownloadSpecODS(orig.install):
         self.filename = 'OpenExposureData_Spec.json'
         self.ods_repo = 'OasisLMF/ODS_OpenExposureData'
         self.oed_version = OED_VERSION
-        self.url = f'https://github.com/{self.ods_repo}/releases/download/{self.oed_version}/{self.filename}'
+        self.url = f'https://github.com/{self.ods_repo}/releases/download/'
         orig.install.__init__(self, *args, **kwargs)
 
     def initialize_options(self):
@@ -78,17 +78,37 @@ class DownloadSpecODS(orig.install):
                 data = json.load(f)
                 data['version'] = f'Local-file-install: {self.local_oed_spec}'
         else:
-            # Install from relalse URL
-            print(f'OED Version: {OED_VERSION}')
-            print(f'Install from url: {self.url}')
-            response = urllib.request.urlopen(self.url)
-            data = json.loads(response.read())
-            data['version'] = OED_VERSION
+            # Install all releases
+            print(f'Install all versions from url: {self.url}')
+            tags = self.get_all_tags()
+            data = {}
+            for tag in tags:
+                try:
+                    url = self.url + f"{tag}/{self.filename}"
+                    response = urllib.request.urlopen(url)
+                    data[tag] = json.loads(response.read())
+                    data[tag]['version'] = tag
+                except HTTPError:
+                    print(f'No OED associated with {tag}: {url}')
 
         download_path = os.path.join(self.build_lib, 'ods_tools', 'data', self.filename)
         with open(download_path, 'w+') as f:
             json.dump(data, f)
         orig.install.run(self)
+
+    def get_all_tags(self):
+        """Fetch all release tags from GitHub API."""
+        tags = []
+        page = 1
+        while True:
+            api_url = f"https://api.github.com/repos/{self.ods_repo}/tags?per_page=100&page={page}"
+            with urllib.request.urlopen(api_url) as response:
+                data = json.load(response)
+            if not data:
+                break
+            tags.extend([t['name'] for t in data if 'rc' not in t['name']])
+            page += 1
+        return tags
 
 
 version = get_version()
