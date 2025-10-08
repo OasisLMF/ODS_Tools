@@ -12,7 +12,6 @@ import json
 
 SCRIPT_DIR = os.path.abspath(os.path.dirname(__file__))
 
-OED_VERSION = '4.0.0'
 # ORD_VERSION =
 
 
@@ -54,7 +53,6 @@ class DownloadSpecODS(orig.install):
     def __init__(self, *args, **kwargs):
         self.filename = 'OpenExposureData_Spec.json'
         self.ods_repo = 'OasisLMF/ODS_OpenExposureData'
-        self.oed_version = OED_VERSION
         self.url = f'https://github.com/{self.ods_repo}/releases/download/'
         orig.install.__init__(self, *args, **kwargs)
 

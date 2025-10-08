@@ -7,6 +7,8 @@ import numpy as np
 
 from .common import OdsException, BLANK_VALUES, cached_property, dtype_to_python
 
+ODS_VERSION = '4.0.0'
+
 logger = logging.getLogger(__name__)
 
 ENV_ODS_SCHEMA_PATH = os.getenv('ODS_SCHEMA_PATH')
@@ -83,7 +85,7 @@ class OedSchema:
             raise OdsException(f"{oed_schema_info} is not a supported format to create {cls} object")
 
     @classmethod
-    def from_json(cls, oed_json):
+    def from_json(cls, oed_json, version=ODS_VERSION):
         """
         Create OedSchema from json file
         Args:
@@ -93,7 +95,7 @@ class OedSchema:
             OedSchema
         """
         with open(oed_json) as f:
-            schema = json.load(f)
+            schema = json.load(f)[version]
             # reformat area code for efficient check
             country_area = set()
             for country, areas in schema['area'].items():
