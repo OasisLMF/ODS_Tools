@@ -7,7 +7,7 @@ import numpy as np
 
 from .common import OdsException, BLANK_VALUES, cached_property, dtype_to_python
 
-ODS_VERSION = '4.0.0'
+OED_VERSION = '4.0.0'
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,7 @@ class OedSchema:
         return self.json_path
 
     @classmethod
-    def from_oed_schema_info(cls, oed_schema_info):
+    def from_oed_schema_info(cls, oed_schema_info, version=None):
         """
         Args:
             oed_schema_info: info to create OedSchema object, can be:
@@ -74,18 +74,20 @@ class OedSchema:
         Returns:
             OedSchema
         """
+        if version is None:
+            version = OED_VERSION
         if isinstance(oed_schema_info, (str, Path)):
-            return cls.from_json(oed_schema_info)
+            return cls.from_json(oed_schema_info, version)
         elif isinstance(oed_schema_info, cls):
             return oed_schema_info
         elif oed_schema_info is None:
             logger.debug(f"loading default schema {cls.DEFAULT_ODS_SCHEMA_PATH}")
-            return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH)
+            return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH, version)
         else:
             raise OdsException(f"{oed_schema_info} is not a supported format to create {cls} object")
 
     @classmethod
-    def from_json(cls, oed_json, version=ODS_VERSION):
+    def from_json(cls, oed_json, version=OED_VERSION):
         """
         Create OedSchema from json file
         Args:
@@ -95,7 +97,11 @@ class OedSchema:
             OedSchema
         """
         with open(oed_json) as f:
-            schema = json.load(f)[version]
+            schema = json.load(f)
+            if version in schema:
+                schema = schema[version]
+            with open("/home/ubuntu/GitHub/TestWorkspace/a.json", "w+") as file:
+                json.dump(schema, file)
             # reformat area code for efficient check
             country_area = set()
             for country, areas in schema['area'].items():
