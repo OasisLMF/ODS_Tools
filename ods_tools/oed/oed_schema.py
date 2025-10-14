@@ -100,8 +100,6 @@ class OedSchema:
             schema = json.load(f)
             if version in schema:
                 schema = schema[version]
-            with open("/home/ubuntu/GitHub/TestWorkspace/a.json", "w+") as file:
-                json.dump(schema, file)
             # reformat area code for efficient check
             country_area = set()
             for country, areas in schema['area'].items():
