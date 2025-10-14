@@ -48,7 +48,8 @@ class OedExposure:
                  account_numbers=None,
                  portfolio_numbers=None,
                  base_df_engine=None,
-                 exposure_df_engine=None):
+                 exposure_df_engine=None,
+                 oed_schema_version=None):
         """
         Create an OED object,
         each input can be the object itself or  information that will be used to create the object
@@ -69,9 +70,10 @@ class OedExposure:
             base_df_engine (Union[str, InputReaderConfig]): The default engine to use when loading dataframes
             exposure_df_engine (Union[str, InputReaderConfig]):
                 The exposure specific engine to use when loading dataframes
+            oed_schema_version: version of oed schema to validate from
         """
         self.use_field = use_field
-        self.oed_schema = OedSchema.from_oed_schema_info(oed_schema_info)
+        self.oed_schema = OedSchema.from_oed_schema_info(oed_schema_info, version=oed_schema_version)
         df_engine = (
             exposure_df_engine or
             base_df_engine or
