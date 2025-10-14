@@ -20,6 +20,7 @@ sys.path.append(sys.path.pop(0))
 from ods_tools.main import convert
 from ods_tools.oed import (OedExposure, OedSchema, OdsException, ModelSettingSchema, AnalysisSettingSchema, OED_TYPE_TO_NAME, UnknownColumnSaveOption,
                            ClassOfBusiness)
+from ods_tools.oed.oed_schema import OED_VERSION
 
 logger = logging.getLogger(__file__)
 
@@ -420,7 +421,7 @@ class OdsPackageTests(TestCase):
             with open(OedSchema.DEFAULT_ODS_SCHEMA_PATH) as default_schema_file, open(custom_schema_path,
                                                                                       'w') as custom_schema_file:
                 default_schema = json.load(default_schema_file)
-                default_schema['input_fields']['Loc']['locnumber']['alias'] = 'LocNumberAlias'
+                default_schema[OED_VERSION]['input_fields']['Loc']['locnumber']['alias'] = 'LocNumberAlias'
                 json.dump(default_schema, custom_schema_file)
 
             exposure = OedExposure(**{
