@@ -1,4 +1,6 @@
 ods_tools/data/OpenExposureData_Spec.json
+losses-*
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -48,6 +50,7 @@ coverage.xml
 
 # venv
 .venv/
+env/
 
 # vscode
 .vscode/
