@@ -4,37 +4,18 @@ File outlining how to load in and interact with ord analyses.
 # %% imports
 
 import pandas as pd
-from dataclasses import dataclass, asdict, field
 import json
 from pathlib import Path
-from pprint import pprint
-from typing import List
+from dataclasses import asdict
 
-# %% define data classes
-
-@dataclass
-class OutputSet():
-    '''OutputSetTable field data class'''
-    id: int = None
-    perspective_code: str = None
-    settings_id: int = None # link to AnalysisTable
-    exposure_summary_level_fields: List[str] = field(default_factory=lambda : list)
-    exposure_summary_level_id: int = None
-
-@dataclass
-class Analysis():
-    '''AnalysisTable field data class'''
-    id: int = None
-    run_id: str = None
-    description: str = ''
-    settings: dict = field(default_factory=lambda : dict)
+from ord_combining.common import OutputSet, Analysis, dataclass_list_to_dataframe
 
 # %% specify file paths
 
 ord_output_dirs = [
-                   "/home/vinulw/code/ODS_Tools/ord_combining/losses-20251017134045/output",
-                   "/home/vinulw/code/ODS_Tools/ord_combining/losses-20251017134021/output",
-                   "/home/vinulw/code/ODS_Tools/ord_combining/losses-20251017133750/output"
+                    "/home/vinulw/code/ODS_Tools/ord_combining/losses-20251017133750/output",
+                    "/home/vinulw/code/ODS_Tools/ord_combining/losses-20251017134021/output",
+                    "/home/vinulw/code/ODS_Tools/ord_combining/losses-20251021131718/output"
                    ]
 
 ord_output_dirs = [Path(p) for p in ord_output_dirs]
@@ -53,6 +34,7 @@ def parse_analysis_settings(settings_fp):
     analysis = Analysis()
     analysis.run_id = a_settings.get('analysis_tag')
     analysis.settings = a_settings
+    analysis.path = str(settings_fp.parent)
 
     # parse the output sets
     perspectives = ['gul', 'il', 'ri']
@@ -101,9 +83,6 @@ def load_output_sets(ord_output_dirs):
         output_sets += _outputsets
 
     return analysis_set, output_sets
-
-def dataclass_list_to_dataframe(dataclass_list):
-    return pd.DataFrame([asdict(c) for c in dataclass_list])
 
 # %% run generate outputsets
 
@@ -172,6 +151,76 @@ group_set_df, group_output_set_df, group_analysis_df = compute_potential_group_s
 # note at this point you can determine if a group_set has more than one element
 print("Value counts for each group_set: \n", group_output_set_df['group_set_id'].value_counts())
 
-# %% grouping
+# %% generating group_event_set
 
+def parse_field_from_analysis_settings(field, settings):
+    field_location_map = {
+            "event_set_id" : ["model_settings", "event_set"],
+            "event_occurrence_id" : ["model_settings", "event_occurrence_id"],
+            }
+
+    field_path = field_location_map.get(field, [field])
+    value = settings
+
+    for key in field_path:
+        value = value.get(key, {})
+
+    if value:
+        return value
+    return None
+
+
+def extract_group_event_set_fields(analysis, group_event_set_fields):
+    output = {}
+    for field in group_event_set_fields:
+        output[field] = parse_field_from_analysis_settings(field, analysis.settings)
+
+    return output
+
+
+def generate_group_event_set(analysis, group_analysis_df, group_event_set_fields):
+
+    # generate event occurrence set
+    event_occurrence_set = []
+    for a in analysis:
+        extracted_analysis = extract_group_event_set_fields(a, group_event_set_fields)
+        extracted_analysis['analysis_id'] = a.id
+
+        event_occurrence_set.append(extracted_analysis)
+
+
+    full_event_occurrence_set_df = pd.DataFrame(event_occurrence_set)
+
+    event_occurrence_set_df= full_event_occurrence_set_df.drop_duplicates(subset=group_event_set_fields)
+
+    event_occurrence_set_df = event_occurrence_set_df.reset_index(drop=True)
+    event_occurrence_set_df['id'] = event_occurrence_set_df.index + 1
+    event_occurrence_set_df = event_occurrence_set_df[['id'] + group_event_set_fields]
+
+    group_event_set_analysis = pd.merge(full_event_occurrence_set_df, event_occurrence_set_df, on=group_event_set_fields,
+                                        how='left').rename(columns={'id': 'group_event_set_id'})
+    group_event_set_analysis = group_event_set_analysis[['analysis_id', 'group_event_set_id']]
+
+
+    return event_occurrence_set_df, group_event_set_analysis
+
+group_event_set_fields = ['event_set_id', 'event_occurrence_id', 'model_supplier_id']
+event_occurrence_set_df, group_event_set_analysis = generate_group_event_set(analysis, group_analysis_df, group_event_set_fields)
+
+event_occurrence_set_df
+group_event_set_analysis
+
+# %% save output for period sampling
+
+output_path = Path("/home/vinulw/code/ODS_Tools/ord_combining/outputs/")
+
+analysis_dicts = [asdict(a) for a in analysis]
+
+with open(output_path / 'analysis.json', 'w') as f:
+    json.dump(analysis_dicts, f, indent=4)
+
+group_event_set_analysis
+
+group_event_set_analysis.to_csv(output_path / 'group_event_set_analysis.csv', index=False)
+event_occurrence_set_df.to_csv(output_path / 'event_occurrence_set.csv', index=False)
 
