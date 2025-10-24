@@ -9,7 +9,7 @@ class OutputSet():
     '''OutputSetTable field data class'''
     id: int = None
     perspective_code: str = None
-    settings_id: int = None # link to AnalysisTable
+    analysis_id: int = None # link to AnalysisTable
     exposure_summary_level_fields: List[str] = field(default_factory=lambda : list)
     exposure_summary_level_id: int = None
 

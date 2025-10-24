@@ -57,7 +57,7 @@ def parse_analysis_output_sets(perspective, analysis):
         outputset.perspective_code = perspective
         outputset.exposure_summary_level_id = summary_level['id']
         outputset.exposure_summary_level_fields = summary_level.get('oed_fields', [])
-        outputset.settings_id = analysis.id
+        outputset.analysis_id = analysis.id
 
         outputset_list.append(outputset)
 
@@ -76,7 +76,7 @@ def load_output_sets(ord_output_dirs):
         # set the analysis
         analysis.id = analysis_id
         for i in range(len(_outputsets)):
-            _outputsets[i].settings_id = analysis_id
+            _outputsets[i].analysis_id = analysis_id
         analysis_id += 1
 
         analysis_set.append(analysis)
@@ -131,10 +131,10 @@ def compute_potential_group_set(outputsets_df, group_id = 1):
     merged_df = merge_group_set_output_set(group_set_df, outputsets_df)
 
     # extract group analysis
-    group_analysis_df = merged_df[['group_id', 'settings_id_output_set']]
+    group_analysis_df = merged_df[['group_id', 'analysis_id_output_set']]
     group_analysis_df = group_analysis_df.reset_index(drop=True)
     group_analysis_df['id'] = group_analysis_df.index
-    group_analysis_df = group_analysis_df.rename(columns={"settings_id_output_set": "analysis_id"})
+    group_analysis_df = group_analysis_df.rename(columns={"analysis_id_output_set": "analysis_id"})
 
     # extract group output set
     group_output_set_df = merged_df[["id", "group_set_id", "output_set_id"]]
@@ -224,3 +224,10 @@ group_event_set_analysis
 group_event_set_analysis.to_csv(output_path / 'group_event_set_analysis.csv', index=False)
 event_occurrence_set_df.to_csv(output_path / 'event_occurrence_set.csv', index=False)
 
+outputsets_df.to_csv(output_path / 'output_set.csv', index=False)
+
+outputsets_df.columns
+
+event_occurrence_set_df
+
+outputsets_df
