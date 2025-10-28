@@ -242,6 +242,57 @@ def mean_loss_sampling(gpqt, melt, sampling_func=beta_sampling_group_loss):
     remaining_gpqt = gpqt[merged['not_merged']]
     return loss_sampled_df, remaining_gpqt
 
+def quantile_loss_sampling(gpqt, qelt):
+    filtered_gpqt = gpqt
+    original_cols = list(filtered_gpqt.columns)
+
+    filtered_gpqt["merged"] = filtered_gpqt["EventId"].isin(qelt["EventId"].unique())
+    remaining_gpqt = filtered_gpqt[~filtered_gpqt["merged"]][original_cols]
+
+    sample_loss_df = filtered_gpqt[filtered_gpqt["merged"]].apply(lambda x: process_row_quantile_lt(x, qelt), axis=1)
+    sample_loss_df = sample_loss_df[original_cols + ["Loss"]]
+    return sample_loss_df, remaining_gpqt[original_cols]
+
+
+def process_row_quantile_lt(row, qelt): # todo speedup
+    filtered_qelt = qelt.query(f"EventId == {row['EventId']}")
+    previous_quantile = filtered_qelt[filtered_qelt["LTQuantile"] <= row["Quantile"]].iloc[-1]
+    next_quantile = filtered_qelt[filtered_qelt["LTQuantile"] > row["Quantile"]].iloc[0]
+
+
+    if row["Quantile"] == previous_quantile["LTQuantile"]:
+        row["SampleLoss"] = previous_quantile["QuantileLoss"]
+        return row
+
+    quantile_range = next_quantile["LTQuantile"] - previous_quantile["LTQuantile"]
+    quantile_loss_range = next_quantile["QuantileLoss"] - previous_quantile["QuantileLoss"]
+    row["Loss"] =  previous_quantile["QuantileLoss"] + (row["Quantile"] - previous_quantile["LTQuantile"])*quantile_loss_range / quantile_range
+
+    return row
+
+def sample_loss_sampling(gpqt, selt):
+    original_cols = list(gpqt.columns)
+    _gpqt = gpqt
+
+    _gpqt["merged"] = _gpqt["EventId"].isin(selt["EventId"].unique())
+
+    remaining_gpqt = _gpqt[~_gpqt["merged"]][original_cols]
+
+    selt = selt.sort_values(by=['EventId', 'SampleLoss'], ascending=True)
+
+    sample_loss_df = _gpqt[_gpqt["merged"]].apply(lambda x: sample_single_row(x, selt), axis=1)
+    sample_loss_df = sample_loss_df[original_cols + ["Loss"]]
+
+    return sample_loss_df, remaining_gpqt
+
+def sample_single_row(row, selt):
+    selt_event = selt.query(f"EventId == {row['EventId']}")
+
+    interval_index = pd.interval_range(0, 1, periods=len(selt_event))
+
+    row["Loss"] = selt_event.iloc[interval_index.get_loc(row["Quantile"])]["SampleLoss"]
+    return row
+
 
 def do_loss_sampling_full_uncertainty(gpqt, output_set_df, analysis_dict,
                                       priority=['m', 'q', 's']):
@@ -249,9 +300,9 @@ def do_loss_sampling_full_uncertainty(gpqt, output_set_df, analysis_dict,
     loss_sample_fragments = []
     loss_sampling_func_map = {
         'm': mean_loss_sampling,
-        'q': quantile_loss_sampling
+        'q': quantile_loss_sampling,
+        's': sample_loss_sampling
     }
-
 
     for output_set_id in gpqt['output_set_id'].unique():
         os = output_set_df.loc[output_set_id]
@@ -266,6 +317,7 @@ def do_loss_sampling_full_uncertainty(gpqt, output_set_df, analysis_dict,
 
         loss_sampled_fragments = []
         for p in priority:
+            print(f"Running outputset_id: {output_set_id}, priority: {p}")
             elt_df = elt_dfs.get(f'{p}elt', None)
 
             if elt_df is None:
@@ -285,45 +337,8 @@ def do_loss_sampling_full_uncertainty(gpqt, output_set_df, analysis_dict,
             print('Missed events: ')
             print(curr_gpqt['EventId'])
 
-        return pd.concat(loss_sample_fragments)
-
-# gpqt, qelt = do_loss_sampling_full_uncertainty(gpqt, output_set_df, analysis_dict,
-#                                            priority=['q'])
-#
-# gpqt
-#
-# qelt
-
-# %%
-
-def quantile_loss_sampling(gpqt, qelt):
-    filtered_gpqt = gpqt
-    original_cols = list(filtered_gpqt.columns)
-
-    filtered_gpqt["merged"] = filtered_gpqt["EventId"].isin(qelt["EventId"].unique())
-    remaining_gpqt = filtered_gpqt[~filtered_gpqt["merged"]][original_cols]
-
-    sample_loss_df = filtered_gpqt[filtered_gpqt["merged"]].apply(lambda x: process_row_quantile_lt(x, qelt), axis=1)
-    sample_loss_df = sample_loss_df[original_cols + ["Loss"]]
-    return sample_loss_df, remaining_gpqt
+    return pd.concat(loss_sample_fragments)
 
 
-def process_row_quantile_lt(row, qelt):
-    filtered_qelt = qelt.query(f"EventId == {row['EventId']}")
-    previous_quantile = filtered_qelt[filtered_qelt["LTQuantile"] <= row["Quantile"]].iloc[-1]
-    next_quantile = filtered_qelt[filtered_qelt["LTQuantile"] > row["Quantile"]].iloc[0]
-
-
-    if row["Quantile"] == previous_quantile["LTQuantile"]:
-        row["SampleLoss"] = previous_quantile["QuantileLoss"]
-        return row
-
-    quantile_range = next_quantile["LTQuantile"] - previous_quantile["LTQuantile"]
-    quantile_loss_range = next_quantile["QuantileLoss"] - previous_quantile["QuantileLoss"]
-    row["Loss"] =  previous_quantile["QuantileLoss"] + (row["Quantile"] - previous_quantile["LTQuantile"])*quantile_loss_range / quantile_range
-
-    return row
-
-
-output = quantile_loss_sampling(gpqt, qelt)
-output
+output = do_loss_sampling_full_uncertainty(gpqt, output_set_df, analysis_dict,
+                                           priority=['m', 'q', 's'])
