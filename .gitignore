@@ -1,5 +1,7 @@
 ods_tools/data/OpenExposureData_Spec.json
 losses-*
+.ipynb_checkpoints
+
 
 
 # Byte-compiled / optimized / DLL files
