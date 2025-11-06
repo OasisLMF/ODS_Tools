@@ -74,7 +74,7 @@ class OedExposure:
         """
         self.use_field = use_field
         self.oed_schema = OedSchema.from_oed_schema_info(oed_schema_info)
-        df_engine = (
+        self.df_engine = (
             exposure_df_engine or
             base_df_engine or
             'oasis_data_manager.df_reader.reader.OasisPandasReader'
@@ -96,7 +96,7 @@ class OedExposure:
         self.location = OedSource.from_oed_info(
             exposure=self,
             oed_type='Loc',
-            oed_info=self.resolve_oed_info(location, df_engine),
+            oed_info=self.resolve_oed_info(location, self.df_engine),
             filters=loc_filters,
         )
 
@@ -107,14 +107,14 @@ class OedExposure:
         self.account = OedSource.from_oed_info(
             exposure=self,
             oed_type='Acc',
-            oed_info=self.resolve_oed_info(account, df_engine),
+            oed_info=self.resolve_oed_info(account, self.df_engine),
             filters=acc_filters,
         )
 
         self.ri_info = OedSource.from_oed_info(
             exposure=self,
             oed_type='ReinsInfo',
-            oed_info=self.resolve_oed_info(ri_info, df_engine),
+            oed_info=self.resolve_oed_info(ri_info, self.df_engine),
         )
 
         ri_scope_filters = [
@@ -125,7 +125,7 @@ class OedExposure:
         self.ri_scope = OedSource.from_oed_info(
             exposure=self,
             oed_type='ReinsScope',
-            oed_info=self.resolve_oed_info(ri_scope, df_engine),
+            oed_info=self.resolve_oed_info(ri_scope, self.df_engine),
             filters=ri_scope_filters,
         )
 

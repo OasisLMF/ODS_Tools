@@ -34,6 +34,22 @@ def jit_peril_filtering(peril_ids, peril_filters, perils_dict):
     return result
 
 
+peril_groups_dict_key_type = nb.types.UnicodeCharSeq(3)
+peril_groups_dict_value_type = nb.types.UnicodeCharSeq(3)[:]
+
+
+@nb.jit(cache=True, nopython=True)
+def make_peril_groups_dict(peril_group_keys, peril_group_index, peril_lists):
+    nb_peril_groups_dict = nb.typed.Dict.empty(
+        key_type=peril_groups_dict_key_type,
+        value_type=peril_groups_dict_value_type,
+    )
+    for i in range(peril_group_keys.shape[0]):
+        nb_peril_groups_dict[peril_group_keys[i]] = peril_lists[peril_group_index[i]: peril_group_index[i + 1]]
+
+    return nb_peril_groups_dict
+
+
 class OedSchema:
     """
     Object managing information about a certain OED schema
@@ -126,17 +142,21 @@ class OedSchema:
     @cached_property
     def nb_peril_groups_dict(self):
         """ dict peril group to all included peril group """
-        nb_peril_groups_dict = nb.typed.Dict.empty(
-            key_type=nb.types.UnicodeCharSeq(3),
-            value_type=nb.types.UnicodeCharSeq(3)[:],
-        )
+        peril_group_keys = []
+        peril_group_index = []
+        peril_lists = []
+        index = 0
         for peril_group_key, perils in self.schema['perils']['covered'].items():
+            peril_group_keys.append(peril_group_key)
+            peril_group_index.append(index)
             peril_groups = []
             for peril_group_include, perils_include in self.schema['perils']['covered'].items():
                 if not set(perils_include).difference(set(perils)):
                     peril_groups.append(peril_group_include)
-            nb_peril_groups_dict[peril_group_key] = np.array(peril_groups, dtype='U3')
-        return nb_peril_groups_dict
+            peril_lists.extend(peril_groups)
+            index += len(peril_groups)
+        peril_group_index.append(index)
+        return make_peril_groups_dict(np.array(peril_group_keys, dtype='U3'), np.array(peril_group_index), np.array(peril_lists, dtype='U3'))
 
     def peril_filtering(self, peril_ids, peril_filters, include_sub_group=True):
         """
