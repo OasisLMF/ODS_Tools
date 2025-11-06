@@ -370,6 +370,7 @@ class OedSource:
         if version_name is None:
             version_name = self.cur_version_name
         source = self.sources[version_name]
+        engine = self.sources[version_name]['engine']
         if source['source_type'] == 'filepath':
             filepath = source['filepath']
             if is_relative(filepath):
@@ -377,7 +378,7 @@ class OedSource:
             extension = PANDAS_COMPRESSION_MAP.get(source.get('extention')) or Path(filepath).suffix
             if extension == '.parquet':
                 oed_df = get_df_reader(
-                    filepath,
+                    format_filepath_engine_as_config(filepath, engine),
                     **source.get('read_param', {})
                 ).filter(self.filters).as_pandas()
                 ods_fields = self.exposure.get_input_fields(self.oed_type)
@@ -389,7 +390,7 @@ class OedSource:
                 read_params = {'keep_default_na': False,
                                'na_values': PANDAS_DEFAULT_NULL_VALUES.difference({'NA'})}
                 read_params.update(source.get('read_param', {}))
-                oed_df = self.read_csv(filepath, self.exposure.get_input_fields(self.oed_type), filter=self.filters, **read_params)
+                oed_df = self.read_csv(filepath, self.exposure.get_input_fields(self.oed_type), engine, filter=self.filters, **read_params)
         else:
             raise Exception(f"Source type {source['source_type']} is not supported")
 
@@ -494,10 +495,10 @@ class OedSource:
             #  try to read, if it fails, try to detect the encoding and update the top function kwargs for future read
             try:
                 return get_df_reader(
-                    filepath_or_buffer,
-                    **read_kwargs
+                    format_filepath_engine_as_config(filepath_or_buffer, df_engine),
+                    **read_kwargs,
                 ).as_pandas()
-            except UnicodeDecodeError as e:
+            except UnicodeDecodeError:
                 if stream_start is None:
                     with open(filepath_or_buffer, 'rb') as buffer:
                         detected_encoding = detect_encoding(buffer)['encoding']
@@ -508,7 +509,7 @@ class OedSource:
                     kwargs['encoding'] = detected_encoding
                     read_kwargs.pop('encoding', None)
                     return get_df_reader(
-                        filepath_or_buffer,
+                        format_filepath_engine_as_config(filepath_or_buffer, df_engine),
                         encoding=detected_encoding,
                         **read_kwargs
                     ).as_pandas()
@@ -532,18 +533,17 @@ class OedSource:
 
         else:
             header = read_or_try_encoding_read(df_engine, filepath_or_buffer, **header_read_arg).columns
-
         # read the oed file
         if kwargs.get('compression') == 'gzip':
             with open(filepath_or_buffer, 'rb') as f:
                 df = get_df_reader(
-                    filepath_or_buffer,
+                    format_filepath_engine_as_config(filepath_or_buffer, df_engine),
                     dtype=str,  # prevent inferring type
                     **kwargs
                 ).filter(filter).as_pandas()
         else:
             df = get_df_reader(
-                filepath_or_buffer,
+                format_filepath_engine_as_config(filepath_or_buffer, df_engine),
                 dtype=str,  # prevent inferring type
                 **kwargs
             ).filter(filter).as_pandas()
@@ -552,3 +552,12 @@ class OedSource:
         df = cls.as_oed_type(df, column_to_field)
 
         return cls.prepare_df(df, column_to_field, ods_fields)
+
+
+def format_filepath_engine_as_config(filepath, df_engine):
+    if isinstance(filepath, dict):
+        filepath['engine'] = {'path': df_engine}
+        return filepath
+    if isinstance(filepath, (str, Path)) or hasattr(filepath, "read"):
+        return {'filepath': filepath, 'engine': {'path': df_engine}}
+    return filepath
