@@ -555,4 +555,9 @@ class OedSource:
 
 
 def format_filepath_engine_as_config(filepath, df_engine):
-    return {'filepath': filepath, 'engine': {'path': df_engine}}
+    if isinstance(filepath, dict):
+        filepath['engine'] = {'path': df_engine}
+        return filepath
+    if isinstance(filepath, (str, Path)) or hasattr(filepath, "read"):
+        return {'filepath': filepath, 'engine': {'path': df_engine}}
+    return filepath
