@@ -73,7 +73,7 @@ class OedExposure:
             oed_schema_version: version of oed schema to validate from
         """
         self.use_field = use_field
-        self.oed_schema = OedSchema.from_oed_schema_info(oed_schema_info, version=oed_schema_version)
+        self.oed_schema = OedSchema.from_oed_schema_info(oed_schema_info)
         df_engine = (
             exposure_df_engine or
             base_df_engine or

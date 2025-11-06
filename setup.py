@@ -51,7 +51,7 @@ class DownloadSpecODS(orig.install):
     ]
 
     def __init__(self, *args, **kwargs):
-        self.filename = 'OpenExposureData_Spec.json'
+        self.filename = 'OpenExposureData_{}Spec.json'
         self.ods_repo = 'OasisLMF/ODS_OpenExposureData'
         self.url = f'https://github.com/{self.ods_repo}/releases/download/'
         orig.install.__init__(self, *args, **kwargs)
@@ -82,16 +82,17 @@ class DownloadSpecODS(orig.install):
             data = {}
             for tag in tags:
                 try:
-                    url = self.url + f"{tag}/{self.filename}"
+                    url = self.url + f"{tag}/{self.filename.format('')}"
                     response = urllib.request.urlopen(url)
-                    data[tag] = json.loads(response.read())
-                    data[tag]['version'] = tag
+                    data = json.loads(response.read())
+                    data['version'] = tag
+
+                    download_path = os.path.join(self.build_lib, 'ods_tools', 'data', self.filename.format(tag))
+                    with open(download_path, 'w+') as f:
+                        json.dump(data, f)
+
                 except HTTPError:
                     print(f'No OED associated with {tag}: {url}')
-
-        download_path = os.path.join(self.build_lib, 'ods_tools', 'data', self.filename)
-        with open(download_path, 'w+') as f:
-            json.dump(data, f)
         orig.install.run(self)
 
     def get_all_tags(self):

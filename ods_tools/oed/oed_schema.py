@@ -42,7 +42,7 @@ class OedSchema:
         schema (dict): information about the OED schema
         json_path (Path or str): path to the json file from where the schema was loaded
     """
-    DEFAULT_ODS_SCHEMA_FILE = 'OpenExposureData_Spec.json'
+    DEFAULT_ODS_SCHEMA_FILE = 'OpenExposureData_{}Spec.json'
     DEFAULT_ODS_SCHEMA_PATH = (ENV_ODS_SCHEMA_PATH if ENV_ODS_SCHEMA_PATH
                                else os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', DEFAULT_ODS_SCHEMA_FILE))
 
@@ -63,7 +63,7 @@ class OedSchema:
         return self.json_path
 
     @classmethod
-    def from_oed_schema_info(cls, oed_schema_info, version=None):
+    def from_oed_schema_info(cls, oed_schema_info):
         """
         Args:
             oed_schema_info: info to create OedSchema object, can be:
@@ -74,20 +74,24 @@ class OedSchema:
         Returns:
             OedSchema
         """
-        if version is None:
-            version = OED_VERSION
+        if oed_schema_info is None:
+            logger.debug(f"loading default schema {cls.DEFAULT_ODS_SCHEMA_PATH}")
+            return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(OED_VERSION))
+        if isinstance(oed_schema_info, str) and oed_schema_info.lower().startswith('v'):
+            try:
+                return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(oed_schema_info[1:]))
+            except FileNotFoundError:
+                raise FileNotFoundError(f"Given oed_schema_info version {oed_schema_info} not found."
+                                        "Make sure your version is labelled in the form 'v1.2.3'")
         if isinstance(oed_schema_info, (str, Path)):
-            return cls.from_json(oed_schema_info, version)
+            return cls.from_json(oed_schema_info)
         elif isinstance(oed_schema_info, cls):
             return oed_schema_info
-        elif oed_schema_info is None:
-            logger.debug(f"loading default schema {cls.DEFAULT_ODS_SCHEMA_PATH}")
-            return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH, version)
         else:
             raise OdsException(f"{oed_schema_info} is not a supported format to create {cls} object")
 
     @classmethod
-    def from_json(cls, oed_json, version=OED_VERSION):
+    def from_json(cls, oed_json):
         """
         Create OedSchema from json file
         Args:
@@ -98,8 +102,6 @@ class OedSchema:
         """
         with open(oed_json) as f:
             schema = json.load(f)
-            if version in schema:
-                schema = schema[version]
             # reformat area code for efficient check
             country_area = set()
             for country, areas in schema['area'].items():
