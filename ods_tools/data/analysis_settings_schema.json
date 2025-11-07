@@ -491,6 +491,12 @@
             },
             "additionalProperties": false
         },
+        "join_summary_info": {
+            "type": "boolean",
+            "title": "Join Summary Info to output file data",
+            "description": "If true, joins the summary info file data to any output files generated",
+            "default": false
+        },
         "gul_output": {
             "type": "boolean",
             "title": "Produce GUL output",
