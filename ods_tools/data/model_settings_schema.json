@@ -835,6 +835,15 @@
                                  "minLength":1
                               }
                            },
+                           "valid_pla_loss_factors_ids": {
+                              "type": "array",
+                              "title": "Supported PLA loss factors files",
+                              "description": "An optional list of viable PLA lossfactors file ids to use with this event set",
+                              "items":{
+                                 "type":"string",
+                                 "minLength":1
+                              }
+                           },
                            "valid_perspectives":{
                               "type":"array",
                               "title":"Supported loss perspectives ",

@@ -1,6 +1,18 @@
 ODS_Tools Changelog
 ===================
 
+`4.0.4`_
+ ---------
+* [#197](https://github.com/OasisLMF/ODS_Tools/pull/198) - RE: Config option for "engine" not propagating to Oasis Data Manager for pd read/write causing critical performance issues
+* [#200](https://github.com/OasisLMF/ODS_Tools/pull/200) - Added valid_pla_loss_factors_ids to event set options #199
+* [#201](https://github.com/OasisLMF/ODS_Tools/pull/201) - Fix CI build script for ODM branch select
+* [#202](https://github.com/OasisLMF/ODS_Tools/pull/203) - OEDSchema choice
+* [#8](https://github.com/OasisLMF/ODS_Tools/pull/204) - Parquet OED ReinsScope incorrectly fail validation 
+* [#205](https://github.com/OasisLMF/ODS_Tools/pull/205) - Fix CI testing by pinning pip
+* [#206](https://github.com/OasisLMF/ODS_Tools/pull/206) - make nb_peril_groups_dict more friendly with numba caching function
+* [#207](https://github.com/OasisLMF/ODS_Tools/pull/207) - remove unused param
+.. _`4.0.4`:  https://github.com/OasisLMF/ODS_Tools/compare/4.0.3...4.0.4
+
 `4.0.3`_
  ---------
 * [#191](https://github.com/OasisLMF/ODS_Tools/pull/192) - OED validation does not correctly handle spaces in numeric columns
