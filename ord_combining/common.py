@@ -2,8 +2,6 @@ from dataclasses import dataclass, asdict, field
 from typing import List
 import pandas as pd
 
-# %% define data classes
-
 @dataclass
 class OutputSet():
     '''OutputSetTable field data class'''
@@ -24,3 +22,6 @@ class Analysis():
 
 def dataclass_list_to_dataframe(dataclass_list):
     return pd.DataFrame([asdict(c) for c in dataclass_list])
+
+def list_col_to_string(list_col):
+    return [','.join(map(str, l)) for l in list_col]
