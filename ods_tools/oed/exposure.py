@@ -48,8 +48,7 @@ class OedExposure:
                  account_numbers=None,
                  portfolio_numbers=None,
                  base_df_engine=None,
-                 exposure_df_engine=None,
-                 oed_schema_version=None):
+                 exposure_df_engine=None):
         """
         Create an OED object,
         each input can be the object itself or  information that will be used to create the object
