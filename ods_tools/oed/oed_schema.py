@@ -7,6 +7,8 @@ import numpy as np
 
 from .common import OdsException, BLANK_VALUES, cached_property, dtype_to_python
 
+OED_VERSION = '4.0.0'
+
 logger = logging.getLogger(__name__)
 
 ENV_ODS_SCHEMA_PATH = os.getenv('ODS_SCHEMA_PATH')
@@ -32,6 +34,22 @@ def jit_peril_filtering(peril_ids, peril_filters, perils_dict):
     return result
 
 
+peril_groups_dict_key_type = nb.types.UnicodeCharSeq(3)
+peril_groups_dict_value_type = nb.types.UnicodeCharSeq(3)[:]
+
+
+@nb.jit(cache=True, nopython=True)
+def make_peril_groups_dict(peril_group_keys, peril_group_index, peril_lists):
+    nb_peril_groups_dict = nb.typed.Dict.empty(
+        key_type=peril_groups_dict_key_type,
+        value_type=peril_groups_dict_value_type,
+    )
+    for i in range(peril_group_keys.shape[0]):
+        nb_peril_groups_dict[peril_group_keys[i]] = peril_lists[peril_group_index[i]: peril_group_index[i + 1]]
+
+    return nb_peril_groups_dict
+
+
 class OedSchema:
     """
     Object managing information about a certain OED schema
@@ -40,7 +58,7 @@ class OedSchema:
         schema (dict): information about the OED schema
         json_path (Path or str): path to the json file from where the schema was loaded
     """
-    DEFAULT_ODS_SCHEMA_FILE = 'OpenExposureData_Spec.json'
+    DEFAULT_ODS_SCHEMA_FILE = 'OpenExposureData_{}Spec.json'
     DEFAULT_ODS_SCHEMA_PATH = (ENV_ODS_SCHEMA_PATH if ENV_ODS_SCHEMA_PATH
                                else os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data', DEFAULT_ODS_SCHEMA_FILE))
 
@@ -72,13 +90,19 @@ class OedSchema:
         Returns:
             OedSchema
         """
+        if oed_schema_info is None:
+            logger.debug(f"loading default schema {cls.DEFAULT_ODS_SCHEMA_PATH}")
+            return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(OED_VERSION))
+        if isinstance(oed_schema_info, str) and oed_schema_info.lower().startswith('v'):
+            try:
+                return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(oed_schema_info[1:]))
+            except FileNotFoundError:
+                raise FileNotFoundError(f"Given oed_schema_info version {oed_schema_info} not found."
+                                        "Make sure your version is labelled in the form 'v1.2.3'")
         if isinstance(oed_schema_info, (str, Path)):
             return cls.from_json(oed_schema_info)
         elif isinstance(oed_schema_info, cls):
             return oed_schema_info
-        elif oed_schema_info is None:
-            logger.debug(f"loading default schema {cls.DEFAULT_ODS_SCHEMA_PATH}")
-            return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH)
         else:
             raise OdsException(f"{oed_schema_info} is not a supported format to create {cls} object")
 
@@ -118,17 +142,21 @@ class OedSchema:
     @cached_property
     def nb_peril_groups_dict(self):
         """ dict peril group to all included peril group """
-        nb_peril_groups_dict = nb.typed.Dict.empty(
-            key_type=nb.types.UnicodeCharSeq(3),
-            value_type=nb.types.UnicodeCharSeq(3)[:],
-        )
+        peril_group_keys = []
+        peril_group_index = []
+        peril_lists = []
+        index = 0
         for peril_group_key, perils in self.schema['perils']['covered'].items():
+            peril_group_keys.append(peril_group_key)
+            peril_group_index.append(index)
             peril_groups = []
             for peril_group_include, perils_include in self.schema['perils']['covered'].items():
                 if not set(perils_include).difference(set(perils)):
                     peril_groups.append(peril_group_include)
-            nb_peril_groups_dict[peril_group_key] = np.array(peril_groups, dtype='U3')
-        return nb_peril_groups_dict
+            peril_lists.extend(peril_groups)
+            index += len(peril_groups)
+        peril_group_index.append(index)
+        return make_peril_groups_dict(np.array(peril_group_keys, dtype='U3'), np.array(peril_group_index), np.array(peril_lists, dtype='U3'))
 
     def peril_filtering(self, peril_ids, peril_filters, include_sub_group=True):
         """
