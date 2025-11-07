@@ -38,6 +38,7 @@ from pathlib import Path
 import json
 from dataclasses import asdict
 import pandas as pd
+import numpy as np
 
 # %%
 # make sure relative imports work
@@ -198,8 +199,74 @@ total_group_periods = 2000
 # %%
 group_period = generate_group_periods(group_event_set_analysis, analysis, total_periods, total_group_periods)
 
+# %%
+# save csv
+group_period.to_csv(output_dir / 'group_period.csv', index=False)
+
 
 # %% [markdown]
 # Questions:
 # - Currently loading Periods from single PLT file in ORD. Should this actually read all PLT files?
 # - How to load total periods from analysis settings (is it possible to have different total periods for individual grouped analyses)?
+
+# %% [markdown]
+# ## 3. Loss Sampling
+# The final step involves sampling losses for each event in the GroupPeriod.
+# There are two types of loss sampling:
+# - Mean only (only for MELT files)
+# - Full uncertainty sampling
+#
+# The additional config options are demonstrated below:
+
+# %%
+loss_sampling_config = {
+        "group_mean" : False,
+        "group_mean_type" : 1,  # SampleType filter
+        "group_secondary_uncertainty" : False,
+        "group_parametric_distribution" : 'gamma', # either gamma or beta
+        "group_format_priority": {"M", "Q", "S"}
+        }
+
+# %% [markdown]
+# The first stage in loss sampling is generating the GroupPeriodQuantile table.
+
+# %%
+from ord_combining.losssampling import construct_gpqt
+
+gpqt = construct_gpqt(group_period, group_event_set_analysis, outputsets_df, analysis,
+                      loss_sampling_config.get('group_mean', False))
+
+
+gpqt_dtype = {
+        'GroupPeriod': np.int32,
+        'Period': np.int32,
+        'group_event_set_id': np.int32,
+        'EventId': np.int32,
+        'Quantile': np.float32,
+        'output_set_id': np.int32,
+        }
+
+gpqt.astype(gpqt_dtype)
+
+# %%
+# save gpqt
+gpqt.to_csv(output_dir / "group_period_quantile.csv", index=False)
+
+# %% [markdown]
+# Finally the loss sampling can be done.
+
+# %%
+from ord_combining.losssampling import do_loss_sampling_full_uncertainty, do_loss_sampling_mean_only
+
+# %%
+loss_sampled_full = do_loss_sampling_full_uncertainty(gpqt, outputsets_df,
+                                                      analysis, priority=['m', 'q', 's'])
+loss_sampled_full.to_csv(output_dir / "loss_sampled_full.csv", index=False)
+
+loss_sampled_full.head()
+
+# %%
+loss_sampled_mean = do_loss_sampling_mean_only(gpqt, outputsets_df, analysis)
+loss_sampled_mean.to_csv(output_dir / "loss_sampled_mean.csv", index=False)
+
+loss_sampled_mean.head()

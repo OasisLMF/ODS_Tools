@@ -53,7 +53,6 @@ def load_analysis_periods(selected_analyses):
 
 def generate_group_periods(group_event_set_analysis, analysis, max_periods, max_group_periods):
     group_period_fragments = []
-    print(max_group_periods)
     for event_set_id in group_event_set_analysis['group_event_set_id'].unique():
         filtered_group_event_set = group_event_set_analysis[group_event_set_analysis['group_event_set_id'] == event_set_id]
 
@@ -61,9 +60,6 @@ def generate_group_periods(group_event_set_analysis, analysis, max_periods, max_
         filtered_analysis = [analysis[a] for a in filtered_analysis_ids]
 
         periods = load_analysis_periods(filtered_analysis)
-        print(f"min period: {min(periods)}")
-        print(f"max period: {max(periods)}")
-        print(f"len period: {len(periods)}")
         curr_frag = gen_group_periods_event_set_analysis(periods,
                                                          max_period=max_periods,
                                                          max_group_periods=max_group_periods)
