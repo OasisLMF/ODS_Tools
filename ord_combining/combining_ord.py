@@ -236,37 +236,27 @@ from ord_combining.losssampling import construct_gpqt
 gpqt = construct_gpqt(group_period, group_event_set_analysis, outputsets_df, analysis,
                       loss_sampling_config.get('group_mean', False))
 
-
-gpqt_dtype = {
-        'GroupPeriod': np.int32,
-        'Period': np.int32,
-        'group_event_set_id': np.int32,
-        'EventId': np.int32,
-        'Quantile': np.float32,
-        'output_set_id': np.int32,
-        }
-
-gpqt.astype(gpqt_dtype)
-
 # %%
 # save gpqt
 gpqt.to_csv(output_dir / "group_period_quantile.csv", index=False)
 
 # %% [markdown]
-# Finally the loss sampling can be done.
+# Finally the loss sampling can be done to produce the group period loss table (GPLT).
 
 # %%
 from ord_combining.losssampling import do_loss_sampling_full_uncertainty, do_loss_sampling_mean_only
 
 # %%
-loss_sampled_full = do_loss_sampling_full_uncertainty(gpqt, outputsets_df,
+gplt_full = do_loss_sampling_full_uncertainty(gpqt, outputsets_df,
                                                       analysis, priority=['m', 'q', 's'])
-loss_sampled_full.to_csv(output_dir / "loss_sampled_full.csv", index=False)
 
-loss_sampled_full.head()
+gplt_full.to_csv(output_dir / "gplt_full.csv", index=False)
+
+gplt_full.head()
+
 
 # %%
-loss_sampled_mean = do_loss_sampling_mean_only(gpqt, outputsets_df, analysis)
-loss_sampled_mean.to_csv(output_dir / "loss_sampled_mean.csv", index=False)
+gplt_mean = do_loss_sampling_mean_only(gpqt, outputsets_df, analysis)
+gplt_mean.to_csv(output_dir / "gplt_mean.csv", index=False)
 
-loss_sampled_mean.head()
+gplt_mean.head()
