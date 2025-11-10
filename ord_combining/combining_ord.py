@@ -249,14 +249,26 @@ from ord_combining.losssampling import do_loss_sampling_full_uncertainty, do_los
 # %%
 gplt_full = do_loss_sampling_full_uncertainty(gpqt, outputsets_df,
                                                       analysis, priority=['m', 'q', 's'])
-
-gplt_full.to_csv(output_dir / "gplt_full.csv", index=False)
-
 gplt_full.head()
-
 
 # %%
 gplt_mean = do_loss_sampling_mean_only(gpqt, outputsets_df, analysis)
-gplt_mean.to_csv(output_dir / "gplt_mean.csv", index=False)
-
 gplt_mean.head()
+
+# %% [markdown]
+
+# ## 4. Output Generation
+# The output options are:
+# - Group Period Loss Table (GPLT)
+#   - full (all groups)
+#   - file based (each group in new file) <-- probably better
+# - Group Average Loss Table (GALT)
+# - Group Exceedance Probability Table (GEPT)
+
+# %% [markdown]
+# #### GPLT output
+# Note that instead of `SummaryId` we display `output_set_id` as the OutputSet model is the true interface for an element in this row.
+
+# %%
+gplt_full.to_csv(output_dir / "gplt_full.csv", index=False)
+gplt_mean.to_csv(output_dir / "gplt_mean.csv", index=False)
