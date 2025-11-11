@@ -3,41 +3,33 @@ from ord_combining.common import list_col_to_string
 
 def create_group_set_df(outputsets_df, group_id):
     group_set_cols = ['perspective_code', 'exposure_summary_level_fields_string']
-    group_set_df = outputsets_df.drop_duplicates(subset=group_set_cols)
 
-    group_set_df = group_set_df.reset_index(drop=True)
-    group_set_df['group_id'] = group_id
-    group_set_df['id'] = group_set_df.index
+    group_df = outputsets_df.copy().rename(columns={'id': 'output_set_id'})
+    group_df['group_id'] = group_id
+    group_df['group_set_id'] = outputsets_df.groupby(group_set_cols).ngroup()
 
-    return group_set_df
+    output_cols = ['group_set_id', 'group_id'] + group_set_cols
+    group_set_df = group_df[output_cols].drop_duplicates(subset='group_set_id').sort_values('group__set_id')
+
+    group_output_set_df = group_df[['group_set_id', 'output_set_id']]
+    return group_set_df, group_output_set_df
 
 
-def merge_group_set_output_set(group_set_df, outputsets_df):
-    group_set_cols = ['perspective_code', 'exposure_summary_level_fields_string']
-    # create merged group output set mapping
-    merged_df = pd.merge(outputsets_df, group_set_df,
-                how='inner', on=group_set_cols, suffixes=("_output_set", "_group_set"))
-    merged_df = merged_df.rename(columns={"id_output_set": "output_set_id",
-                                        "id_group_set": "group_set_id"})
-    merged_df['id'] = merged_df.index
-
-    return merged_df
-
-def generate_group_analysis(outputsets_df, group_id=1):
+def generate_group_set(outputsets_df, group_id=1):
     # convert to categorical col
     outputsets_df['exposure_summary_level_fields_string'] = list_col_to_string(outputsets_df['exposure_summary_level_fields'])
 
-    group_set_df = create_group_set_df(outputsets_df, group_id)
+    # intermediary table
+    group_set_cols = ['perspective_code', 'exposure_summary_level_fields_string']
+    group_df = outputsets_df.copy().rename(columns={'id': 'output_set_id'})
+    group_df['group_id'] = group_id
+    group_df['group_set_id'] = outputsets_df.groupby(group_set_cols).ngroup()
 
-    merged_df = merge_group_set_output_set(group_set_df, outputsets_df)
+    group_set_df = group_df[['group_set_id', 'group_id'] + group_set_cols] \
+                           .drop_duplicates(subset='group_set_id').sort_values('group_set_id')
+    group_output_set_df = group_df[['group_set_id', 'output_set_id']]
 
-    # extract group analysis
-    group_analysis_df = merged_df[['group_id', 'analysis_id_output_set']]
-    group_analysis_df = group_analysis_df.reset_index(drop=True)
-    group_analysis_df['id'] = group_analysis_df.index
-    group_analysis_df = group_analysis_df.rename(columns={"analysis_id_output_set": "analysis_id"})
-
-    return group_analysis_df
+    return group_set_df, group_output_set_df
 
 def parse_field_from_analysis_settings(field, settings):
     field_location_map = {
@@ -64,7 +56,7 @@ def extract_group_event_set_fields(analysis, group_event_set_fields):
     return output
 
 
-def generate_group_event_set(analysis, group_analysis_df, group_event_set_fields):
+def generate_group_event_set(analysis, group_event_set_fields):
 
     # generate event occurrence set
     event_occurrence_set = []

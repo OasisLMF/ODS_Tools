@@ -129,17 +129,33 @@ outputsets_df.columns
 # The EventOccurenceSet table contains the meta information for each event set based on the `group_event_set_fields`.
 
 # %%
-from ord_combining.groupeventset import generate_group_analysis, generate_group_event_set
+from ord_combining.groupeventset import generate_group_set, generate_group_event_set
 group_event_set_fields = ['event_set_id', 'event_occurrence_id', 'model_supplier_id']
 
-group_analysis = generate_group_analysis(outputsets_df) # intermediary table
-event_occurrence_set_df, group_event_set_analysis = generate_group_event_set(analysis, group_analysis, group_event_set_fields)
+group_set, group_output_set = generate_group_set(outputsets_df) # intermediary table
+event_occurrence_set_df, group_event_set_analysis = generate_group_event_set(analysis, group_event_set_fields)
+
+group_output_set
+group_set
 
 # %%
 event_occurrence_set_df.head()
 
 # %%
 group_event_set_analysis.head()
+
+# %% [markdown]
+# Once the groups have been assigned the SummaryId is aligned within each group_set.
+# To do so we find each unique grouping of summary level fields in each group set and aggregate the tiv by summing.
+
+# %%
+from ord_combining.summaryinfo import load_summary_info, assign_summary_ids
+os_summary_info = load_summary_info(analysis, outputsets_df)
+group_set_summary_info = assign_summary_ids(group_output_set, os_summary_info)
+
+for gs, g_summary_info_df in group_set_summary_info.items():
+    print('Current group_set_id: ', gs)
+    print(g_summary_info_df)
 
 # %%
 # save outputs
@@ -267,8 +283,14 @@ gplt_mean.head()
 
 # %% [markdown]
 # #### GPLT output
-# Note that instead of `SummaryId` we display `output_set_id` as the OutputSet model is the true interface for an element in this row.
+# Note that `SummaryId` is used as a
+
+# `output_set_id` as the OutputSet model is the true interface for an element in this row.
 
 # %%
 gplt_full.to_csv(output_dir / "gplt_full.csv", index=False)
 gplt_mean.to_csv(output_dir / "gplt_mean.csv", index=False)
+
+gplt_mean['output_set_id']
+outputsets_df.keys()
+
