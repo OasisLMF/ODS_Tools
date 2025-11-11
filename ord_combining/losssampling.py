@@ -112,15 +112,36 @@ def load_period_eventid_from_plt(plt_paths, priority=['m', 'q', 's']):
     return pd.concat(period_eventid_frags).drop_duplicates()
 
 
-def loss_sample_mean_only(gpqt, elt_paths, sample_type=2):
+def loss_sample_mean_only(gpqt, elt_paths):
     assert 'mplt' in elt_paths
 
-    mplt_df = pd.read_csv(elt_paths['mplt']).query(f'SampleType == {sample_type}')
-    mplt_df = mplt_df[["EventId", "MeanLoss"]]
+    mplt_df = pd.read_csv(elt_paths['mplt'])
+    mplt_df = mplt_df[["SummaryId", "SampleType", "EventId", "MeanLoss", "SDLoss"]]
 
-    mplt_df["LossType"] = 1 if sample_type==1 else 3
+    mplt_dtypes = {
+            "SummaryId": "Int64",
+            "SampleType": "Int64",
+            "EventId": "Int64",
+            "MeanLoss": "float",
+            "SDLoss": "float"
+            }
 
-    return gpqt.merge(mplt_df, on='EventId', how='left').rename(columns={"MeanLoss": "Loss"})
+    mplt_df = mplt_df.astype(mplt_dtypes)
+
+    grouped_df = mplt_df.groupby(["SummaryId", "SampleType", "EventId"], as_index=False)
+    mplt_df = grouped_df.agg({
+            'SDLoss': lambda x: np.sqrt(np.sum(x**2)),
+            'MeanLoss': 'sum'
+        })
+
+    mplt_df["LossType"] = mplt_df["SampleType"].where(mplt_df["SampleType"] == 1, 3)
+    mplt_df = mplt_df[["SummaryId", "EventId", "MeanLoss", "SDLoss", "LossType"]]
+
+    gplt = gpqt.merge(mplt_df, on='EventId', how='left').rename(columns={"MeanLoss": "Loss"})
+
+    output_cols =["group_event_set_id", "GroupPeriod", "output_set_id",
+                  "SummaryId", "EventId", "LossType", "Loss", "SDLoss"]
+    return gplt[output_cols]
 
 
 def do_loss_sampling_mean_only(gpqt, output_set_df, analysis_dict):
@@ -136,10 +157,7 @@ def do_loss_sampling_mean_only(gpqt, output_set_df, analysis_dict):
         filtered_gpqt = gpqt.query(f'output_set_id == {output_set_id}')
         gplt_fragments.append(loss_sample_mean_only(filtered_gpqt, elt_paths))
 
-    gplt = pd.concat(gplt_fragments)
-    gplt.drop(columns=['Quantile'])
-
-    return gplt.astype(gplt_dtype)
+    return pd.concat(gplt_fragments)
 
 ## Loss sampling functions
 

@@ -269,7 +269,12 @@ gplt_full.head()
 
 # %%
 gplt_mean = do_loss_sampling_mean_only(gpqt, outputsets_df, analysis)
+
+# %%
 gplt_mean.head()
+
+# %%
+gplt_mean.describe()
 
 # %% [markdown]
 
