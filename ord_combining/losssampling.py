@@ -211,8 +211,8 @@ def quantile_loss_sampling(gpqt, qelt):
         sample_loss_frags.append(curr_loss_frag)
 
     sample_loss_df = pd.concat(sample_loss_frags)
-    sample_loss_df = sample_loss_df[original_cols + ["SummaryId", "Loss"]]
     sample_loss_df["LossType"] = 2
+    sample_loss_df = sample_loss_df[original_cols + ["SummaryId", "LossType", "Loss"]]
 
     return sample_loss_df, remaining_gpqt[original_cols]
 
@@ -251,8 +251,8 @@ def sample_loss_sampling(gpqt, selt):
         sample_loss_frags.append(curr_loss_frag)
 
     sample_loss_df = pd.concat(sample_loss_frags)
-    sample_loss_df = sample_loss_df[original_cols + ["SummaryId", "Loss"]]
     sample_loss_df["LossType"] = 2
+    sample_loss_df = sample_loss_df[original_cols + ["SummaryId", "LossType", "Loss"]]
 
     return sample_loss_df, remaining_gpqt
 
