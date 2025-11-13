@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from scipy.special import betaincinv
+from tqdm import tqdm
 
 from ord_combining.ordhandling import merge_melt, merge_qelt, merge_selt, read_melt, read_qelt, read_selt
 
@@ -193,27 +194,36 @@ def mean_loss_sampling(gpqt, melt, sampling_func=beta_sampling_group_loss):
     remaining_gpqt = gpqt.loc[merged['not_merged']]
     return loss_sampled_df, remaining_gpqt
 
+
 def quantile_loss_sampling(gpqt, qelt):
     original_cols = list(gpqt.columns)
 
     gpqt["merged"] = gpqt["EventId"].isin(qelt["EventId"].unique())
     remaining_gpqt = gpqt[~gpqt["merged"]][original_cols]
 
-    sample_loss_df = gpqt[gpqt["merged"]].apply(lambda x: process_row_quantile_lt(x, qelt), axis=1)
-    sample_loss_df = sample_loss_df[original_cols + ["Loss"]]
+    summary_ids = qelt["SummaryId"].unique()
+    sample_loss_frags = []
+    curr_gpqt = gpqt[gpqt["merged"]]
+    for summary_id in tqdm(summary_ids, desc="quantile loss sampling"):
+        qelt_summary_id = qelt.query(f"SummaryId == {summary_id}")
+        curr_loss_frag = curr_gpqt.apply(lambda x: quantile_single_row(x, qelt_summary_id), axis=1)
+        curr_loss_frag["SummaryId"] = summary_id
+        sample_loss_frags.append(curr_loss_frag)
 
+    sample_loss_df = pd.concat(sample_loss_frags)
+    sample_loss_df = sample_loss_df[original_cols + ["SummaryId", "Loss"]]
     sample_loss_df["LossType"] = 2
+
     return sample_loss_df, remaining_gpqt[original_cols]
 
 
-def process_row_quantile_lt(row, qelt): # todo speedup
+def quantile_single_row(row, qelt): # todo speedup
     filtered_qelt = qelt.query(f"EventId == {row['EventId']}")
     previous_quantile = filtered_qelt[filtered_qelt["LTQuantile"] <= row["Quantile"]].iloc[-1]
     next_quantile = filtered_qelt[filtered_qelt["LTQuantile"] > row["Quantile"]].iloc[0]
 
-
     if row["Quantile"] == previous_quantile["LTQuantile"]:
-        row["SampleLoss"] = previous_quantile["QuantileLoss"]
+        row["Loss"] = previous_quantile["QuantileLoss"]
         return row
 
     quantile_range = next_quantile["LTQuantile"] - previous_quantile["LTQuantile"]
@@ -221,6 +231,7 @@ def process_row_quantile_lt(row, qelt): # todo speedup
     row["Loss"] =  previous_quantile["QuantileLoss"] + (row["Quantile"] - previous_quantile["LTQuantile"])*quantile_loss_range / quantile_range
 
     return row
+
 
 def sample_loss_sampling(gpqt, selt):
     original_cols = list(gpqt.columns)
@@ -233,11 +244,14 @@ def sample_loss_sampling(gpqt, selt):
 
     curr_gpqt = gpqt[gpqt["merged"]]
     sample_loss_frags = []
-    for summary_id in tqdm(summary_ids):
+    for summary_id in tqdm(summary_ids, desc="sample loss sampling"):
         selt_summary_id = selt.query(f"SummaryId == {summary_id}")
-        sample_loss_frags.append(curr_gpqt.apply(lambda x: sample_single_row(x, selt_summary_id), axis=1))
+        curr_loss_frag = curr_gpqt.apply(lambda x: sample_single_row(x, selt_summary_id), axis=1)
+        curr_loss_frag["SummaryId"] = summary_id
+        sample_loss_frags.append(curr_loss_frag)
+
     sample_loss_df = pd.concat(sample_loss_frags)
-    sample_loss_df = sample_loss_df[original_cols + ["Loss"]]
+    sample_loss_df = sample_loss_df[original_cols + ["SummaryId", "Loss"]]
     sample_loss_df["LossType"] = 2
 
     return sample_loss_df, remaining_gpqt
