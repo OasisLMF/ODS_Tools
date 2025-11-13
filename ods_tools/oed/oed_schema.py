@@ -93,12 +93,14 @@ class OedSchema:
         if oed_schema_info is None:
             logger.debug(f"loading default schema {cls.DEFAULT_ODS_SCHEMA_PATH}")
             return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(OED_VERSION))
-        if isinstance(oed_schema_info, str) and oed_schema_info.lower().startswith('v'):
+        if isinstance(oed_schema_info, (str, Path)):
             try:
-                return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(oed_schema_info[1:]))
+                return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(oed_schema_info.lstrip('v')))
             except FileNotFoundError:
-                raise FileNotFoundError(f"Given oed_schema_info version {oed_schema_info} not found."
-                                        "Make sure your version is labelled in the form 'v1.2.3'")
+                try:
+                    return cls.from_json(oed_schema_info)
+                except Exception:
+                    raise ValueError()
         if isinstance(oed_schema_info, (str, Path)):
             return cls.from_json(oed_schema_info)
         elif isinstance(oed_schema_info, cls):
