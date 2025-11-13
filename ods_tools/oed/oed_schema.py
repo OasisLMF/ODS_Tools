@@ -93,20 +93,19 @@ class OedSchema:
         if oed_schema_info is None:
             logger.debug(f"loading default schema {cls.DEFAULT_ODS_SCHEMA_PATH}")
             return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(OED_VERSION))
-        if isinstance(oed_schema_info, (str, Path)):
+        if isinstance(oed_schema_info, str):
             try:
                 return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(oed_schema_info.lstrip('v')))
             except FileNotFoundError:
                 try:
                     return cls.from_json(oed_schema_info)
                 except Exception:
-                    raise ValueError()
-        if isinstance(oed_schema_info, (str, Path)):
+                    raise ValueError(f"oed_schema_info {oed_schema_info} has no corresponding file or version")
+        if isinstance(oed_schema_info, Path):
             return cls.from_json(oed_schema_info)
-        elif isinstance(oed_schema_info, cls):
+        if isinstance(oed_schema_info, cls):
             return oed_schema_info
-        else:
-            raise OdsException(f"{oed_schema_info} is not a supported format to create {cls} object")
+        raise OdsException(f"{oed_schema_info} is not a supported format to create {cls} object")
 
     @classmethod
     def from_json(cls, oed_json):
