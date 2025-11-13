@@ -229,18 +229,22 @@ def sample_loss_sampling(gpqt, selt):
     remaining_gpqt = gpqt[~gpqt["merged"]][original_cols]
 
     selt = selt.sort_values(by=['EventId', 'SampleLoss'], ascending=True)
-    sample_loss_df = gpqt[gpqt["merged"]].apply(lambda x: sample_single_row(x, selt), axis=1)
+    summary_ids = selt["SummaryId"].unique()
+
+    curr_gpqt = gpqt[gpqt["merged"]]
+    sample_loss_frags = []
+    for summary_id in tqdm(summary_ids):
+        selt_summary_id = selt.query(f"SummaryId == {summary_id}")
+        sample_loss_frags.append(curr_gpqt.apply(lambda x: sample_single_row(x, selt_summary_id), axis=1))
+    sample_loss_df = pd.concat(sample_loss_frags)
     sample_loss_df = sample_loss_df[original_cols + ["Loss"]]
     sample_loss_df["LossType"] = 2
 
     return sample_loss_df, remaining_gpqt
 
 def sample_single_row(row, selt):
-    selt_event = selt.query(f"EventId == {row['EventId']}")
-
-    interval_index = pd.interval_range(0, 1, periods=len(selt_event))
-
-    row["Loss"] = selt_event.iloc[interval_index.get_loc(row["Quantile"])]["SampleLoss"]
+    selt_loss = selt.query(f"EventId == {row['EventId']}")["SampleLoss"].sort_values()
+    row["Loss"] = selt_loss.iloc[int(row["Quantile"] * len(selt_loss))]
     return row
 
 
