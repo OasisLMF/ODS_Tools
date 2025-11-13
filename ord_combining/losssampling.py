@@ -47,7 +47,7 @@ def construct_gpqt(group_period_df, group_event_set_analysis_df, output_set_df, 
             selected_analysis = analysis[curr_os['analysis_id']]
 
             plt_paths = load_loss_table_paths(selected_analysis,
-                                              summary_id=curr_os['exposure_summary_level_id'],
+                                              summary_level_id=curr_os['exposure_summary_level_id'],
                                               perspective=curr_os['perspective_code'],
                                               output_type='plt')
 
@@ -72,7 +72,7 @@ def construct_gpqt(group_period_df, group_event_set_analysis_df, output_set_df, 
     gpqt = pd.concat(gpqt_fragments)
     return gpqt.astype(gpqt_dtype)
 
-def load_loss_table_paths(analysis, summary_id, perspective, output_type):
+def load_loss_table_paths(analysis, summary_level_id, perspective, output_type):
     '''Load loss table paths to of type `output_type` from ord output directory of the selected
     analysis, summary_id and perspective.
 
@@ -85,7 +85,7 @@ def load_loss_table_paths(analysis, summary_id, perspective, output_type):
     '''
 
     analysis_dir = Path(analysis.path)
-    glob_str = f'*{perspective}*S{summary_id}*{output_type}.csv'
+    glob_str = f'*{perspective}*S{summary_level_id}*{output_type}.csv'
     output = list(analysis_dir.glob(glob_str))
     output = {path.stem.split('_')[-1]: path for path in output}
 
@@ -151,7 +151,7 @@ def do_loss_sampling_mean_only(gpqt, output_set_df, analysis_dict):
         os = output_set_df.loc[output_set_id]
         analysis = analysis_dict[os['analysis_id']]
 
-        elt_paths = load_loss_table_paths(analysis, summary_id=os['exposure_summary_level_id'],
+        elt_paths = load_loss_table_paths(analysis, summary_level_id=os['exposure_summary_level_id'],
                                           perspective=os['perspective_code'], output_type='mplt')
 
         filtered_gpqt = gpqt.query(f'output_set_id == {output_set_id}')
@@ -185,7 +185,8 @@ def mean_loss_sampling(gpqt, melt, sampling_func=beta_sampling_group_loss):
     original_cols = list(gpqt.columns)
     merged = merge_melt(gpqt, melt)
 
-    loss_sampled_df = sampling_func(merged.query('not_merged == False'))
+    # sampling only works on SampleType 2
+    loss_sampled_df = sampling_func(merged.query('SampleType ==2 & not_merged == False'))
     loss_sampled_df = loss_sampled_df[original_cols + ['Loss']]
     loss_sampled_df["LossType"] = 2
 
@@ -193,13 +194,12 @@ def mean_loss_sampling(gpqt, melt, sampling_func=beta_sampling_group_loss):
     return loss_sampled_df, remaining_gpqt
 
 def quantile_loss_sampling(gpqt, qelt):
-    filtered_gpqt = gpqt
-    original_cols = list(filtered_gpqt.columns)
+    original_cols = list(gpqt.columns)
 
-    filtered_gpqt["merged"] = filtered_gpqt["EventId"].isin(qelt["EventId"].unique())
-    remaining_gpqt = filtered_gpqt[~filtered_gpqt["merged"]][original_cols]
+    gpqt["merged"] = gpqt["EventId"].isin(qelt["EventId"].unique())
+    remaining_gpqt = gpqt[~gpqt["merged"]][original_cols]
 
-    sample_loss_df = filtered_gpqt[filtered_gpqt["merged"]].apply(lambda x: process_row_quantile_lt(x, qelt), axis=1)
+    sample_loss_df = gpqt[gpqt["merged"]].apply(lambda x: process_row_quantile_lt(x, qelt), axis=1)
     sample_loss_df = sample_loss_df[original_cols + ["Loss"]]
 
     sample_loss_df["LossType"] = 2
@@ -224,17 +224,13 @@ def process_row_quantile_lt(row, qelt): # todo speedup
 
 def sample_loss_sampling(gpqt, selt):
     original_cols = list(gpqt.columns)
-    _gpqt = gpqt
+    gpqt["merged"] = gpqt["EventId"].isin(selt["EventId"].unique())
 
-    _gpqt["merged"] = _gpqt["EventId"].isin(selt["EventId"].unique())
-
-    remaining_gpqt = _gpqt[~_gpqt["merged"]][original_cols]
+    remaining_gpqt = gpqt[~gpqt["merged"]][original_cols]
 
     selt = selt.sort_values(by=['EventId', 'SampleLoss'], ascending=True)
-
-    sample_loss_df = _gpqt[_gpqt["merged"]].apply(lambda x: sample_single_row(x, selt), axis=1)
+    sample_loss_df = gpqt[gpqt["merged"]].apply(lambda x: sample_single_row(x, selt), axis=1)
     sample_loss_df = sample_loss_df[original_cols + ["Loss"]]
-
     sample_loss_df["LossType"] = 2
 
     return sample_loss_df, remaining_gpqt
@@ -262,7 +258,7 @@ def do_loss_sampling_full_uncertainty(gpqt, output_set_df, analysis_dict,
         os = output_set_df.loc[output_set_id]
         analysis = analysis_dict[os['analysis_id']]
 
-        elt_paths = load_loss_table_paths(analysis, summary_id=os['exposure_summary_level_id'],
+        elt_paths = load_loss_table_paths(analysis, summary_level_id=os['exposure_summary_level_id'],
                                           perspective=os['perspective_code'], output_type='elt')
 
         elt_dfs = {key: globals()[f'read_{key}'](value) for key, value in elt_paths.items()} # todo handle this better (lazy load)

@@ -22,7 +22,7 @@ def merge_selt(gpqt, selt):
     return merged
 
 def read_melt(path):
-    return pd.read_csv(path).query('SampleType == 2')
+    return pd.read_csv(path)
 
 def read_qelt(path):
     return pd.read_csv(path).rename(columns={"Loss": "QuantileLoss",
