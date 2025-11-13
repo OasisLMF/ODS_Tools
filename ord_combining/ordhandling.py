@@ -3,7 +3,7 @@ import pandas as pd
 # Handling + merging ELT files
 
 def merge_melt(gpqt, melt):
-    _melt = melt[['EventId', 'MeanLoss', 'SDLoss', 'MaxLoss']]
+    _melt = melt[['SummaryId', 'EventId', 'MeanLoss', 'SDLoss', 'MaxLoss']]
     merged = gpqt.merge(_melt, on='EventId', how='outer')
     merged['not_merged'] = merged[['MeanLoss', 'SDLoss', 'MaxLoss']].isna().any(axis='columns')
 

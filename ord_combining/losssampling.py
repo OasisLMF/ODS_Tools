@@ -171,7 +171,7 @@ def beta_sampling_group_loss(df):
 
     df_filter = df[['alpha', 'beta']].notna().all(axis='columns')
 
-    df.loc[df_filter, 'Loss'] = df.loc[df_filter, 'MaxLoss']*betaincinv(df[df_filter]['alpha'], df[df_filter]['beta'], df[df_filter]['Quantile'])
+    df.loc[df_filter, 'Loss'] = df.loc[df_filter, 'MaxLoss']*betaincinv(df.loc[df_filter, 'alpha'], df.loc[df_filter, 'beta'], df.loc[df_filter, 'Quantile'])
 
     df.loc[~df_filter, 'Loss'] = df.loc[~df_filter, 'MeanLoss'] # default to MeanLoss
 
@@ -184,12 +184,12 @@ def beta_sampling_group_loss(df):
 
 def mean_loss_sampling(gpqt, melt, sampling_func=beta_sampling_group_loss):
     original_cols = list(gpqt.columns)
-    merged = merge_melt(gpqt, melt)
-
     # sampling only works on SampleType 2
-    loss_sampled_df = sampling_func(merged.query('SampleType ==2 & not_merged == False'))
-    loss_sampled_df = loss_sampled_df[original_cols + ['Loss']]
+    merged = merge_melt(gpqt, melt.query('SampleType == 2'))
+
+    loss_sampled_df = sampling_func(merged.query('not_merged == False'))
     loss_sampled_df["LossType"] = 2
+    loss_sampled_df = loss_sampled_df[original_cols + ['SummaryId', 'LossType', 'Loss']]
 
     remaining_gpqt = gpqt.loc[merged['not_merged']]
     return loss_sampled_df, remaining_gpqt
