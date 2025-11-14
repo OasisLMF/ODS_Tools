@@ -135,7 +135,11 @@ group_event_set_fields = ['event_set_id', 'event_occurrence_id', 'model_supplier
 group_set, group_output_set = generate_group_set(outputsets_df) # intermediary table
 event_occurrence_set_df, group_event_set_analysis = generate_group_event_set(analysis, group_event_set_fields)
 
+
+# %%
 group_output_set
+
+# %%
 group_set
 
 # %%
@@ -264,7 +268,7 @@ from ord_combining.losssampling import do_loss_sampling_full_uncertainty, do_los
 
 # %%
 gplt_full = do_loss_sampling_full_uncertainty(gpqt, outputsets_df,
-                                                      analysis, priority=['m', 'q', 's'])
+                                                      analysis, priority=['q', 's'])
 gplt_full.head()
 
 # %%
@@ -299,3 +303,4 @@ gplt_mean.to_csv(output_dir / "gplt_mean.csv", index=False)
 gplt_mean['output_set_id']
 outputsets_df.keys()
 
+gplt_full
