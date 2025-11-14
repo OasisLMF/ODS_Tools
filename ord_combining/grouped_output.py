@@ -25,10 +25,6 @@ def generate_aal(gplt, max_period):
 
     return  pd.DataFrame(records)
 
-def generate_ep(gplt):
-    pass
-
-
 # %% path def
 gplt_path = Path('/home/vinulw/code/ODS_Tools/combined_ord-141125121128/gplt_full.csv')
 output_dir  = gplt_path.parent
@@ -39,6 +35,52 @@ max_group_period = 2000
 
 # %% aal
 aal_df = generate_aal(gplt, max_group_period)
-aal_df.to_csv(output_dir / "aal.csv")
+aal_df.to_csv(output_dir / "aal.csv", index=False)
 
-aal_df
+# %% ep
+def assign_exceedance_probability(df, max_period):
+    original_cols = list(df.columns)
+    df["rank"] = (df.groupby(by=["output_set_id", "SummaryId", "EPType"], as_index=False)["Loss"]
+                   .rank(method="first", ascending=False))
+    df["RP"] = max_period/df["rank"]
+    return df[original_cols + ["RP"]]
+
+
+def generate_ep(gplt, max_group_period, oep=True, aep=True):
+    ep_groups = (
+                gplt.rename(columns={"LossType": "EPType"})
+                    .groupby(by=["output_set_id", "group_event_set_id",
+                                     "EventId", "GroupPeriod", "SummaryId",
+                                     "EPType"], as_index=False)
+                )
+    grouped_df = ep_groups["Loss"].agg("sum")
+    grouped_df = grouped_df.groupby(by=["output_set_id", "SummaryId", "GroupPeriod", "EPType"], as_index=False)
+
+    ep_frags = []
+    if oep:
+        oep_df = (
+                    grouped_df.pipe(lambda gp: gp["Loss"].max())
+                    .pipe(assign_exceedance_probability, max_period=max_group_period)
+                    .pipe(lambda x: x.assign(EPCalc=1)) # todo check OEP TVAR EPCalc 2
+                  )
+
+        ep_frags.append(oep_df)
+
+    if aep:
+        aep_df = (
+                    grouped_df.pipe(lambda gp: gp["Loss"].sum())
+                    .pipe(assign_exceedance_probability, max_period=max_group_period)
+                    .pipe(lambda x: x.assign(EPCalc=3)) # todo check AEP TVAR EPCalc 4
+                )
+        ep_frags.append(aep_df)
+
+    return (
+                pd.concat(ep_frags)[["output_set_id", "SummaryId", "EPCalc", "EPType", "RP", "Loss"]]
+                .sort_values(by=["output_set_id", "SummaryId", "EPType", "EPCalc", "Loss"],
+                             ascending=[True, True, True, True, False])
+            )
+
+
+
+ep_df = generate_ep(gplt, max_group_period)
+ep_df.to_csv(output_dir / "ept.csv", index=False)
