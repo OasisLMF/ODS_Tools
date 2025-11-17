@@ -161,6 +161,11 @@ for gs, g_summary_info_df in group_set_summary_info.items():
     print(g_summary_info_df)
 
 # %%
+from ord_combining.summaryinfo import generate_summary_id_map
+
+outputset_summary_id_map = generate_summary_id_map(os_summary_info, group_set_summary_info, group_output_set)
+
+# %%
 # save outputs
 with open(output_dir / 'analysis.json', 'w') as f:
     _analysis_dict = {key: asdict(value) for key, value in analysis.items()}

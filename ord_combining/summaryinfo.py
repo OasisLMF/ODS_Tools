@@ -34,3 +34,20 @@ def assign_summary_ids(group_output_set, outputset_summary_info):
         group_summary_info[group_set_id] = curr_group_summary_info
 
     return group_summary_info
+
+def generate_summary_id_map(outputset_summary_info, group_summary_info, group_output_set):
+    """
+    Create a map for each outputset which maps the input summary_id to the group SummaryId.
+    """
+    ignored_cols = ['SummaryId', 'summary_id']
+
+    outputset_summary_id = {}
+    for output_set_id, group_set_id in group_output_set.items():
+        curr_group_summary_info = group_summary_info[group_set_id].drop(columns=['tiv'])
+        curr_os_summary_info = outputset_summary_info[output_set_id].drop(columns=['tiv'])
+
+        summary_oed_cols = [c for c in curr_group_summary_info.columns.to_list() if c not in ignored_cols]
+        output_set_map = pd.merge(curr_os_summary_info, curr_group_summary_info, how="left", on=summary_oed_cols)
+        outputset_summary_id[output_set_id] = output_set_map[['summary_id', 'SummaryId']].set_index('summary_id').to_dict()['SummaryId']
+
+    return outputset_summary_id
