@@ -275,9 +275,18 @@ def sample_single_row(row, selt):
     return row
 
 
-def do_loss_sampling_full_uncertainty(gpqt, output_set_df, analysis_dict,
+def do_loss_sampling_full_uncertainty(gpqt, output_set_df, group_output_set, analysis_dict,
                                       priority=['m', 'q', 's']):
-    '''Perform the full uncertainty loss sampling.'''
+    """
+    Calculate group period loss table using full loss sampling. Currently requires ELT files.
+
+    Args
+    ----
+    gpqt: group period quantile table
+    outputset_df: output set dataframe
+    group_output_set: dict mapping output_set_id to corresponding group
+    analysis_dict: dict with analysis info
+    """
     gplt_fragments = []
     loss_sampling_func_map = {
         'm': mean_loss_sampling,
@@ -306,6 +315,7 @@ def do_loss_sampling_full_uncertainty(gpqt, output_set_df, analysis_dict,
             assert p in loss_sampling_func_map, f"Loss sampling {p} not defined."
 
             _gplt_fragment, curr_gpqt = loss_sampling_func_map[p](curr_gpqt, elt_df)
+            _gplt_fragment["group_set_id"] = group_output_set[output_set_id]
             gplt_fragments.append(_gplt_fragment)
 
             if curr_gpqt.empty:
