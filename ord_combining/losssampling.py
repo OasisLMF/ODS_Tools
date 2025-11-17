@@ -145,7 +145,17 @@ def loss_sample_mean_only(gpqt, elt_paths):
     return gplt[output_cols]
 
 
-def do_loss_sampling_mean_only(gpqt, output_set_df, analysis_dict):
+def do_loss_sampling_mean_only(gpqt, output_set_df, group_output_set, analysis_dict):
+    """
+    Calculate group period loss table using mean only. Requires MPLT in individual ORD results.
+
+    Args
+    ----
+    gpqt: group period quantile table
+    outputset_df: output set dataframe
+    group_output_set: dict mapping output_set_id to corresponding group
+    analysis_dict: dict with analysis info
+    """
     gplt_fragments = []
 
     for output_set_id in gpqt['output_set_id'].unique():
@@ -156,7 +166,10 @@ def do_loss_sampling_mean_only(gpqt, output_set_df, analysis_dict):
                                           perspective=os['perspective_code'], output_type='mplt')
 
         filtered_gpqt = gpqt.query(f'output_set_id == {output_set_id}')
-        gplt_fragments.append(loss_sample_mean_only(filtered_gpqt, elt_paths))
+        gplt_fragment = loss_sample_mean_only(filtered_gpqt, elt_paths)
+
+        gplt_fragment["group_set_id"] = group_output_set[output_set_id]
+        gplt_fragments.append(gplt_fragment)
 
     return pd.concat(gplt_fragments)
 

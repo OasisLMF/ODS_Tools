@@ -27,9 +27,9 @@ def generate_group_set(outputsets_df, group_id=1):
 
     group_set_df = group_df[['group_set_id', 'group_id'] + group_set_cols] \
                            .drop_duplicates(subset='group_set_id').sort_values('group_set_id')
-    group_output_set_df = group_df[['group_set_id', 'output_set_id']]
+    group_output_set = group_df[['group_set_id', 'output_set_id']].set_index("output_set_id").to_dict()['group_set_id']
 
-    return group_set_df, group_output_set_df
+    return group_set_df, group_output_set
 
 def parse_field_from_analysis_settings(field, settings):
     field_location_map = {

@@ -135,7 +135,6 @@ group_event_set_fields = ['event_set_id', 'event_occurrence_id', 'model_supplier
 group_set, group_output_set = generate_group_set(outputsets_df) # intermediary table
 event_occurrence_set_df, group_event_set_analysis = generate_group_event_set(analysis, group_event_set_fields)
 
-
 # %%
 group_output_set
 
@@ -167,6 +166,10 @@ with open(output_dir / 'analysis.json', 'w') as f:
     _analysis_dict = {key: asdict(value) for key, value in analysis.items()}
     json.dump(_analysis_dict, f, indent=4)
 
+with open(output_dir / 'group_output_set.json', 'w') as f:
+    json.dump(group_output_set, f, indent=4)
+
+group_set.to_csv(output_dir / 'group_set.csv', index=False)
 group_event_set_analysis.to_csv(output_dir / 'group_event_set_analysis.csv', index=False)
 event_occurrence_set_df.to_csv(output_dir / 'event_occurrence_set.csv', index=False)
 
@@ -272,7 +275,7 @@ gplt_full = do_loss_sampling_full_uncertainty(gpqt, outputsets_df,
 gplt_full.head()
 
 # %%
-gplt_mean = do_loss_sampling_mean_only(gpqt, outputsets_df, analysis)
+gplt_mean = do_loss_sampling_mean_only(gpqt, outputsets_df, group_output_set, analysis)
 
 # %%
 gplt_mean.head()
