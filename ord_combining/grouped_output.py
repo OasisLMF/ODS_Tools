@@ -4,9 +4,7 @@ import numpy as np
 
 def generate_aal(gplt, max_period):
     # TODO: mean loss sampling results in inf + NaN values
-
-    # todo: should group by group_set_id not output_set_id
-    aal_group = gplt.groupby(by=["output_set_id", "SummaryId", "LossType"], as_index=False)
+    aal_group = gplt.groupby(by=["group_set_id", "SummaryId", "LossType"], as_index=False)
 
     records = []
     for name, group in aal_group:
@@ -14,7 +12,7 @@ def generate_aal(gplt, max_period):
         std_loss = np.sqrt(((mean_loss - group["Loss"])**2).sum() / (max_group_period - 1))
 
         record = {
-                "output_set_id": name[0],
+                "group_set_id": name[0],
                 "SummaryId": name[1],
                 "LossType": name[2],
                 "Mean": mean_loss,
@@ -26,7 +24,7 @@ def generate_aal(gplt, max_period):
     return  pd.DataFrame(records)
 
 # %% path def
-gplt_path = Path('/home/vinulw/code/ODS_Tools/combined_ord-141125121128/gplt_full.csv')
+gplt_path = Path('/home/vinulw/code/ODS_Tools/combined_ord-171125152914/gplt_full.csv')
 output_dir  = gplt_path.parent
 
 # %%
@@ -40,7 +38,7 @@ aal_df.to_csv(output_dir / "aal.csv", index=False)
 # %% ep
 def assign_exceedance_probability(df, max_period):
     original_cols = list(df.columns)
-    df["rank"] = (df.groupby(by=["output_set_id", "SummaryId", "EPType"], as_index=False)["Loss"]
+    df["rank"] = (df.groupby(by=["group_set_id", "SummaryId", "EPType"], as_index=False)["Loss"]
                    .rank(method="first", ascending=False))
     df["RP"] = max_period/df["rank"]
     return df[original_cols + ["RP"]]
@@ -49,12 +47,12 @@ def assign_exceedance_probability(df, max_period):
 def generate_ep(gplt, max_group_period, oep=True, aep=True):
     ep_groups = (
                 gplt.rename(columns={"LossType": "EPType"})
-                    .groupby(by=["output_set_id", "group_event_set_id",
+                    .groupby(by=["group_set_id", "group_event_set_id",
                                      "EventId", "GroupPeriod", "SummaryId",
                                      "EPType"], as_index=False)
                 )
     grouped_df = ep_groups["Loss"].agg("sum")
-    grouped_df = grouped_df.groupby(by=["output_set_id", "SummaryId", "GroupPeriod", "EPType"], as_index=False)
+    grouped_df = grouped_df.groupby(by=["group_set_id", "SummaryId", "GroupPeriod", "EPType"], as_index=False)
 
     ep_frags = []
     if oep:
@@ -75,8 +73,8 @@ def generate_ep(gplt, max_group_period, oep=True, aep=True):
         ep_frags.append(aep_df)
 
     return (
-                pd.concat(ep_frags)[["output_set_id", "SummaryId", "EPCalc", "EPType", "RP", "Loss"]]
-                .sort_values(by=["output_set_id", "SummaryId", "EPType", "EPCalc", "Loss"],
+                pd.concat(ep_frags)[["group_set_id", "SummaryId", "EPCalc", "EPType", "RP", "Loss"]]
+                .sort_values(by=["group_set_id", "SummaryId", "EPType", "EPCalc", "Loss"],
                              ascending=[True, True, True, True, False])
             )
 

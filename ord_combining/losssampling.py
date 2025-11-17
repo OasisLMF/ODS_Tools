@@ -21,7 +21,7 @@ gpqt_dtype = {
 gplt_dtype = {
         'group_set_id': np.int32,
         'output_set_id': np.int32,
-        'SummaryId': np.int32,
+        'SummaryId': "Int32",
         'GroupPeriod': np.int32,
         'Period': np.int32,
         'group_event_set_id': np.int32,
@@ -136,7 +136,7 @@ def loss_sample_mean_only(gpqt, elt_paths):
     mplt_df = mplt_df[["SummaryId", "EventId", "MeanLoss", "LossType"]]
 
     gplt = gpqt.merge(mplt_df, on='EventId', how='left').rename(columns={"MeanLoss": "Loss"})
-    return gplt.astype(gplt_dtype)[gplt_dtype.keys()]
+    return gplt
 
 
 def do_loss_sampling_mean_only(gpqt, output_set_df, group_output_set, analysis_dict):
@@ -165,7 +165,7 @@ def do_loss_sampling_mean_only(gpqt, output_set_df, group_output_set, analysis_d
         gplt_fragment["group_set_id"] = group_output_set[output_set_id]
         gplt_fragments.append(gplt_fragment)
 
-    return pd.concat(gplt_fragments)
+    return pd.concat(gplt_fragments).astype(gplt_dtype)[gplt_dtype.keys()]
 
 ## Loss sampling functions
 

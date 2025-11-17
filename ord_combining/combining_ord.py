@@ -301,10 +301,6 @@ gplt_mean.describe()
 # `output_set_id` as the OutputSet model is the true interface for an element in this row.
 
 # %%
-gplt_full.to_csv(output_dir / "gplt_full.csv", index=False)
-gplt_mean.to_csv(output_dir / "gplt_mean.csv", index=False)
-
-gplt_mean['output_set_id']
-outputsets_df.keys()
-
-gplt_full
+sort_cols = ['group_set_id', 'output_set_id', 'SummaryId', 'GroupPeriod']
+gplt_full.sort_values(by=sort_cols).to_csv(output_dir / "gplt_full.csv", index=False)
+gplt_mean.sort_values(by=sort_cols).to_csv(output_dir / "gplt_mean.csv", index=False)
