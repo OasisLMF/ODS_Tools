@@ -19,15 +19,16 @@ gpqt_dtype = {
 
 
 gplt_dtype = {
+        'group_set_id': np.int32,
+        'output_set_id': np.int32,
+        'SummaryId': np.int32,
         'GroupPeriod': np.int32,
         'Period': np.int32,
         'group_event_set_id': np.int32,
         'EventId': np.int32,
-        'output_set_id': np.int32,
         'Loss': np.float64,
         'LossType': 'Int8'
         }
-
 
 def construct_gpqt(group_period_df, group_event_set_analysis_df, output_set_df, analysis,
                    mean_only=False):
@@ -117,32 +118,25 @@ def loss_sample_mean_only(gpqt, elt_paths):
     assert 'mplt' in elt_paths
 
     mplt_df = pd.read_csv(elt_paths['mplt'])
-    mplt_df = mplt_df[["SummaryId", "SampleType", "EventId", "MeanLoss", "SDLoss"]]
+    mplt_df = mplt_df[["SummaryId", "SampleType", "EventId", "MeanLoss"]]
 
     mplt_dtypes = {
             "SummaryId": "Int64",
             "SampleType": "Int64",
             "EventId": "Int64",
             "MeanLoss": "float",
-            "SDLoss": "float"
             }
 
     mplt_df = mplt_df.astype(mplt_dtypes)
 
     grouped_df = mplt_df.groupby(["SummaryId", "SampleType", "EventId"], as_index=False)
-    mplt_df = grouped_df.agg({
-            'SDLoss': lambda x: np.sqrt(np.sum(x**2)),
-            'MeanLoss': 'sum'
-        })
+    mplt_df = grouped_df.agg({'MeanLoss': 'sum'})
 
     mplt_df["LossType"] = mplt_df["SampleType"].where(mplt_df["SampleType"] == 1, 3)
-    mplt_df = mplt_df[["SummaryId", "EventId", "MeanLoss", "SDLoss", "LossType"]]
+    mplt_df = mplt_df[["SummaryId", "EventId", "MeanLoss", "LossType"]]
 
     gplt = gpqt.merge(mplt_df, on='EventId', how='left').rename(columns={"MeanLoss": "Loss"})
-
-    output_cols =["group_event_set_id", "GroupPeriod", "output_set_id",
-                  "SummaryId", "EventId", "LossType", "Loss", "SDLoss"]
-    return gplt[output_cols]
+    return gplt.astype(gplt_dtype)[gplt_dtype.keys()]
 
 
 def do_loss_sampling_mean_only(gpqt, output_set_df, group_output_set, analysis_dict):
@@ -328,6 +322,5 @@ def do_loss_sampling_full_uncertainty(gpqt, output_set_df, group_output_set, ana
             print(curr_gpqt['EventId'])
 
     gplt = pd.concat(gplt_fragments)
-    gplt.drop(columns=['Quantile'])
 
-    return gplt.astype(gplt_dtype)
+    return gplt.astype(gplt_dtype)[gplt_dtype.keys()]
