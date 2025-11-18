@@ -213,13 +213,13 @@ def mean_loss_sampling(gpqt, melt, sampling_func=beta_sampling_group_loss):
 def quantile_loss_sampling(gpqt, qelt):
     original_cols = list(gpqt.columns)
 
-    gpqt["merged"] = gpqt["EventId"].isin(qelt["EventId"].unique())
-    remaining_gpqt = gpqt[~gpqt["merged"]][original_cols]
+    merged = gpqt["EventId"].isin(qelt["EventId"].unique())
+    remaining_gpqt = gpqt[~merged]
 
     summary_ids = qelt["SummaryId"].unique()
     sample_loss_frags = []
-    curr_gpqt = gpqt[gpqt["merged"]]
-    for summary_id in tqdm(summary_ids, desc="quantile loss sampling"):
+    curr_gpqt = gpqt[merged]
+    for summary_id in tqdm(summary_ids, desc="quantile ls", position=1, leave=False):
         qelt_summary_id = qelt.query(f"SummaryId == {summary_id}")
         curr_loss_frag = curr_gpqt.apply(lambda x: quantile_single_row(x, qelt_summary_id), axis=1)
         curr_loss_frag["SummaryId"] = summary_id
@@ -250,16 +250,16 @@ def quantile_single_row(row, qelt): # todo speedup
 
 def sample_loss_sampling(gpqt, selt):
     original_cols = list(gpqt.columns)
-    gpqt["merged"] = gpqt["EventId"].isin(selt["EventId"].unique())
+    merged = gpqt["EventId"].isin(selt["EventId"].unique())
 
-    remaining_gpqt = gpqt[~gpqt["merged"]][original_cols]
+    remaining_gpqt = gpqt[~merged][original_cols]
 
     selt = selt.sort_values(by=['EventId', 'SampleLoss'], ascending=True)
     summary_ids = selt["SummaryId"].unique()
 
-    curr_gpqt = gpqt[gpqt["merged"]]
+    curr_gpqt = gpqt[merged]
     sample_loss_frags = []
-    for summary_id in tqdm(summary_ids, desc="sample loss sampling"):
+    for summary_id in tqdm(summary_ids, desc="sample ls", position=1, leave=False):
         selt_summary_id = selt.query(f"SummaryId == {summary_id}")
         curr_loss_frag = curr_gpqt.apply(lambda x: sample_single_row(x, selt_summary_id), axis=1)
         curr_loss_frag["SummaryId"] = summary_id
@@ -296,7 +296,7 @@ def do_loss_sampling_full_uncertainty(gpqt, output_set_df, group_output_set, ana
         's': sample_loss_sampling
     }
 
-    for output_set_id in gpqt['output_set_id'].unique():
+    for output_set_id in tqdm(gpqt['output_set_id'].unique(), position=0, desc='loss sampling'):
         os = output_set_df.loc[output_set_id]
         analysis = analysis_dict[os['analysis_id']]
 
@@ -305,10 +305,9 @@ def do_loss_sampling_full_uncertainty(gpqt, output_set_df, group_output_set, ana
 
         elt_dfs = {key: globals()[f'read_{key}'](value) for key, value in elt_paths.items()} # todo handle this better (lazy load)
 
-        curr_gpqt = gpqt.query(f'output_set_id == {output_set_id}')
+        curr_gpqt = gpqt.query('output_set_id == @output_set_id')
 
         for p in priority:
-            print(f"Running outputset_id: {output_set_id}, priority: {p}")
             elt_df = elt_dfs.get(f'{p}elt', None)
 
             if elt_df is None:
@@ -329,13 +328,10 @@ def do_loss_sampling_full_uncertainty(gpqt, output_set_df, group_output_set, ana
             gplt_fragments.append(_gplt_fragment)
 
             if curr_gpqt.empty:
-                print(f"curr_gpqt is empty, exiting at {p}")
                 break
 
         if not curr_gpqt.empty:
-            print('Could not perform loss sampling for all events.')
-            print('Missed events: ')
-            print(curr_gpqt['EventId'])
+            raise Exception(f'Could not perform loss sampling for all events. Missing events: {curr_gpqt["EventId"].to_list()}')
 
     gplt = pd.concat(gplt_fragments)
 
