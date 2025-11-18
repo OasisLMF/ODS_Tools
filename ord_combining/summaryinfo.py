@@ -48,6 +48,10 @@ def generate_summary_id_map(outputset_summary_info, group_summary_info, group_ou
 
         summary_oed_cols = [c for c in curr_group_summary_info.columns.to_list() if c not in ignored_cols]
         output_set_map = pd.merge(curr_os_summary_info, curr_group_summary_info, how="left", on=summary_oed_cols)
-        outputset_summary_id[output_set_id] = output_set_map[['summary_id', 'SummaryId']].set_index('summary_id').to_dict()['SummaryId']
+        output_set_map = output_set_map[['summary_id', 'SummaryId']]
+        output_set_map = output_set_map.query('~(summary_id == SummaryId)')
+
+        if not output_set_map.empty:
+            outputset_summary_id[output_set_id] = output_set_map.set_index('summary_id').to_dict()['SummaryId']
 
     return outputset_summary_id

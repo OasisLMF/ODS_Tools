@@ -74,7 +74,7 @@ def construct_gpqt(group_period_df, group_event_set_analysis_df, output_set_df, 
     gpqt = pd.concat(gpqt_fragments)
     return gpqt.astype(gpqt_dtype)
 
-def load_loss_table_paths(analysis, summary_level_id, perspective, output_type):
+def load_loss_table_paths(analysis, summary_level_id, perspective, output_type, outputset_summary_id_map=None):
     '''Load loss table paths to of type `output_type` from ord output directory of the selected
     analysis, summary_id and perspective.
 
@@ -139,7 +139,8 @@ def loss_sample_mean_only(gpqt, elt_paths):
     return gplt
 
 
-def do_loss_sampling_mean_only(gpqt, output_set_df, group_output_set, analysis_dict):
+def do_loss_sampling_mean_only(gpqt, output_set_df, group_output_set, analysis_dict,
+                               outputset_summary_id_map=None):
     """
     Calculate group period loss table using mean only. Requires MPLT in individual ORD results.
 
@@ -161,6 +162,13 @@ def do_loss_sampling_mean_only(gpqt, output_set_df, group_output_set, analysis_d
 
         filtered_gpqt = gpqt.query(f'output_set_id == {output_set_id}')
         gplt_fragment = loss_sample_mean_only(filtered_gpqt, elt_paths)
+
+        # do summary id mapping
+        summary_id_map = outputset_summary_id_map.get(output_set_id, None) if outputset_summary_id_map is not None else None
+        if summary_id_map is not None:
+            assert not gplt_fragment["SummaryId"].isna().any(), "missing SummaryIds detected"
+            gplt_fragment["SummaryId"] = (gplt_fragment["SummaryId"].map(summary_id_map)
+                                                                    .fillna(gplt_fragment["SummaryId"]))
 
         gplt_fragment["group_set_id"] = group_output_set[output_set_id]
         gplt_fragments.append(gplt_fragment)
@@ -270,7 +278,7 @@ def sample_single_row(row, selt):
 
 
 def do_loss_sampling_full_uncertainty(gpqt, output_set_df, group_output_set, analysis_dict,
-                                      priority=['m', 'q', 's']):
+                                      priority=['m', 'q', 's'], outputset_summary_id_map=None):
     """
     Calculate group period loss table using full loss sampling. Currently requires ELT files.
 
@@ -310,6 +318,14 @@ def do_loss_sampling_full_uncertainty(gpqt, output_set_df, group_output_set, ana
 
             _gplt_fragment, curr_gpqt = loss_sampling_func_map[p](curr_gpqt, elt_df)
             _gplt_fragment["group_set_id"] = group_output_set[output_set_id]
+
+            # do summary id mapping
+            summary_id_map = outputset_summary_id_map.get(output_set_id, None) if outputset_summary_id_map is not None else None
+            if summary_id_map is not None:
+                assert not _gplt_fragment["SummaryId"].isna().any(), "missing SummaryIds detected"
+                _gplt_fragment["SummaryId"] = (_gplt_fragment["SummaryId"].map(summary_id_map)
+                                                                          .fillna(_gplt_fragment["SummaryId"]))
+
             gplt_fragments.append(_gplt_fragment)
 
             if curr_gpqt.empty:

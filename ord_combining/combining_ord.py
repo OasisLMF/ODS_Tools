@@ -150,9 +150,16 @@ group_event_set_analysis.head()
 # %% [markdown]
 # Once the groups have been assigned the SummaryId is aligned within each group_set.
 # To do so we find each unique grouping of summary level fields in each group set and aggregate the tiv by summing.
+# Then we produce a `outputset_summary_id_map` which contains dicts which maps
+# the summary_id of the ORD files to the group `SummaryId` indexed by a key
+# value of `output_set_id`.
+# Note only adds mapping where summary_id != SummaryId
+
+# To demo this swapped LocNumber for summary_id 1 and 2 in /home/vinulw/code/ODS_Tools/ord_combining/losses-20251021131718 SummaryLevel 2
+
 
 # %%
-from ord_combining.summaryinfo import load_summary_info, assign_summary_ids
+from ord_combining.summaryinfo import load_summary_info, assign_summary_ids, generate_summary_id_map
 os_summary_info = load_summary_info(analysis, outputsets_df)
 group_set_summary_info = assign_summary_ids(group_output_set, os_summary_info)
 
@@ -160,10 +167,9 @@ for gs, g_summary_info_df in group_set_summary_info.items():
     print('Current group_set_id: ', gs)
     print(g_summary_info_df)
 
-# %%
-from ord_combining.summaryinfo import generate_summary_id_map
-
 outputset_summary_id_map = generate_summary_id_map(os_summary_info, group_set_summary_info, group_output_set)
+
+outputset_summary_id_map
 
 # %%
 # save outputs
@@ -225,6 +231,8 @@ total_periods = 1000 # from model
 total_group_periods = 2000
 
 # %%
+group_event_set_analysis
+event_occurrence_set_df
 group_period = generate_group_periods(group_event_set_analysis, analysis, total_periods, total_group_periods)
 
 # %%
@@ -277,11 +285,13 @@ from ord_combining.losssampling import do_loss_sampling_full_uncertainty, do_los
 # %%
 gplt_full = do_loss_sampling_full_uncertainty(gpqt, outputsets_df,
                                               group_output_set, analysis,
-                                              priority=['q', 's'])
+                                              priority=['q', 's'],
+                                              outputset_summary_id_map=outputset_summary_id_map)
 gplt_full.head()
 
 # %%
-gplt_mean = do_loss_sampling_mean_only(gpqt, outputsets_df, group_output_set, analysis)
+gplt_mean = do_loss_sampling_mean_only(gpqt, outputsets_df, group_output_set, analysis,
+                                       outputset_summary_id_map=outputset_summary_id_map)
 
 # %%
 gplt_mean.head()
