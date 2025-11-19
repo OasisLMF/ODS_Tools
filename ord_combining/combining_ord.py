@@ -132,7 +132,7 @@ outputsets_df.columns
 from ord_combining.groupeventset import generate_group_set, generate_group_event_set
 group_event_set_fields = ['event_set_id', 'event_occurrence_id', 'model_supplier_id']
 
-group_set, group_output_set = generate_group_set(outputsets_df) # intermediary table
+group_set, group_output_set = generate_group_set(outputsets_df)
 event_occurrence_set_df, group_event_set_analysis = generate_group_event_set(analysis, group_event_set_fields)
 
 # %%
@@ -163,9 +163,7 @@ from ord_combining.summaryinfo import load_summary_info, assign_summary_ids, gen
 os_summary_info = load_summary_info(analysis, outputsets_df)
 group_set_summary_info = assign_summary_ids(group_output_set, os_summary_info)
 
-for gs, g_summary_info_df in group_set_summary_info.items():
-    print('Current group_set_id: ', gs)
-    print(g_summary_info_df)
+# %%
 
 outputset_summary_id_map = generate_summary_id_map(os_summary_info, group_set_summary_info, group_output_set)
 
@@ -180,11 +178,18 @@ with open(output_dir / 'analysis.json', 'w') as f:
 with open(output_dir / 'group_output_set.json', 'w') as f:
     json.dump(group_output_set, f, indent=4)
 
-group_set.to_csv(output_dir / 'group_set.csv', index=False)
+group_set.to_csv(output_dir / 'group_set.csv')
 group_event_set_analysis.to_csv(output_dir / 'group_event_set_analysis.csv', index=False)
 event_occurrence_set_df.to_csv(output_dir / 'event_occurrence_set.csv', index=False)
 
 outputsets_df.to_csv(output_dir / 'output_set.csv', index=False)
+
+# Serialise summary-info
+for gs, g_summary_info_df in group_set_summary_info.items():
+    gs_info = group_set.loc[gs]
+    summary_info_fname = f'{gs_info['perspective_code']}_GS{gs}_summary-info.csv'
+    g_summary_info_df.to_csv(output_dir / summary_info_fname, index=False)
+
 
 # %% [markdown]
 # ## 2. Period Sampling

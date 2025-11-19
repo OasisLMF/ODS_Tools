@@ -24,7 +24,7 @@ def generate_aal(gplt, max_period):
     return  pd.DataFrame(records)
 
 # %% path def
-gplt_path = Path('/home/vinulw/code/ODS_Tools/combined_ord-171125152914/gplt_full.csv')
+gplt_path = Path('/home/vinulw/code/ODS_Tools/combined_ord-191125100816/gplt_full.csv')
 output_dir  = gplt_path.parent
 
 # %%
