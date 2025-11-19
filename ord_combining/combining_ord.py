@@ -14,8 +14,8 @@
 # ---
 
 # %%
-%load_ext autoreload
-%autoreload 2
+# %load_ext autoreload
+# %autoreload 2
 
 # %% [markdown]
 # # Combining Results in ORD
@@ -72,7 +72,7 @@ print(f'Output Path: {output_dir}')
 # - OutputSet table which contains references to the ORD results.
 
 # %% [markdown]
-
+#
 # The `analysis_settings.json` files for each ORD analysis are parsed to read the Analysis and OutputSet tables.
 
 # %%
@@ -103,7 +103,7 @@ outputsets_df = dataclass_list_to_dataframe(outputsets)
 outputsets_df['id'] = outputsets_df.index # set id col
 
 # %%
-outputsets_df.head()
+outputsets_df
 
 # %%
 outputsets_df.columns
@@ -131,10 +131,10 @@ group_output_set
 group_set
 
 # %%
-event_occurrence_set_df.head()
+event_occurrence_set_df
 
 # %%
-group_event_set_analysis.head()
+group_event_set_analysis
 
 # %% [markdown]
 # Once the groups have been assigned the SummaryId is aligned within each group_set.
@@ -143,7 +143,7 @@ group_event_set_analysis.head()
 # the summary_id of the ORD files to the group `SummaryId` indexed by a key
 # value of `output_set_id`.
 # Note only adds mapping where summary_id != SummaryId
-
+#
 # To demo this swapped LocNumber for summary_id 1 and 2 in /home/vinulw/code/ODS_Tools/ord_combining/losses-20251021131718 SummaryLevel 2
 
 
@@ -227,7 +227,7 @@ total_group_periods = 2000 # config: set by user
 # %%
 group_period = generate_group_periods(group_event_set_analysis, analysis, total_periods, total_group_periods)
 
-group_period
+group_period.head()
 
 # %%
 # save csv
@@ -294,7 +294,7 @@ gplt_mean.head()
 gplt_mean.describe()
 
 # %% [markdown]
-
+#
 # ## 4. Output Generation
 # The output options are:
 # - Group Period Loss Table (GPLT)
