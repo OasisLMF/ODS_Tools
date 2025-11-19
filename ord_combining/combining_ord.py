@@ -291,18 +291,38 @@ gplt_mean.describe()
 # ## 4. Output Generation
 # The output options are:
 # - Group Period Loss Table (GPLT)
-#   - full (all groups)
-#   - file based (each group in new file) <-- probably better
-# - Group Average Loss Table (GALT)
-# - Group Exceedance Probability Table (GEPT)
+#   - full (all group_set_id) <-- current implementation
+#   - file based (each group_set_id in new file) <-- probably better
+# - Group Average Annual Loss Table (GAAL)
+# - Group Exceedance Probability Table (GEP)
 
 # %% [markdown]
-# #### GPLT output
-# Note that `SummaryId` is used as a
-
-# `output_set_id` as the OutputSet model is the true interface for an element in this row.
+# ### GPLT output
 
 # %%
 sort_cols = ['group_set_id', 'output_set_id', 'SummaryId', 'GroupPeriod']
 gplt_full.sort_values(by=sort_cols).to_csv(output_dir / "gplt_full.csv", index=False)
 gplt_mean.sort_values(by=sort_cols).to_csv(output_dir / "gplt_mean.csv", index=False)
+
+# %%
+from ord_combining.grouped_output import generate_aal, generate_ep
+
+# %% [markdown]
+# ### GAAL Output
+
+# %%
+aal_full = generate_aal(gplt_full, total_group_periods)
+aal_mean = generate_aal(gplt_mean, total_group_periods)
+
+aal_full.to_csv(output_dir / "aal_full.csv", index=False)
+aal_mean.to_csv(output_dir / "aal_mean.csv", index=False)
+
+# %% [markdown]
+# ### GEP Output
+
+# %%
+ep_full_df = generate_ep(gplt_full, total_group_periods, oep=True, aep=True)
+ep_mean_df = generate_ep(gplt_mean, total_group_periods, oep=True, aep=True)
+
+ep_full_df.to_csv(output_dir / "ep_full.csv", index=False)
+ep_mean_df.to_csv(output_dir / "ep_mean.csv", index=False)

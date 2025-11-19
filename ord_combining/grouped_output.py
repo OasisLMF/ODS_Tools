@@ -9,7 +9,7 @@ def generate_aal(gplt, max_period):
     records = []
     for name, group in aal_group:
         mean_loss = group["Loss"].sum() / max_period
-        std_loss = np.sqrt(((mean_loss - group["Loss"])**2).sum() / (max_group_period - 1))
+        std_loss = np.sqrt(((mean_loss - group["Loss"])**2).sum() / (max_period - 1))
 
         record = {
                 "group_set_id": name[0],
@@ -22,18 +22,6 @@ def generate_aal(gplt, max_period):
         records.append(record)
 
     return  pd.DataFrame(records)
-
-# %% path def
-gplt_path = Path('/home/vinulw/code/ODS_Tools/combined_ord-191125100816/gplt_full.csv')
-output_dir  = gplt_path.parent
-
-# %%
-gplt = pd.read_csv(gplt_path)
-max_group_period = 2000
-
-# %% aal
-aal_df = generate_aal(gplt, max_group_period)
-aal_df.to_csv(output_dir / "aal.csv", index=False)
 
 # %% ep
 def assign_exceedance_probability(df, max_period):
@@ -77,8 +65,3 @@ def generate_ep(gplt, max_group_period, oep=True, aep=True):
                 .sort_values(by=["group_set_id", "SummaryId", "EPType", "EPCalc", "Loss"],
                              ascending=[True, True, True, True, False])
             )
-
-
-
-ep_df = generate_ep(gplt, max_group_period)
-ep_df.to_csv(output_dir / "ept.csv", index=False)
