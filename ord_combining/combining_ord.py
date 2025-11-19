@@ -38,57 +38,39 @@ from pathlib import Path
 import json
 from dataclasses import asdict
 import pandas as pd
-import numpy as np
 
 # %%
 # make sure relative imports work
-# todo: remove after packaging
 import os
 import sys
 module_path = os.path.abspath(os.path.join('..'))
 if module_path not in sys.path:
     sys.path.append(module_path)
 
+# %% [markdown]
+# The input files are multiple runs of PiWind.
+
+# %% specify input ORD dirs
+parent_path = Path('~/code/ODS_Tools/ord_combining').expanduser()
+
+ord_output_dirs = [parent_path / "ord-losses-1/output",
+                   parent_path / "ord-losses-2/output",
+                   parent_path / "ord-losses-3/output"]
+
 # %%
 # specify directory for outputs
 
 output_dir = Path("./combined_ord-" + datetime.now().strftime("%d%m%y%H%M%S"))
 output_dir.mkdir(exist_ok=True)
-print(f"Output dir: {output_dir}")
+print(f'Output Path: {output_dir}')
 
 # %% [markdown]
 # ## 1. Load and Group
-# ### Creating Analysis and OutputSet
-# In this section we create the objects required prior to grouping, namely:
-# - Analysis table which contains the meta data from the analyses
-# - OutputSet table which contains references to the ORD results.
-#
-# The `Analysis` and `OutputSet` dataclasses are defined in `common.py`.
-# Note that a single analysis can have multiple OutputSets.
-
-# %%
-from ord_combining.common import Analysis, OutputSet
-
-# %%
-?Analysis
-# %%
-?OutputSet
-
-# %% [markdown]
-# The `analysis_settings.json` files for each ORD analysis contains the necessary information to instantiate both the Analysis object and all the OutputSet objects assosiated with a given analysis.
+# ### Creating Analysis and OutputSet In this section we create the objects required prior to grouping, namely: - Analysis table which contains the meta data from the analyses - OutputSet table which contains references to the ORD results. %% [markdown] The `analysis_settings.json` files for each ORD analysis are parsed to read the Analysis and OutputSet tables.
 
 # %%
 from ord_combining.outputset import parse_analysis_settings
 from ord_combining.common import dataclass_list_to_dataframe
-
-# specify the ORD directory paths for each analysis
-ord_output_dirs = [
-                    "/home/vinulw/code/ODS_Tools/ord_combining/losses-20251017133750/output",
-                    "/home/vinulw/code/ODS_Tools/ord_combining/losses-20251017134021/output",
-                    "/home/vinulw/code/ODS_Tools/ord_combining/losses-20251021131718/output"
-                   ]
-
-ord_output_dirs = [Path(p) for p in ord_output_dirs]
 
 def load_analysis_and_output_sets(ord_output_dirs):
     analysis_set = []
