@@ -66,7 +66,14 @@ print(f'Output Path: {output_dir}')
 
 # %% [markdown]
 # ## 1. Load and Group
-# ### Creating Analysis and OutputSet In this section we create the objects required prior to grouping, namely: - Analysis table which contains the meta data from the analyses - OutputSet table which contains references to the ORD results. %% [markdown] The `analysis_settings.json` files for each ORD analysis are parsed to read the Analysis and OutputSet tables.
+# ### Creating Analysis and OutputSet
+# In this section we create the objects required prior to grouping, namely:
+# - Analysis table which contains the meta data from the analyses
+# - OutputSet table which contains references to the ORD results.
+
+# %% [markdown]
+
+# The `analysis_settings.json` files for each ORD analysis are parsed to read the Analysis and OutputSet tables.
 
 # %%
 from ord_combining.outputset import parse_analysis_settings
@@ -214,13 +221,13 @@ for i in range(total_group_periods // total_periods):
 # %%
 from ord_combining.groupperiod import generate_group_periods
 
-total_periods = 1000 # from model
-total_group_periods = 2000
+total_periods = 1000 # config: from model
+total_group_periods = 2000 # config: set by user
 
 # %%
-group_event_set_analysis
-event_occurrence_set_df
 group_period = generate_group_periods(group_event_set_analysis, analysis, total_periods, total_group_periods)
+
+group_period
 
 # %%
 # save csv
@@ -228,7 +235,7 @@ group_period.to_csv(output_dir / 'group_period.csv', index=False)
 
 
 # %% [markdown]
-# Questions:
+# **Q**:
 # - Currently loading Periods from single PLT file in ORD. Should this actually read all PLT files?
 # - How to load total periods from analysis settings (is it possible to have different total periods for individual grouped analyses)?
 
@@ -293,8 +300,8 @@ gplt_mean.describe()
 # - Group Period Loss Table (GPLT)
 #   - full (all group_set_id) <-- current implementation
 #   - file based (each group_set_id in new file) <-- probably better
-# - Group Average Annual Loss Table (GAAL)
-# - Group Exceedance Probability Table (GEP)
+# - Group Average Loss Table (GALT)
+# - Group Exceedance Probability Table (GEPT)
 
 # %% [markdown]
 # ### GPLT output
@@ -305,20 +312,20 @@ gplt_full.sort_values(by=sort_cols).to_csv(output_dir / "gplt_full.csv", index=F
 gplt_mean.sort_values(by=sort_cols).to_csv(output_dir / "gplt_mean.csv", index=False)
 
 # %%
-from ord_combining.grouped_output import generate_aal, generate_ep
+from ord_combining.grouped_output import generate_al, generate_ep
 
 # %% [markdown]
-# ### GAAL Output
+# ### GALT Output
 
 # %%
-aal_full = generate_aal(gplt_full, total_group_periods)
-aal_mean = generate_aal(gplt_mean, total_group_periods)
+aal_full = generate_al(gplt_full, total_group_periods)
+aal_mean = generate_al(gplt_mean, total_group_periods)
 
 aal_full.to_csv(output_dir / "aal_full.csv", index=False)
 aal_mean.to_csv(output_dir / "aal_mean.csv", index=False)
 
 # %% [markdown]
-# ### GEP Output
+# ### GEPT Output
 
 # %%
 ep_full_df = generate_ep(gplt_full, total_group_periods, oep=True, aep=True)

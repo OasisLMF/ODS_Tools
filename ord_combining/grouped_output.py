@@ -2,7 +2,7 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 
-def generate_aal(gplt, max_period):
+def generate_al(gplt, max_period):
     # TODO: mean loss sampling results in inf + NaN values
     aal_group = gplt.groupby(by=["group_set_id", "SummaryId", "LossType"], as_index=False)
 

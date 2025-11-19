@@ -219,7 +219,7 @@ def quantile_loss_sampling(gpqt, qelt):
     summary_ids = qelt["SummaryId"].unique()
     sample_loss_frags = []
     curr_gpqt = gpqt[merged]
-    for summary_id in tqdm(summary_ids, desc="quantile ls", position=1, leave=False):
+    for summary_id in tqdm(summary_ids, desc="quantile ls"):
         qelt_summary_id = qelt.query(f"SummaryId == {summary_id}")
         curr_loss_frag = curr_gpqt.apply(lambda x: quantile_single_row(x, qelt_summary_id), axis=1)
         curr_loss_frag["SummaryId"] = summary_id
@@ -259,7 +259,7 @@ def sample_loss_sampling(gpqt, selt):
 
     curr_gpqt = gpqt[merged]
     sample_loss_frags = []
-    for summary_id in tqdm(summary_ids, desc="sample ls", position=1, leave=False):
+    for summary_id in tqdm(summary_ids, desc="sample ls"):
         selt_summary_id = selt.query(f"SummaryId == {summary_id}")
         curr_loss_frag = curr_gpqt.apply(lambda x: sample_single_row(x, selt_summary_id), axis=1)
         curr_loss_frag["SummaryId"] = summary_id
@@ -296,7 +296,13 @@ def do_loss_sampling_full_uncertainty(gpqt, output_set_df, group_output_set, ana
         's': sample_loss_sampling
     }
 
-    for output_set_id in tqdm(gpqt['output_set_id'].unique(), position=0, desc='loss sampling'):
+    n_outpusets = len(gpqt['output_set_id'].unique())
+    count = 1
+
+    for output_set_id in gpqt['output_set_id'].unique():
+        print(f'Running output_set_id:{output_set_id}.    {count}/{n_outpusets}')
+        count += 1
+
         os = output_set_df.loc[output_set_id]
         analysis = analysis_dict[os['analysis_id']]
 

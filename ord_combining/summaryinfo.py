@@ -26,7 +26,6 @@ def assign_summary_ids(group_output_set, outputset_summary_info):
         group_output_set_inv.setdefault(v, []).append(k)
 
     for group_set_id, outputset_ids in group_output_set_inv.items():
-        print(f'Current group_set_id: {group_set_id}')
         curr_group_summary_info = pd.concat([outputset_summary_info[os_id] for os_id in outputset_ids])
         summary_oed_cols = [c for c in curr_group_summary_info.columns.to_list() if c not in ignored_cols]
         curr_group_summary_info = curr_group_summary_info.groupby(summary_oed_cols, as_index=False).agg({'tiv': 'sum'})
