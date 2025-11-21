@@ -90,7 +90,7 @@ class OedSchema:
         Returns:
             OedSchema
         """
-        if oed_schema_info is None:
+        if oed_schema_info is None or oed_schema_info == "":
             logger.debug(f"loading default schema {cls.DEFAULT_ODS_SCHEMA_PATH}")
             return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(OED_VERSION))
         if isinstance(oed_schema_info, str):
