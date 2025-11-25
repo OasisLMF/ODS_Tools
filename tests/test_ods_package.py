@@ -18,7 +18,6 @@ import tempfile
 sys.path.append(sys.path.pop(0))
 
 from ods_tools.main import convert
-from ods_tools.oed.common import default_string_dtype
 from ods_tools.oed import (OedExposure, OedSchema, OdsException, ModelSettingSchema, AnalysisSettingSchema, OED_TYPE_TO_NAME, UnknownColumnSaveOption,
                            ClassOfBusiness)
 from ods_tools.oed.oed_schema import OED_VERSION
