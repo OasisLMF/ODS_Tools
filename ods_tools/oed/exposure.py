@@ -48,7 +48,8 @@ class OedExposure:
                  account_numbers=None,
                  portfolio_numbers=None,
                  base_df_engine=None,
-                 exposure_df_engine=None):
+                 exposure_df_engine=None,
+                 backend_dtype=None):
         """
         Create an OED object,
         each input can be the object itself or  information that will be used to create the object
@@ -73,6 +74,7 @@ class OedExposure:
         """
         self.use_field = use_field
         self.oed_schema = OedSchema.from_oed_schema_info(oed_schema_info)
+        self.backend_dtype = backend_dtype if backend_dtype is not None else self.oed_schema.get_default_backend_dtype()
         self.df_engine = (
             exposure_df_engine or
             base_df_engine or

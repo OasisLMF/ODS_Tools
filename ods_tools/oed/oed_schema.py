@@ -171,6 +171,13 @@ class OedSchema:
         return jit_peril_filtering(peril_ids.to_numpy().astype('str'), peril_filters.to_numpy().astype('str'),
                                    self.nb_peril_groups_dict if include_sub_group else self.nb_perils_dict)
 
+    def get_default_backend_dtype(self):
+        if 'pa_dtype' in next(iter(self.schema['input_fields']['null'].values())):
+            backend_dtype = 'pa_dtype'
+        else:
+            backend_dtype = 'pd_dtype'
+        return backend_dtype
+
     @staticmethod
     def get_default_from_ods_fields(ods_fields, field_name):
         field_info = ods_fields.get(field_name.lower())
