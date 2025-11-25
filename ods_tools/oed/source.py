@@ -282,7 +282,7 @@ class OedSource:
                     oed_df.loc[is_empty(oed_df, column), column] = ''
                 except ValueError:  # error raised if oed_df[column] is readonly
                     oed_df[column] = oed_df[column].copy()
-                    oed_df[column].loc[is_empty(oed_df, column), column] = ''
+                    oed_df.loc[is_empty(oed_df, column), column] = ''
                 if _dtype == 'category':  # we will need to convert to str first
                     oed_df[column] = oed_df[column].astype('str')
                 if dtype_str_to_dtype[_dtype].name != oed_df[column].dtype.name:

@@ -49,7 +49,7 @@ class OedExposure:
                  portfolio_numbers=None,
                  base_df_engine=None,
                  exposure_df_engine=None,
-                 backend_dtype=None):
+                 backend_dtype=None, **kwargs):
         """
         Create an OED object,
         each input can be the object itself or  information that will be used to create the object
