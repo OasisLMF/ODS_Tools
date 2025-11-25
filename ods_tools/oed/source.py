@@ -286,7 +286,7 @@ class OedSource:
             elif pd.api.types.is_numeric_dtype(_dtype):  # make sure empty string are converted to nan
                 if dtype_str_to_dtype[_dtype].name != oed_df[column].dtype.name:
                     oed_df[column] = pd.to_numeric(oed_df[column], errors='coerce').astype(_dtype)
-            else: # for example for date dtype, not present at the moment in OED schema but could be in a custom one
+            else:  # for example for date dtype, not present at the moment in OED schema but could be in a custom one
                 oed_df[column] = oed_df[column].astype(_dtype)
         return oed_df
 
@@ -538,7 +538,7 @@ class OedSource:
 
         header_read_arg = {**kwargs, 'nrows': 0, 'index_col': False}
         if header_read_arg.get('engine') == 'pyarrow':
-            header_read_arg.pop('engine') # The 'nrows' option is not supported with the 'pyarrow' engine
+            header_read_arg.pop('engine')  # The 'nrows' option is not supported with the 'pyarrow' engine
         if (stream_start is None
                 and Path(filepath_or_buffer).suffix == '.gzip' or header_read_arg.get('compression') == 'gzip'):
             # support for gzip https://stackoverflow.com/questions/60460814/pandas-read-csv-failing-on-gzipped-file-with-unicodedecodeerror-utf-8-codec-c

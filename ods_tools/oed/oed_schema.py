@@ -172,11 +172,7 @@ class OedSchema:
                                    self.nb_peril_groups_dict if include_sub_group else self.nb_perils_dict)
 
     def get_default_backend_dtype(self):
-        if 'pa_dtype' in next(iter(self.schema['input_fields']['null'].values())):
-            backend_dtype = 'pa_dtype'
-        else:
-            backend_dtype = 'pd_dtype'
-        return backend_dtype
+        return 'pd_dtype'
 
     @staticmethod
     def get_default_from_ods_fields(ods_fields, field_name):

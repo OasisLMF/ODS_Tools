@@ -236,7 +236,6 @@ def fill_empty(df, columns, value):
         df.loc[is_empty(df, column), column] = value
 
 
-
 class UnknownColumnSaveOption(Enum):
     IGNORE = 1
     RENAME = 2
