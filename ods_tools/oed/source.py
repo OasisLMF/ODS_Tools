@@ -278,7 +278,11 @@ class OedSource:
             if _dtype == default_string_dtype[backend_dtype]:
                 if oed_df[column].dtype.name == 'category' and '' not in oed_df[column].dtype.categories:
                     oed_df[column] = oed_df[column].cat.add_categories('')
-                oed_df.loc[is_empty(oed_df, column), column] = ''
+                try:
+                    oed_df.loc[is_empty(oed_df, column), column] = ''
+                except ValueError:  # error raised if oed_df[column] is readonly
+                    oed_df[column] = oed_df[column].copy()
+                    oed_df[column].loc[is_empty(oed_df, column), column] = ''
                 if _dtype == 'category':  # we will need to convert to str first
                     oed_df[column] = oed_df[column].astype('str')
                 if dtype_str_to_dtype[_dtype].name != oed_df[column].dtype.name:
@@ -393,12 +397,10 @@ class OedSource:
             else:  # default we assume it is csv like
                 read_params = {'keep_default_na': False,
                                'na_values': PANDAS_DEFAULT_NULL_VALUES.difference({'NA'}),
-                               'skipinitialspace': True,
                                }
                 if self.exposure.backend_dtype == "pa_dtype":
                     read_params['dtype_backend'] = "pyarrow"
                     read_params['engine'] = "pyarrow"
-                    read_params['skipinitialspace'] = False
                 read_params.update(source.get('read_param', {}))
                 oed_df = self.read_csv(filepath, self.exposure.get_input_fields(self.oed_type), engine,
                                        filter=self.filters,
