@@ -186,8 +186,9 @@ class OedSource:
         oed_source = cls(exposure, oed_type, 'orig', {'orig': {'source_type': 'DataFrame'}}, filters=filters)
 
         ods_fields = exposure.get_input_fields(oed_type)
+        additional_fields = exposure.get_additional_fields(oed_type)
         column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
-        oed_df = cls.as_oed_type(oed_df, column_to_field)
+        oed_df = cls.as_oed_type(oed_df, column_to_field, additional_fields=additional_fields)
         oed_df = cls.prepare_df(oed_df, column_to_field, ods_fields)
 
         # apply the filters to the dataframe
@@ -251,8 +252,9 @@ class OedSource:
             raise OdsException('Failed to read stream data') from e
 
         ods_fields = exposure.get_input_fields(oed_type)
+        additional_fields = exposure.get_additional_fields(oed_type)
         column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
-        oed_df = cls.as_oed_type(oed_df, column_to_field)
+        oed_df = cls.as_oed_type(oed_df, column_to_field, additional_fields=additional_fields)
         oed_df = cls.prepare_df(oed_df, column_to_field, ods_fields)
 
         # apply the filters to the dataframe
@@ -269,12 +271,14 @@ class OedSource:
         return oed_source
 
     @classmethod
-    def as_oed_type(cls, oed_df, column_to_field):
+    def as_oed_type(cls, oed_df, column_to_field, additional_fields={}):
         pd_dtype = {}
         to_tmp_dtype = {}
         for column in oed_df.columns:
             if column in column_to_field:
                 pd_dtype[column] = column_to_field[column]['pd_dtype']
+            elif column in additional_fields:
+                pd_dtype[column] = additional_fields[column]
             else:
                 pd_dtype[column] = 'category'
             if pd_dtype[column] == 'category':  # we need to convert to str first
@@ -376,21 +380,27 @@ class OedSource:
             if is_relative(filepath):
                 filepath = Path(self.exposure.working_dir, filepath)
             extension = PANDAS_COMPRESSION_MAP.get(source.get('extention')) or Path(filepath).suffix
+
+            ods_fields = self.exposure.get_input_fields(self.oed_type)
+            additional_fields = self.exposure.get_additional_fields(self.oed_type)
+
             if extension == '.parquet':
                 oed_df = get_df_reader(
                     format_filepath_engine_as_config(filepath, engine),
                     **source.get('read_param', {})
                 ).filter(self.filters).as_pandas()
-                ods_fields = self.exposure.get_input_fields(self.oed_type)
                 column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
-                oed_df = self.as_oed_type(oed_df, column_to_field)
+                oed_df = self.as_oed_type(oed_df, column_to_field, additional_fields=additional_fields)
                 oed_df = self.prepare_df(oed_df, column_to_field, ods_fields)
 
             else:  # default we assume it is csv like
                 read_params = {'keep_default_na': False,
                                'na_values': PANDAS_DEFAULT_NULL_VALUES.difference({'NA'})}
                 read_params.update(source.get('read_param', {}))
-                oed_df = self.read_csv(filepath, self.exposure.get_input_fields(self.oed_type), engine, filter=self.filters, **read_params)
+                oed_df = self.read_csv(filepath, ods_fields, engine,
+                                       filter=self.filters,
+                                       additional_fields=additional_fields,
+                                       **read_params)
         else:
             raise Exception(f"Source type {source['source_type']} is not supported")
 
@@ -470,7 +480,7 @@ class OedSource:
         self.sources[version_name] = source
 
     @classmethod
-    def read_csv(cls, filepath_or_buffer, ods_fields, df_engine=pd, filter=None, **kwargs):
+    def read_csv(cls, filepath_or_buffer, ods_fields, df_engine=pd, filter=None, additional_fields={}, **kwargs):
         """
         the function read_csv will load a csv file as a DataFrame
         with all the columns converted to the correct dtype and having the correct default.
@@ -549,7 +559,7 @@ class OedSource:
             ).filter(filter).as_pandas()
 
         column_to_field = OedSchema.column_to_field(header, ods_fields)
-        df = cls.as_oed_type(df, column_to_field)
+        df = cls.as_oed_type(df, column_to_field, additional_fields=additional_fields)
 
         return cls.prepare_df(df, column_to_field, ods_fields)
 

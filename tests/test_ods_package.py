@@ -211,6 +211,48 @@ class OdsPackageTests(TestCase):
         # check case and extra space are ignored
         self.assertTrue(exposure.location.dataframe['CountryCode'][0] == 'GB')
 
+    def test_load_oed__additional_fields(self):
+        location_df = pd.DataFrame({
+            'PortNumber': [1, 1],
+            'PortName': ['1', None],
+            'AccNumber': [1, 2],
+            'AccName': [1, ''],
+            'LocNumber': [1, 2],
+            'COUNTRYCODE ': ['GB', 'FR'],
+            'LocPerilsCovered': 'WTC',
+            'buildingtiv': ['1000', '20000'],
+            'ContentsTIV': [0, 0],
+            'BITIV': [0, 0],
+            'BIPOI': [5, 10],
+            'BIPOIType': ['3', '3'],
+            'loc_id': [0, 1],
+            'LocCurrency': ['GBP', 'EUR']})
+        # check categorical column
+        location_df['PortName'] = location_df['PortName'].astype('category')
+
+        additional_fields_config = {'Loc': {
+                                          'loc_id': 'Int64',
+                                          'BIPOIType': 'Int64'
+                                        }
+                                    }
+
+        exposure = OedExposure(**{'location': location_df, 'use_field': True,
+                                  'additional_fields': additional_fields_config
+                                  })
+
+        assert exposure.location.dataframe['BIPOIType'].dtype == 'Int64'
+        assert exposure.location.dataframe['loc_id'].dtype == 'Int64'
+
+        # check reading from file
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            loc_path = os.path.join(tmp_dir, 'location.csv')
+            location_df.to_csv(loc_path, index=False)
+
+            exposure = OedExposure(**{'location': loc_path, 'use_field': True,
+                                      'additional_fields': additional_fields_config})
+            assert exposure.location.dataframe['BIPOIType'].dtype == 'Int64'
+            assert exposure.location.dataframe['loc_id'].dtype == 'Int64'
+
     def test_load_oed_from_stream(self):
         with tempfile.TemporaryDirectory() as tmp_run_dir:
             # read_parquet needs stream with seek method which urllib.request.urlopen doesn't have
