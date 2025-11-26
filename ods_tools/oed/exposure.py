@@ -74,7 +74,14 @@ class OedExposure:
         """
         self.use_field = use_field
         self.oed_schema = OedSchema.from_oed_schema_info(oed_schema_info)
-        self.backend_dtype = backend_dtype if backend_dtype is not None else self.oed_schema.get_default_backend_dtype()
+        if backend_dtype is not None:
+            if backend_dtype not in self.oed_schema.get_available_backend_dtype():
+                logger.warning(f"backend_dtype {backend_dtype} is not available for "
+                               f"the selected schema fallback to {self.oed_schema.get_default_backend_dtype()}")
+                backend_dtype = self.oed_schema.get_default_backend_dtype()
+        else:
+            backend_dtype = self.oed_schema.get_default_backend_dtype()
+        self.backend_dtype = backend_dtype
         self.df_engine = (
             exposure_df_engine or
             base_df_engine or

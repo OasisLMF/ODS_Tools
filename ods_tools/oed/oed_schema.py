@@ -174,6 +174,9 @@ class OedSchema:
     def get_default_backend_dtype(self):
         return 'pd_dtype'
 
+    def get_available_backend_dtype(self):
+        self.schema.get('backend_dtype', ['pd_dtype'])
+
     @staticmethod
     def get_default_from_ods_fields(ods_fields, field_name):
         field_info = ods_fields.get(field_name.lower())
