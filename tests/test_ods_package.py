@@ -230,11 +230,12 @@ class OdsPackageTests(TestCase):
         # check categorical column
         location_df['PortName'] = location_df['PortName'].astype('category')
 
-        additional_fields_config = {'Loc': {
-                                          'loc_id': 'Int64',
-                                          'BIPOIType': 'Int64'
-                                        }
-                                    }
+        additional_fields_config = {
+            'Loc': {
+                'loc_id': 'Int64',
+                'BIPOIType': 'Int64'
+            }
+        }
 
         exposure = OedExposure(**{'location': location_df, 'use_field': True,
                                   'additional_fields': additional_fields_config
