@@ -49,7 +49,8 @@ class OedExposure:
                  account_numbers=None,
                  portfolio_numbers=None,
                  base_df_engine=None,
-                 exposure_df_engine=None):
+                 exposure_df_engine=None,
+                 backend_dtype=None, **kwargs):
         """
         Create an OED object,
         each input can be the object itself or  information that will be used to create the object
@@ -74,6 +75,14 @@ class OedExposure:
         """
         self.use_field = use_field
         self.oed_schema = OedSchema.from_oed_schema_info(oed_schema_info)
+        if backend_dtype is not None:
+            if backend_dtype not in self.oed_schema.get_available_backend_dtype():
+                logger.warning(f"backend_dtype {backend_dtype} is not available for "
+                               f"the selected schema fallback to {self.oed_schema.get_default_backend_dtype()}")
+                backend_dtype = self.oed_schema.get_default_backend_dtype()
+        else:
+            backend_dtype = self.oed_schema.get_default_backend_dtype()
+        self.backend_dtype = backend_dtype
         self.df_engine = (
             exposure_df_engine or
             base_df_engine or
@@ -293,7 +302,7 @@ class OedExposure:
         The additional_field dict has the `oed_type` as the key and a
         mapping between the field name and type as the values.
         An example structure of self.additional_fields should be:
-            { 'Loc': {'field_1': 'Int64'} }
+            { 'Loc': {'field_1': {'pd_dtype': 'Int64', 'pa_dtype': 'int64[pyarrow]'} }
         """
         return self.additional_fields.get(oed_type, {})
 
