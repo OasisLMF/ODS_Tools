@@ -93,7 +93,7 @@ class OedSchema:
         if oed_schema_info is None or oed_schema_info == "":
             try:
                 dev_schema_path = cls.DEFAULT_ODS_SCHEMA_PATH.format('DEV')
-                logger.info(f"attempting to load DEV schema {dev_schema_path}")
+                logger.debug(f"attempting to load DEV schema {dev_schema_path}")
                 return cls.from_json(dev_schema_path)
             except (FileNotFoundError, Exception) as e:
                 logger.debug(f"loading default schema {cls.DEFAULT_ODS_SCHEMA_PATH}")
