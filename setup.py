@@ -68,31 +68,35 @@ class DownloadSpecODS(orig.install):
         orig.install.finalize_options(self)
 
     def run(self):
+        # Install all releases
+        print(f'Install all versions from url: {self.url}')
+        tags = self.get_all_tags()
+        data = {}
+        for tag in tags:
+            try:
+                url = self.url + f"{tag}/{self.filename.format('')}"
+                response = urllib.request.urlopen(url)
+                data = json.loads(response.read())
+                data['version'] = tag
+
+                download_path = os.path.join(self.build_lib, 'ods_tools', 'data', self.filename.format(tag))
+                with open(download_path, 'w+') as f:
+                    json.dump(data, f)
+
+            except HTTPError:
+                print(f'No OED associated with {tag}: {url}')
+
         if self.local_oed_spec:
             # Install with local json spec
             print('OED Version: Local File')
             print(f'Install from path: {self.local_oed_spec}')
             with open(self.local_oed_spec, 'r') as f:
                 data = json.load(f)
-                data['version'] = f'Local-file-install: {self.local_oed_spec}'
-        else:
-            # Install all releases
-            print(f'Install all versions from url: {self.url}')
-            tags = self.get_all_tags()
-            data = {}
-            for tag in tags:
-                try:
-                    url = self.url + f"{tag}/{self.filename.format('')}"
-                    response = urllib.request.urlopen(url)
-                    data = json.loads(response.read())
-                    data['version'] = tag
+                download_path = os.path.join(self.build_lib, 'ods_tools', 'data', self.filename.format('DEV'))
+                with open(download_path, 'w+') as f:
+                    json.dump(data, f)
+                data['version'] = 'DEV'
 
-                    download_path = os.path.join(self.build_lib, 'ods_tools', 'data', self.filename.format(tag))
-                    with open(download_path, 'w+') as f:
-                        json.dump(data, f)
-
-                except HTTPError:
-                    print(f'No OED associated with {tag}: {url}')
         orig.install.run(self)
 
     def get_all_tags(self):
