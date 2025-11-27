@@ -73,7 +73,7 @@ jobs:
     - run: pip install pip-tools pandas pyarrow openpyxl==3.0.10 click tox wheel
 
     - name: Build package (from OED release)
-      if: inputs.oed_spec_json == ''
+      if: inputs.oed_spec_json == '' && inputs.oed_spec_branch == ''
       run: |
         python setup.py sdist
         python setup.py bdist_wheel
