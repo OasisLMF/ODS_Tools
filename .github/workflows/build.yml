@@ -84,12 +84,16 @@ jobs:
       with:
         name: extracted_spec
         path: ${{ github.workspace }}/
+      env:
+        GITHUB_TOKEN: ${{ secrets.BUILD_GIT_TOKEN }}
 
     # Testing only - not for release
     - name: Buildpackage (from OED schema file)
       if: inputs.oed_spec_json != '' || inputs.oed_spec_branch != ''
       run: |
         python setup.py bdist_wheel install "--local-oed-spec=${{ github.workspace }}/OpenExposureData_Spec.json"
+      env:
+        GITHUB_TOKEN: ${{ secrets.BUILD_GIT_TOKEN }}
 
     - name: Build Output
       id: build_package

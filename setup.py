@@ -54,6 +54,7 @@ class DownloadSpecODS(orig.install):
         self.filename = 'OpenExposureData_{}Spec.json'
         self.ods_repo = 'OasisLMF/ODS_OpenExposureData'
         self.url = f'https://github.com/{self.ods_repo}/releases/download/'
+        self.github_token = os.environ.get('GITHUB_TOKEN', None)
         orig.install.__init__(self, *args, **kwargs)
 
     def initialize_options(self):
@@ -75,7 +76,11 @@ class DownloadSpecODS(orig.install):
         for tag in tags:
             try:
                 url = self.url + f"{tag}/{self.filename.format('')}"
-                response = urllib.request.urlopen(url)
+                req = urllib.request.Request(url)
+                if self.github_token:
+                    req.add_header('Authorization', f'token {self.github_token}')
+
+                response = urllib.request.urlopen(req)
                 data = json.loads(response.read())
                 data['version'] = tag
 
@@ -105,7 +110,11 @@ class DownloadSpecODS(orig.install):
         page = 1
         while True:
             api_url = f"https://api.github.com/repos/{self.ods_repo}/tags?per_page=100&page={page}"
-            with urllib.request.urlopen(api_url) as response:
+            req = urllib.request.Request(api_url)
+            if self.github_token:
+                req.add_header('Authorization', f'token {self.github_token}')
+
+            with urllib.request.urlopen(req) as response:
                 data = json.load(response)
             if not data:
                 break
