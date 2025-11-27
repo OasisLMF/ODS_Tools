@@ -276,7 +276,7 @@ class OedSource:
             if column in column_to_field:
                 _dtype = column_to_field[column][backend_dtype]
             elif column in additional_fields:
-                _dtype[column] = additional_fields[column][backend_dtype]
+                _dtype = additional_fields[column][backend_dtype]
             else:
                 _dtype = default_string_dtype[backend_dtype]
             if _dtype == default_string_dtype[backend_dtype]:

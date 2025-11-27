@@ -232,8 +232,8 @@ class OdsPackageTests(TestCase):
 
         additional_fields_config = {
             'Loc': {
-                'loc_id': 'Int64',
-                'BIPOIType': 'Int64'
+                'loc_id': {'pd_dtype': 'Int64', 'pa_dtype': 'int64[pyarrow]'},
+                'BIPOIType': {'pd_dtype': 'Int64', 'pa_dtype': 'int64[pyarrow'}
             }
         }
 
