@@ -1,3 +1,4 @@
+from oasislmf.pytools.common.input_files import read_occurrence
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -9,26 +10,27 @@ from ord_combining.ordhandling import merge_melt, merge_qelt, merge_selt, read_m
 rng = np.random.default_rng(12345)
 
 gpqt_dtype = {
-        'GroupPeriod': np.int32,
-        'Period': np.int32,
-        'group_event_set_id': np.int32,
-        'EventId': np.int32,
-        'Quantile': np.float32,
-        'output_set_id': np.int32,
-        }
+    'GroupPeriod': np.int32,
+    'Period': np.int32,
+    'group_event_set_id': np.int32,
+    'EventId': np.int32,
+    'Quantile': np.float32,
+    'output_set_id': np.int32,
+}
 
 
 gplt_dtype = {
-        'group_set_id': np.int32,
-        'output_set_id': np.int32,
-        'SummaryId': "Int32",
-        'GroupPeriod': np.int32,
-        'Period': np.int32,
-        'group_event_set_id': np.int32,
-        'EventId': np.int32,
-        'Loss': np.float64,
-        'LossType': 'Int8'
-        }
+    'group_set_id': np.int32,
+    'output_set_id': np.int32,
+    'SummaryId': "Int32",
+    'GroupPeriod': np.int32,
+    'Period': np.int32,
+    'group_event_set_id': np.int32,
+    'EventId': np.int32,
+    'Loss': np.float64,
+    'LossType': 'Int8'
+}
+
 
 def construct_gpqt(group_period_df, group_event_set_analysis_df, output_set_df, analysis,
                    mean_only=False):
@@ -47,20 +49,10 @@ def construct_gpqt(group_period_df, group_event_set_analysis_df, output_set_df, 
             print(f'Currently processing group_event_set_id: {group_event_set_id},  outputset: {id}')
 
             selected_analysis = analysis[curr_os['analysis_id']]
-
-            plt_paths = load_loss_table_paths(selected_analysis,
-                                              summary_level_id=curr_os['exposure_summary_level_id'],
-                                              perspective=curr_os['perspective_code'],
-                                              output_type='plt')
-
-            period_eventid = load_period_eventid_from_plt(plt_paths)
-
-            if period_eventid is None:
-                raise Exception(f"No period files found for this outputset: {curr_os['id']}.")
+            period_eventid = load_period_eventid__occurrence_bin(Path(selected_analysis.path).parent / 'input')
 
             _gpqt_fragment = filtered_group_period.merge(period_eventid, on='Period',
                                                          how='inner')
-
 
             _gpqt_fragment['output_set_id'] = curr_os['id']
 
@@ -73,6 +65,7 @@ def construct_gpqt(group_period_df, group_event_set_analysis_df, output_set_df, 
 
     gpqt = pd.concat(gpqt_fragments)
     return gpqt.astype(gpqt_dtype)
+
 
 def load_loss_table_paths(analysis, summary_level_id, perspective, output_type, outputset_summary_id_map=None):
     '''Load loss table paths to of type `output_type` from ord output directory of the selected
@@ -92,6 +85,7 @@ def load_loss_table_paths(analysis, summary_level_id, perspective, output_type, 
     output = {path.stem.split('_')[-1]: path for path in output}
 
     return output
+
 
 def load_period_eventid_from_plt(plt_paths, priority=['m', 'q', 's']):
     '''Load period eventid info from plt files.
@@ -114,18 +108,26 @@ def load_period_eventid_from_plt(plt_paths, priority=['m', 'q', 's']):
     return pd.concat(period_eventid_frags).drop_duplicates()
 
 
-def loss_sample_mean_only(gpqt, elt_paths):
-    assert 'mplt' in elt_paths
+def load_period_eventid__occurrence_bin(run_dir, fname='occurrence.bin'):
+    period_event_id_list = []
+    occ_map, _, _, _ = read_occurrence(run_dir, fname)
+    period_event_id = pd.DataFrame([{'Period': k, 'EventId': int(v[0][0])} for k, v in occ_map.items()])
 
-    mplt_df = pd.read_csv(elt_paths['mplt'])
+    return period_event_id.drop_duplicates(ignore_index=True)
+
+
+def loss_sample_mean_only(gpqt, elt_paths):
+    assert 'melt' in elt_paths, 'Mean only can only be performed if melt files present.'
+
+    mplt_df = pd.read_csv(elt_paths['melt'])
     mplt_df = mplt_df[["SummaryId", "SampleType", "EventId", "MeanLoss"]]
 
     mplt_dtypes = {
-            "SummaryId": "Int64",
-            "SampleType": "Int64",
-            "EventId": "Int64",
-            "MeanLoss": "float",
-            }
+        "SummaryId": "Int64",
+        "SampleType": "Int64",
+        "EventId": "Int64",
+        "MeanLoss": "float",
+    }
 
     mplt_df = mplt_df.astype(mplt_dtypes)
 
@@ -135,6 +137,7 @@ def loss_sample_mean_only(gpqt, elt_paths):
     mplt_df["LossType"] = mplt_df["SampleType"].where(mplt_df["SampleType"] == 1, 3)
     mplt_df = mplt_df[["SummaryId", "EventId", "MeanLoss", "LossType"]]
 
+    # GroupPeriod unique in gpqt
     gplt = gpqt.merge(mplt_df, on='EventId', how='left').rename(columns={"MeanLoss": "Loss"})
     return gplt
 
@@ -158,7 +161,7 @@ def do_loss_sampling_mean_only(gpqt, output_set_df, group_output_set, analysis_d
         analysis = analysis_dict[os['analysis_id']]
 
         elt_paths = load_loss_table_paths(analysis, summary_level_id=os['exposure_summary_level_id'],
-                                          perspective=os['perspective_code'], output_type='mplt')
+                                          perspective=os['perspective_code'], output_type='melt')
 
         filtered_gpqt = gpqt.query(f'output_set_id == {output_set_id}')
         gplt_fragment = loss_sample_mean_only(filtered_gpqt, elt_paths)
@@ -166,6 +169,11 @@ def do_loss_sampling_mean_only(gpqt, output_set_df, group_output_set, analysis_d
         # do summary id mapping
         summary_id_map = outputset_summary_id_map.get(output_set_id, None) if outputset_summary_id_map is not None else None
         if summary_id_map is not None:
+            missing_summary_ids = gplt_fragment["SummaryId"].isna()
+            if not gplt_fragment[missing_summary_ids].empty:
+                print(f"Output set {output_set_id} has {missing_summary_ids.sum()} missing SummaryIds.")
+            gplt_fragment = gplt_fragment[~missing_summary_ids]
+
             assert not gplt_fragment["SummaryId"].isna().any(), "missing SummaryIds detected"
             gplt_fragment["SummaryId"] = (gplt_fragment["SummaryId"].map(summary_id_map)
                                                                     .fillna(gplt_fragment["SummaryId"]))
@@ -175,10 +183,11 @@ def do_loss_sampling_mean_only(gpqt, output_set_df, group_output_set, analysis_d
 
     return pd.concat(gplt_fragments).astype(gplt_dtype)[gplt_dtype.keys()]
 
-## Loss sampling functions
+# Loss sampling functions
+
 
 def beta_sampling_group_loss(df):
-    df['mu'] = df['MeanLoss'] / df['MaxLoss'] # TODO need to verify form of this - also should we use MaxImpactedExposure as outlined in joh's sheet?
+    df['mu'] = df['MeanLoss'] / df['MaxLoss']  # TODO need to verify form of this - also should we use MaxImpactedExposure as outlined in joh's sheet?
     df['sigma'] = df['SDLoss'] / df['MaxLoss']
 
     df['alpha'] = df['mu'] * (df['mu'] * (1 - df['mu']) / (df['sigma'] ** 2) - 1)
@@ -186,13 +195,14 @@ def beta_sampling_group_loss(df):
 
     df_filter = df[['alpha', 'beta']].notna().all(axis='columns')
 
-    df.loc[df_filter, 'Loss'] = df.loc[df_filter, 'MaxLoss']*betaincinv(df.loc[df_filter, 'alpha'], df.loc[df_filter, 'beta'], df.loc[df_filter, 'Quantile'])
+    df.loc[df_filter, 'Loss'] = df.loc[df_filter, 'MaxLoss'] * \
+        betaincinv(df.loc[df_filter, 'alpha'], df.loc[df_filter, 'beta'], df.loc[df_filter, 'Quantile'])
 
-    df.loc[~df_filter, 'Loss'] = df.loc[~df_filter, 'MeanLoss'] # default to MeanLoss
+    df.loc[~df_filter, 'Loss'] = df.loc[~df_filter, 'MeanLoss']  # default to MeanLoss
 
     df = df.drop(columns=['alpha', 'beta', 'mu', 'sigma'])
 
-    df['LossType'] = 2 # set loss type
+    df['LossType'] = 2  # set loss type
 
     return df
 
@@ -203,10 +213,15 @@ def mean_loss_sampling(gpqt, melt, sampling_func=beta_sampling_group_loss):
     merged = merge_melt(gpqt, melt.query('SampleType == 2'))
 
     loss_sampled_df = sampling_func(merged.query('not_merged == False'))
+
+    remaining_gpqt = gpqt.loc[merged['not_merged']]
+
+    if loss_sampled_df.empty:
+        return None, remaining_gpqt
+
     loss_sampled_df["LossType"] = 2
     loss_sampled_df = loss_sampled_df[original_cols + ['SummaryId', 'LossType', 'Loss']]
 
-    remaining_gpqt = gpqt.loc[merged['not_merged']]
     return loss_sampled_df, remaining_gpqt
 
 
@@ -226,13 +241,17 @@ def quantile_loss_sampling(gpqt, qelt):
         sample_loss_frags.append(curr_loss_frag)
 
     sample_loss_df = pd.concat(sample_loss_frags)
+
+    if sample_loss_df.empty:
+        return None, remaining_gpqt
+
     sample_loss_df["LossType"] = 2
     sample_loss_df = sample_loss_df[original_cols + ["SummaryId", "LossType", "Loss"]]
 
     return sample_loss_df, remaining_gpqt[original_cols]
 
 
-def quantile_single_row(row, qelt): # todo speedup
+def quantile_single_row(row, qelt):  # todo speedup
     filtered_qelt = qelt.query(f"EventId == {row['EventId']}")
     previous_quantile = filtered_qelt[filtered_qelt["LTQuantile"] <= row["Quantile"]].iloc[-1]
     next_quantile = filtered_qelt[filtered_qelt["LTQuantile"] > row["Quantile"]].iloc[0]
@@ -243,7 +262,7 @@ def quantile_single_row(row, qelt): # todo speedup
 
     quantile_range = next_quantile["LTQuantile"] - previous_quantile["LTQuantile"]
     quantile_loss_range = next_quantile["QuantileLoss"] - previous_quantile["QuantileLoss"]
-    row["Loss"] =  previous_quantile["QuantileLoss"] + (row["Quantile"] - previous_quantile["LTQuantile"])*quantile_loss_range / quantile_range
+    row["Loss"] = previous_quantile["QuantileLoss"] + (row["Quantile"] - previous_quantile["LTQuantile"]) * quantile_loss_range / quantile_range
 
     return row
 
@@ -266,10 +285,15 @@ def sample_loss_sampling(gpqt, selt):
         sample_loss_frags.append(curr_loss_frag)
 
     sample_loss_df = pd.concat(sample_loss_frags)
+
+    if sample_loss_df.empty:
+        return None, remaining_gpqt
+
     sample_loss_df["LossType"] = 2
     sample_loss_df = sample_loss_df[original_cols + ["SummaryId", "LossType", "Loss"]]
 
     return sample_loss_df, remaining_gpqt
+
 
 def sample_single_row(row, selt):
     selt_loss = selt.query(f"EventId == {row['EventId']}")["SampleLoss"].sort_values()
@@ -278,7 +302,7 @@ def sample_single_row(row, selt):
 
 
 def do_loss_sampling_full_uncertainty(gpqt, output_set_df, group_output_set, analysis_dict,
-                                      priority=['m', 'q', 's'], outputset_summary_id_map=None):
+                                      priority=['m', 'q', 's'], outputset_summary_id_map=None, missing_gpqt_output_file=None):
     """
     Calculate group period loss table using full loss sampling. Currently requires ELT files.
 
@@ -309,7 +333,7 @@ def do_loss_sampling_full_uncertainty(gpqt, output_set_df, group_output_set, ana
         elt_paths = load_loss_table_paths(analysis, summary_level_id=os['exposure_summary_level_id'],
                                           perspective=os['perspective_code'], output_type='elt')
 
-        elt_dfs = {key: globals()[f'read_{key}'](value) for key, value in elt_paths.items()} # todo handle this better (lazy load)
+        elt_dfs = {key: globals()[f'read_{key}'](value) for key, value in elt_paths.items()}  # todo handle this better (lazy load)
 
         curr_gpqt = gpqt.query('output_set_id == @output_set_id')
 
@@ -322,6 +346,10 @@ def do_loss_sampling_full_uncertainty(gpqt, output_set_df, group_output_set, ana
             assert p in loss_sampling_func_map, f"Loss sampling {p} not defined."
 
             _gplt_fragment, curr_gpqt = loss_sampling_func_map[p](curr_gpqt, elt_df)
+
+            if _gplt_fragment is None:  # no fragment
+                continue
+
             _gplt_fragment["group_set_id"] = group_output_set[output_set_id]
 
             # do summary id mapping
@@ -337,7 +365,10 @@ def do_loss_sampling_full_uncertainty(gpqt, output_set_df, group_output_set, ana
                 break
 
         if not curr_gpqt.empty:
-            raise Exception(f'Could not perform loss sampling for all events. Missing events: {curr_gpqt["EventId"].to_list()}')
+            print(f'Could not perform loss sampling for {len(curr_gpqt)} events.')
+            if missing_gpqt_output_file is not None:
+                curr_gpqt.to_csv(Path(missing_gpqt_output_file) / 'missing_gpqt.csv')
+                print(f"Saved missing gpqt files to: {Path(missing_gpqt_output_file) / f'missing_gpqt_{output_set_id}.csv'}")
 
     gplt = pd.concat(gplt_fragments)
 

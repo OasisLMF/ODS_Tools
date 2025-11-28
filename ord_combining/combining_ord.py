@@ -14,8 +14,8 @@
 # ---
 
 # %%
-# %load_ext autoreload
-# %autoreload 2
+%load_ext autoreload
+%autoreload 2
 
 # %% [markdown]
 # # Combining Results in ORD
@@ -51,11 +51,10 @@ if module_path not in sys.path:
 # The input files are multiple runs of PiWind.
 
 # %% specify input ORD dirs
-parent_path = Path('~/code/ODS_Tools/ord_combining').expanduser()
+parent_path = Path('~/code/ODS_Tools/piwind-ord/').expanduser()
 
-ord_output_dirs = [parent_path / "ord-losses-1/output",
-                   parent_path / "ord-losses-2/output",
-                   parent_path / "ord-losses-3/output"]
+ord_output_dirs = [parent_path / "split/1/runs/losses-20251127155026/output/",
+                   parent_path / "split/2/runs/losses-20251127155057/output"]
 
 # %%
 # specify directory for outputs
@@ -79,6 +78,7 @@ print(f'Output Path: {output_dir}')
 from ord_combining.outputset import parse_analysis_settings
 from ord_combining.common import dataclass_list_to_dataframe
 
+
 def load_analysis_and_output_sets(ord_output_dirs):
     analysis_set = []
     output_sets = []
@@ -97,10 +97,11 @@ def load_analysis_and_output_sets(ord_output_dirs):
 
     return analysis_set, output_sets
 
+
 analysis, outputsets = load_analysis_and_output_sets(ord_output_dirs)
 analysis = {a.id: a for a in analysis}
 outputsets_df = dataclass_list_to_dataframe(outputsets)
-outputsets_df['id'] = outputsets_df.index # set id col
+outputsets_df['id'] = outputsets_df.index  # set id col
 
 # %%
 outputsets_df
@@ -201,16 +202,16 @@ loss_periods = [2, 10, 12, 15, 21]
 total_group_periods = 100
 
 example_group_period = gen_group_periods_event_set_analysis(loss_periods,
-                                                    max_period=total_periods,
-                                                    max_group_periods=total_group_periods)
+                                                            max_period=total_periods,
+                                                            max_group_periods=total_group_periods)
 
 # %%
 example_group_period = pd.concat(example_group_period)
 example_group_period = example_group_period.sort_values(by='GroupPeriod').reset_index(drop=True)
 
 for i in range(total_group_periods // total_periods):
-    slice = (i*total_periods, (i+1) * total_periods)
-    print(f"Current cycle: {i+1} : {slice}")
+    slice = (i * total_periods, (i + 1) * total_periods)
+    print(f"Current cycle: {i + 1} : {slice}")
     print(example_group_period[(example_group_period['GroupPeriod'] >= slice[0]) &
                                (example_group_period['GroupPeriod'] < slice[1])])
 
@@ -221,11 +222,10 @@ for i in range(total_group_periods // total_periods):
 # %%
 from ord_combining.groupperiod import generate_group_periods
 
-total_periods = 1000 # config: from model
-total_group_periods = 2000 # config: set by user
+total_group_periods = 2000  # config: set by user
 
 # %%
-group_period = generate_group_periods(group_event_set_analysis, analysis, total_periods, total_group_periods)
+group_period = generate_group_periods(group_event_set_analysis, analysis, total_group_periods)
 
 group_period.head()
 
@@ -250,12 +250,12 @@ group_period.to_csv(output_dir / 'group_period.csv', index=False)
 
 # %%
 loss_sampling_config = {
-        "group_mean" : False,
-        "group_mean_type" : 1,  # SampleType filter
-        "group_secondary_uncertainty" : False,
-        "group_parametric_distribution" : 'gamma', # either gamma or beta
-        "group_format_priority": {"M", "Q", "S"}
-        }
+    "group_mean": False,
+    "group_mean_type": 1,  # SampleType filter
+    "group_secondary_uncertainty": False,
+    "group_parametric_distribution": 'gamma',  # either gamma or beta
+    "group_format_priority": {"M", "Q", "S"}
+}
 
 # %% [markdown]
 # The first stage in loss sampling is generating the GroupPeriodQuantile table.
@@ -281,6 +281,7 @@ gplt_full = do_loss_sampling_full_uncertainty(gpqt, outputsets_df,
                                               group_output_set, analysis,
                                               priority=['q', 's'],
                                               outputset_summary_id_map=outputset_summary_id_map)
+
 gplt_full.head()
 
 # %%

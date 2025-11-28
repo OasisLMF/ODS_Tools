@@ -3,10 +3,13 @@ from numpy.random import shuffle
 import pandas as pd
 from pathlib import Path
 
+from oasislmf.pytools.common.input_files import read_occurrence
+
+
 def gen_group_periods_event_set_analysis(periods, max_period, max_group_periods):
     # generate the group cycle slices
     group_cycles = max_group_periods // max_period
-    group_slices = [(i*max_period, (i+1) * max_period) for i in range(group_cycles)]
+    group_slices = [(i * max_period, (i + 1) * max_period) for i in range(group_cycles)]
 
     if group_cycles * max_period < max_group_periods:
         group_slices += [(group_cycles * max_period, max_group_periods)]
@@ -20,6 +23,7 @@ def gen_group_periods_event_set_analysis(periods, max_period, max_group_periods)
         group_period_fragments.append(pd.DataFrame({'GroupPeriod': shuffled_slice[:shuffle_filter],
                                                     'Period': periods[:shuffle_filter]}))
     return group_period_fragments
+
 
 def load_plt_file(analysis):
     '''
@@ -38,20 +42,24 @@ def load_plt_file(analysis):
 
     return None
 
+
 def load_analysis_periods(selected_analyses):
-    period_table_fragments = []
+    period_list = []
+    max_periods = None
+
     for analysis in selected_analyses:
-        plt_file = load_plt_file(analysis)
-        if plt_file is None:
-            continue
+        occ_map, _, _, _max_periods = read_occurrence(Path(analysis.path).parent / 'input', 'occurrence.bin')
+        period_list += [int(v[0][0]) for v in occ_map.values()]
 
-        plt_df = pd.read_csv(plt_file)
-        period_table_fragments += [plt_df['Period'].drop_duplicates()]
+        if max_periods is None:
+            max_periods = _max_periods
+        elif max_periods != _max_periods:
+            raise Exception('Currently does not support different max_periods in a group.')
 
-    return pd.concat(period_table_fragments).drop_duplicates().reset_index(drop=True)
+    return pd.Series(period_list, name="Period").drop_duplicates(ignore_index=True), max_periods
 
 
-def generate_group_periods(group_event_set_analysis, analysis, max_periods, max_group_periods):
+def generate_group_periods(group_event_set_analysis, analysis, max_group_periods):
     group_period_fragments = []
     for event_set_id in group_event_set_analysis['group_event_set_id'].unique():
         filtered_group_event_set = group_event_set_analysis[group_event_set_analysis['group_event_set_id'] == event_set_id]
@@ -59,7 +67,7 @@ def generate_group_periods(group_event_set_analysis, analysis, max_periods, max_
         filtered_analysis_ids = filtered_group_event_set['analysis_id'].to_list()
         filtered_analysis = [analysis[a] for a in filtered_analysis_ids]
 
-        periods = load_analysis_periods(filtered_analysis)
+        periods, max_periods = load_analysis_periods(filtered_analysis)
         curr_frag = gen_group_periods_event_set_analysis(periods,
                                                          max_period=max_periods,
                                                          max_group_periods=max_group_periods)
