@@ -37,6 +37,7 @@ class OedExposure:
                  ri_info=None,
                  ri_scope=None,
                  oed_schema_info=None,
+                 additional_fields=None,
                  currency_conversion=None,
                  reporting_currency=None,
                  class_of_business=None,
@@ -60,6 +61,7 @@ class OedExposure:
             ri_info (path or dict or OedSource or pd.DataFrame): info for ri_info
             ri_scope (path or dict or OedSource or pd.DataFrame): info for ri_scope
             oed_schema_info (path_to_json, OedSchema, None): info for oed_schema
+            additional_fields (dict, None): info about additional fields and their dtypes
             currency_conversion (path_to_json or dict or None): info  currency_conversion
             reporting_currency (str): currency to convert
             check_oed (bool): check if OED files are valid or not
@@ -86,6 +88,10 @@ class OedExposure:
             base_df_engine or
             'oasis_data_manager.df_reader.reader.OasisPandasReader'
         )
+
+        if additional_fields is None:
+            additional_fields = {}
+        self.additional_fields = additional_fields
 
         def filter_col_in(column, values):
             def fn(df):
@@ -288,6 +294,17 @@ class OedExposure:
             dict of OED input field info
         """
         return self.oed_schema.schema['input_fields'][oed_type]
+
+    def get_additional_fields(self, oed_type):
+        """
+        Get additional field info for a given `oed_type`.
+
+        The additional_field dict has the `oed_type` as the key and a
+        mapping between the field name and type as the values.
+        An example structure of self.additional_fields should be:
+            { 'Loc': {'field_1': {'pd_dtype': 'Int64', 'pa_dtype': 'int64[pyarrow]'} }
+        """
+        return self.additional_fields.get(oed_type, {})
 
     @property
     def reporting_currency(self):

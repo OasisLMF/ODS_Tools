@@ -186,8 +186,9 @@ class OedSource:
         oed_source = cls(exposure, oed_type, 'orig', {'orig': {'source_type': 'DataFrame'}}, filters=filters)
 
         ods_fields = exposure.get_input_fields(oed_type)
+        additional_fields = exposure.get_additional_fields(oed_type)
         column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
-        oed_df = cls.as_oed_type(oed_df, column_to_field, exposure.backend_dtype)
+        oed_df = cls.as_oed_type(oed_df, column_to_field, exposure.backend_dtype, additional_fields=additional_fields)
         oed_df = cls.prepare_df(oed_df, column_to_field, ods_fields, exposure.backend_dtype)
 
         # apply the filters to the dataframe
@@ -251,8 +252,9 @@ class OedSource:
             raise OdsException('Failed to read stream data') from e
 
         ods_fields = exposure.get_input_fields(oed_type)
+        additional_fields = exposure.get_additional_fields(oed_type)
         column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
-        oed_df = cls.as_oed_type(oed_df, column_to_field, exposure.backend_dtype)
+        oed_df = cls.as_oed_type(oed_df, column_to_field, exposure.backend_dtype, additional_fields=additional_fields)
         oed_df = cls.prepare_df(oed_df, column_to_field, ods_fields, exposure.backend_dtype)
 
         # apply the filters to the dataframe
@@ -269,10 +271,12 @@ class OedSource:
         return oed_source
 
     @classmethod
-    def as_oed_type(cls, oed_df, column_to_field, backend_dtype):
+    def as_oed_type(cls, oed_df, column_to_field, backend_dtype, additional_fields={}):
         for column in oed_df.columns:
             if column in column_to_field:
                 _dtype = column_to_field[column][backend_dtype]
+            elif column in additional_fields:
+                _dtype = additional_fields[column][backend_dtype]
             else:
                 _dtype = default_string_dtype[backend_dtype]
             if _dtype == default_string_dtype[backend_dtype]:
@@ -384,14 +388,19 @@ class OedSource:
             if is_relative(filepath):
                 filepath = Path(self.exposure.working_dir, filepath)
             extension = PANDAS_COMPRESSION_MAP.get(source.get('extention')) or Path(filepath).suffix
+
+            ods_fields = self.exposure.get_input_fields(self.oed_type)
+            additional_fields = self.exposure.get_additional_fields(self.oed_type)
+
             if extension == '.parquet':
                 oed_df = get_df_reader(
                     format_filepath_engine_as_config(filepath, engine),
                     **source.get('read_param', {})
                 ).filter(self.filters).as_pandas()
-                ods_fields = self.exposure.get_input_fields(self.oed_type)
                 column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
-                oed_df = self.as_oed_type(oed_df, column_to_field, self.exposure.backend_dtype)
+                oed_df = self.as_oed_type(oed_df, column_to_field,
+                                          self.exposure.backend_dtype,
+                                          additional_fields=additional_fields)
                 oed_df = self.prepare_df(oed_df, column_to_field, ods_fields, self.exposure.backend_dtype)
 
             else:  # default we assume it is csv like
@@ -405,6 +414,7 @@ class OedSource:
                 oed_df = self.read_csv(filepath, self.exposure.get_input_fields(self.oed_type), engine,
                                        filter=self.filters,
                                        backend_dtype=self.exposure.backend_dtype,
+                                       additional_fields=additional_fields,
                                        **read_params)
         else:
             raise Exception(f"Source type {source['source_type']} is not supported")
@@ -485,7 +495,8 @@ class OedSource:
         self.sources[version_name] = source
 
     @classmethod
-    def read_csv(cls, filepath_or_buffer, ods_fields, df_engine=pd, filter=None, backend_dtype='pd_dtype', **kwargs):
+    def read_csv(cls, filepath_or_buffer, ods_fields, df_engine=pd, filter=None, backend_dtype='pd_dtype',
+                 additional_fields={}, **kwargs):
         """
         the function read_csv will load a csv file as a DataFrame
         with all the columns converted to the correct dtype and having the correct default.
@@ -558,6 +569,8 @@ class OedSource:
             if col in column_to_field:
                 field_info = column_to_field[col]
                 _dtype[col] = field_info[backend_dtype]
+            elif col in additional_fields:
+                _dtype[col] = additional_fields[col][backend_dtype]
             else:
                 _dtype[col] = default_string_dtype[backend_dtype]
 
