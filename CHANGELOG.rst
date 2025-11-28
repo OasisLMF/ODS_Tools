@@ -1,6 +1,14 @@
 ODS_Tools Changelog
 ===================
 
+`4.0.5`_
+ ---------
+* [#209](https://github.com/OasisLMF/ODS_Tools/pull/209) - acceptance conditions for oed_schema
+* [#210](https://github.com/OasisLMF/ODS_Tools/pull/210) - support pyarrow backend dtype
+* [#212](https://github.com/OasisLMF/ODS_Tools/pull/213) - feature/allow additional fields dtypes in oed exposure
+* [#214](https://github.com/OasisLMF/ODS_Tools/pull/214) - Ci fix custom oed schema
+.. _`4.0.5`:  https://github.com/OasisLMF/ODS_Tools/compare/4.0.4...4.0.5
+
 `4.0.4`_
  ---------
 * [#197](https://github.com/OasisLMF/ODS_Tools/pull/198) - RE: Config option for "engine" not propagating to Oasis Data Manager for pd read/write causing critical performance issues
