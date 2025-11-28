@@ -37,6 +37,7 @@ class OedExposure:
                  ri_info=None,
                  ri_scope=None,
                  oed_schema_info=None,
+                 additional_fields=None,
                  currency_conversion=None,
                  reporting_currency=None,
                  class_of_business=None,
@@ -48,7 +49,8 @@ class OedExposure:
                  account_numbers=None,
                  portfolio_numbers=None,
                  base_df_engine=None,
-                 exposure_df_engine=None):
+                 exposure_df_engine=None,
+                 backend_dtype=None, **kwargs):
         """
         Create an OED object,
         each input can be the object itself or  information that will be used to create the object
@@ -59,6 +61,7 @@ class OedExposure:
             ri_info (path or dict or OedSource or pd.DataFrame): info for ri_info
             ri_scope (path or dict or OedSource or pd.DataFrame): info for ri_scope
             oed_schema_info (path_to_json, OedSchema, None): info for oed_schema
+            additional_fields (dict, None): info about additional fields and their dtypes
             currency_conversion (path_to_json or dict or None): info  currency_conversion
             reporting_currency (str): currency to convert
             check_oed (bool): check if OED files are valid or not
@@ -69,15 +72,26 @@ class OedExposure:
             base_df_engine (Union[str, InputReaderConfig]): The default engine to use when loading dataframes
             exposure_df_engine (Union[str, InputReaderConfig]):
                 The exposure specific engine to use when loading dataframes
-            oed_schema_version: version of oed schema to validate from
         """
         self.use_field = use_field
         self.oed_schema = OedSchema.from_oed_schema_info(oed_schema_info)
+        if backend_dtype is not None:
+            if backend_dtype not in self.oed_schema.get_available_backend_dtype():
+                logger.warning(f"backend_dtype {backend_dtype} is not available for "
+                               f"the selected schema fallback to {self.oed_schema.get_default_backend_dtype()}")
+                backend_dtype = self.oed_schema.get_default_backend_dtype()
+        else:
+            backend_dtype = self.oed_schema.get_default_backend_dtype()
+        self.backend_dtype = backend_dtype
         self.df_engine = (
             exposure_df_engine or
             base_df_engine or
             'oasis_data_manager.df_reader.reader.OasisPandasReader'
         )
+
+        if additional_fields is None:
+            additional_fields = {}
+        self.additional_fields = additional_fields
 
         def filter_col_in(column, values):
             def fn(df):
@@ -280,6 +294,17 @@ class OedExposure:
             dict of OED input field info
         """
         return self.oed_schema.schema['input_fields'][oed_type]
+
+    def get_additional_fields(self, oed_type):
+        """
+        Get additional field info for a given `oed_type`.
+
+        The additional_field dict has the `oed_type` as the key and a
+        mapping between the field name and type as the values.
+        An example structure of self.additional_fields should be:
+            { 'Loc': {'field_1': {'pd_dtype': 'Int64', 'pa_dtype': 'int64[pyarrow]'} }
+        """
+        return self.additional_fields.get(oed_type, {})
 
     @property
     def reporting_currency(self):

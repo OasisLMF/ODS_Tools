@@ -90,21 +90,27 @@ class OedSchema:
         Returns:
             OedSchema
         """
-        if oed_schema_info is None:
-            logger.debug(f"loading default schema {cls.DEFAULT_ODS_SCHEMA_PATH}")
-            return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(OED_VERSION))
-        if isinstance(oed_schema_info, str) and oed_schema_info.lower().startswith('v'):
+        if oed_schema_info is None or oed_schema_info == "":
             try:
-                return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(oed_schema_info[1:]))
+                dev_schema_path = cls.DEFAULT_ODS_SCHEMA_PATH.format('DEV')
+                logger.debug(f"attempting to load DEV schema {dev_schema_path}")
+                return cls.from_json(dev_schema_path)
+            except (FileNotFoundError, Exception) as e:
+                logger.debug(f"loading default schema {cls.DEFAULT_ODS_SCHEMA_PATH}")
+                return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(OED_VERSION))
+        if isinstance(oed_schema_info, str):
+            try:
+                return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(oed_schema_info.lstrip('v')))
             except FileNotFoundError:
-                raise FileNotFoundError(f"Given oed_schema_info version {oed_schema_info} not found."
-                                        "Make sure your version is labelled in the form 'v1.2.3'")
-        if isinstance(oed_schema_info, (str, Path)):
+                try:
+                    return cls.from_json(oed_schema_info)
+                except Exception:
+                    raise ValueError(f"oed_schema_info {oed_schema_info} has no corresponding file or version")
+        if isinstance(oed_schema_info, Path):
             return cls.from_json(oed_schema_info)
-        elif isinstance(oed_schema_info, cls):
+        if isinstance(oed_schema_info, cls):
             return oed_schema_info
-        else:
-            raise OdsException(f"{oed_schema_info} is not a supported format to create {cls} object")
+        raise OdsException(f"{oed_schema_info} is not a supported format to create {cls} object")
 
     @classmethod
     def from_json(cls, oed_json):
@@ -170,6 +176,12 @@ class OedSchema:
         """
         return jit_peril_filtering(peril_ids.to_numpy().astype('str'), peril_filters.to_numpy().astype('str'),
                                    self.nb_peril_groups_dict if include_sub_group else self.nb_perils_dict)
+
+    def get_default_backend_dtype(self):
+        return 'pd_dtype'
+
+    def get_available_backend_dtype(self):
+        return self.schema.get('backend_dtype', ['pd_dtype'])
 
     @staticmethod
     def get_default_from_ods_fields(ods_fields, field_name):

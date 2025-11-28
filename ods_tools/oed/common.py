@@ -102,6 +102,7 @@ PANDAS_DEFAULT_NULL_VALUES = {
     'nan',
     '-nan',
     '',
+    ' ',
 }
 
 USUAL_FILE_NAME = {
@@ -197,12 +198,27 @@ OED_PERIL_COLUMNS = ['AccPeril', 'PolPerilsCovered', 'PolPeril', 'CondPeril', 'L
 BLANK_VALUES = {np.nan, '', None, pd.NA, pd.NaT}
 
 dtype_to_python = {
+    # numpy_nullable (historic pandas dtype)
     'Int8': int,
     'Int32': int,
     'Int64': int,
     'bytes': lambda x: bytes(x, 'utf-8'),
     'float64': float,
-    'category': str
+    'category': str,
+    # pyarrow
+    'int8[pyarrow]': int,
+    'int32[pyarrow]': int,
+    'int64[pyarrow]': int,
+    'string[pyarrow]': str,
+    'float64[pyarrow]': float,
+}
+
+dtype_str_to_dtype = {_dtype: pd.Series([None]).astype(_dtype).dtype for _dtype in dtype_to_python}
+
+# default string_dtype depending on backend_dtype
+default_string_dtype = {
+    'pd_dtype': 'category',
+    'pa_dtype': 'string[pyarrow]',
 }
 
 

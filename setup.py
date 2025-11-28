@@ -54,6 +54,7 @@ class DownloadSpecODS(orig.install):
         self.filename = 'OpenExposureData_{}Spec.json'
         self.ods_repo = 'OasisLMF/ODS_OpenExposureData'
         self.url = f'https://github.com/{self.ods_repo}/releases/download/'
+        self.github_token = os.environ.get('GITHUB_TOKEN', None)
         orig.install.__init__(self, *args, **kwargs)
 
     def initialize_options(self):
@@ -68,31 +69,39 @@ class DownloadSpecODS(orig.install):
         orig.install.finalize_options(self)
 
     def run(self):
+        # Install all releases
+        print(f'Install all versions from url: {self.url}')
+        tags = self.get_all_tags()
+        data = {}
+        for tag in tags:
+            try:
+                url = self.url + f"{tag}/{self.filename.format('')}"
+                req = urllib.request.Request(url)
+                if self.github_token:
+                    req.add_header('Authorization', f'token {self.github_token}')
+
+                response = urllib.request.urlopen(req)
+                data = json.loads(response.read())
+                data['version'] = tag
+
+                download_path = os.path.join(self.build_lib, 'ods_tools', 'data', self.filename.format(tag))
+                with open(download_path, 'w+') as f:
+                    json.dump(data, f)
+
+            except HTTPError:
+                print(f'No OED associated with {tag}: {url}')
+
         if self.local_oed_spec:
             # Install with local json spec
             print('OED Version: Local File')
             print(f'Install from path: {self.local_oed_spec}')
             with open(self.local_oed_spec, 'r') as f:
                 data = json.load(f)
-                data['version'] = f'Local-file-install: {self.local_oed_spec}'
-        else:
-            # Install all releases
-            print(f'Install all versions from url: {self.url}')
-            tags = self.get_all_tags()
-            data = {}
-            for tag in tags:
-                try:
-                    url = self.url + f"{tag}/{self.filename.format('')}"
-                    response = urllib.request.urlopen(url)
-                    data = json.loads(response.read())
-                    data['version'] = tag
+                download_path = os.path.join(self.build_lib, 'ods_tools', 'data', self.filename.format('DEV'))
+                with open(download_path, 'w+') as f:
+                    json.dump(data, f)
+                data['version'] = 'DEV'
 
-                    download_path = os.path.join(self.build_lib, 'ods_tools', 'data', self.filename.format(tag))
-                    with open(download_path, 'w+') as f:
-                        json.dump(data, f)
-
-                except HTTPError:
-                    print(f'No OED associated with {tag}: {url}')
         orig.install.run(self)
 
     def get_all_tags(self):
@@ -101,7 +110,11 @@ class DownloadSpecODS(orig.install):
         page = 1
         while True:
             api_url = f"https://api.github.com/repos/{self.ods_repo}/tags?per_page=100&page={page}"
-            with urllib.request.urlopen(api_url) as response:
+            req = urllib.request.Request(api_url)
+            if self.github_token:
+                req.add_header('Authorization', f'token {self.github_token}')
+
+            with urllib.request.urlopen(req) as response:
                 data = json.load(response)
             if not data:
                 break
