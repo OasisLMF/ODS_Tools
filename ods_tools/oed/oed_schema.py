@@ -91,8 +91,13 @@ class OedSchema:
             OedSchema
         """
         if oed_schema_info is None or oed_schema_info == "":
-            logger.debug(f"loading default schema {cls.DEFAULT_ODS_SCHEMA_PATH}")
-            return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(OED_VERSION))
+            try:
+                dev_schema_path = cls.DEFAULT_ODS_SCHEMA_PATH.format('DEV')
+                logger.debug(f"attempting to load DEV schema {dev_schema_path}")
+                return cls.from_json(dev_schema_path)
+            except (FileNotFoundError, Exception) as e:
+                logger.debug(f"loading default schema {cls.DEFAULT_ODS_SCHEMA_PATH}")
+                return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(OED_VERSION))
         if isinstance(oed_schema_info, str):
             try:
                 return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(oed_schema_info.lstrip('v')))
