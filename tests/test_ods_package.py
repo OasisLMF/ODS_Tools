@@ -428,10 +428,12 @@ class OdsPackageTests(TestCase):
                 'location': location_df,
                 'oed_schema_info': custom_schema_path,
                 'use_field': True,
-                'check_oed': True})
-            pd.testing.assert_series_equal(exposure.location.dataframe['LocNumber'],
-                                           location_df['LocNumberAlias'].astype(str).astype('category'),
-                                           check_names=False, check_categorical=False)
+                'check_oed': True,
+                'backend_dtype': 'pa_dtype',
+            })
+            pd.testing.assert_series_equal(exposure.location.dataframe['LocNumber'].astype(str),
+                                           location_df['LocNumberAlias'].astype(str),
+                                           check_names=False)
 
     def test_load_exposure_from_different_directory(self):
         """
@@ -490,7 +492,9 @@ class OdsPackageTests(TestCase):
                 'Allow blanks?': 'YES',
                 'Default': '0',
                 'Valid value range': 'n/a',
-                'pd_dtype': 'Int32'},
+                'pd_dtype': 'Int32',
+                'pa_dtype': 'int32[pyarrow]',
+            },
             'IntValueMultipleXX': {
                 'Input Field Name': 'IntValueMultipleXX',
                 'Type & Description': '',
@@ -499,7 +503,9 @@ class OdsPackageTests(TestCase):
                 'Allow blanks?': 'YES',
                 'Default': '0',
                 'Valid value range': 'n/a',
-                'pd_dtype': 'Int32'},
+                'pd_dtype': 'Int32',
+                'pa_dtype': 'int32[pyarrow]',
+            },
             'StringValueMultipleXX': {
                 'Input Field Name': 'StringValueMultipleXX',
                 'Type & Description': '',
@@ -508,7 +514,9 @@ class OdsPackageTests(TestCase):
                 'Allow blanks?': 'YES',
                 'Default': 'foobar',
                 'Valid value range': 'n/a',
-                'pd_dtype': 'category'}
+                'pd_dtype': 'category',
+                'pa_dtype': 'string[pyarrow]',
+            }
         }
 
         for field_name, field_info in test_fields.items():

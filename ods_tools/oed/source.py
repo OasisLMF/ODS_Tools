@@ -8,7 +8,7 @@ import numpy as np
 from chardet.universaldetector import UniversalDetector
 
 from .common import (OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, fill_empty,
-                     UnknownColumnSaveOption, cached_property, is_empty)
+                     UnknownColumnSaveOption, cached_property, is_empty, dtype_str_to_dtype, default_string_dtype)
 from .forex import convert_currency
 from .oed_schema import OedSchema
 
@@ -173,7 +173,7 @@ class OedSource:
     @classmethod
     def from_dataframe(cls, exposure, oed_type, oed_df: pd.DataFrame, filters=None):
         """
-        OedSource Constructor from a filepath
+        OedSource Constructor from a pd.DataFrame
         Args:
             exposure (OedExposure): Exposure the oed source is part of
             oed_type (str): type of file (Loc, Acc, ..)
@@ -187,8 +187,8 @@ class OedSource:
 
         ods_fields = exposure.get_input_fields(oed_type)
         column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
-        oed_df = cls.as_oed_type(oed_df, column_to_field)
-        oed_df = cls.prepare_df(oed_df, column_to_field, ods_fields)
+        oed_df = cls.as_oed_type(oed_df, column_to_field, exposure.backend_dtype)
+        oed_df = cls.prepare_df(oed_df, column_to_field, ods_fields, exposure.backend_dtype)
 
         # apply the filters to the dataframe
         for fn in oed_source.filters:
@@ -252,8 +252,8 @@ class OedSource:
 
         ods_fields = exposure.get_input_fields(oed_type)
         column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
-        oed_df = cls.as_oed_type(oed_df, column_to_field)
-        oed_df = cls.prepare_df(oed_df, column_to_field, ods_fields)
+        oed_df = cls.as_oed_type(oed_df, column_to_field, exposure.backend_dtype)
+        oed_df = cls.prepare_df(oed_df, column_to_field, ods_fields, exposure.backend_dtype)
 
         # apply the filters to the dataframe
         for fn in oed_source.filters:
@@ -269,33 +269,40 @@ class OedSource:
         return oed_source
 
     @classmethod
-    def as_oed_type(cls, oed_df, column_to_field):
-        pd_dtype = {}
-        to_tmp_dtype = {}
+    def as_oed_type(cls, oed_df, column_to_field, backend_dtype):
         for column in oed_df.columns:
             if column in column_to_field:
-                pd_dtype[column] = column_to_field[column]['pd_dtype']
+                _dtype = column_to_field[column][backend_dtype]
             else:
-                pd_dtype[column] = 'category'
-            if pd_dtype[column] == 'category':  # we need to convert to str first
-                to_tmp_dtype[column] = 'str'
+                _dtype = default_string_dtype[backend_dtype]
+            if _dtype == default_string_dtype[backend_dtype]:
                 if oed_df[column].dtype.name == 'category' and '' not in oed_df[column].dtype.categories:
                     oed_df[column] = oed_df[column].cat.add_categories('')
-                oed_df[column] = oed_df[column]  # make a copy f the col in case it is read_only
-                oed_df.loc[is_empty(oed_df, column), column] = ''
-            if pd.api.types.is_numeric_dtype(pd_dtype[column]):  # make sure empty string are converted to nan
-                oed_df[column] = pd.to_numeric(oed_df[column], errors='coerce')
-
-        return oed_df.astype(to_tmp_dtype).astype(pd_dtype)
+                try:
+                    oed_df.loc[is_empty(oed_df, column), column] = ''
+                except ValueError:  # error raised if oed_df[column] is readonly
+                    oed_df[column] = oed_df[column].copy()
+                    oed_df.loc[is_empty(oed_df, column), column] = ''
+                if _dtype == 'category':  # we will need to convert to str first
+                    oed_df[column] = oed_df[column].astype('str')
+                if dtype_str_to_dtype[_dtype].name != oed_df[column].dtype.name:
+                    oed_df[column] = oed_df[column].astype(_dtype)
+            elif pd.api.types.is_numeric_dtype(_dtype):  # make sure empty string are converted to nan
+                if dtype_str_to_dtype[_dtype].name != oed_df[column].dtype.name:
+                    oed_df[column] = pd.to_numeric(oed_df[column], errors='coerce').astype(_dtype)
+            else:  # for example for date dtype, not present at the moment in OED schema but could be in a custom one
+                oed_df[column] = oed_df[column].astype(_dtype)
+        return oed_df
 
     @classmethod
-    def prepare_df(cls, df, column_to_field, ods_fields):
+    def prepare_df(cls, df, column_to_field, ods_fields, backend_dtype="pd_dtype"):
         """
         Complete the Oed Dataframe with default valued and required column
         Args:
             df: oed dataframe
             column_to_field: dict mapping column to their field info
             ods_fields: the ods_field info for this oed source type
+            backend_dtype: dtype to chose select from field_info (pd_dtype or pa_dtype)
 
         Returns:
             df
@@ -310,14 +317,14 @@ class OedSource:
             col = field_info['Input Field Name']
             if col not in present_field:
                 if field_info.get('Required Field') == 'R' and field_info.get("Allow blanks?", '').upper() == "YES":
-                    if field_info['pd_dtype'] == 'category':
+                    if field_info[backend_dtype] == default_string_dtype[backend_dtype]:
                         df[col] = '' if field_info['Default'] == 'n/a' else field_info['Default']
-                        df[col] = df[col].astype('category')
+                        df[col] = df[col].astype(default_string_dtype[backend_dtype])
                     else:
                         df[col] = np.nan
-                        df[col] = df[col].astype(field_info['pd_dtype'])
+                        df[col] = df[col].astype(field_info[backend_dtype])
                         if field_info['Default'] != 'n/a':
-                            df[col] = df[col].fillna(df[col].dtype.type(field_info['Default'])).astype(field_info['pd_dtype'])
+                            df[col] = df[col].fillna(df[col].dtype.type(field_info['Default'])).astype(field_info[backend_dtype])
         return df
 
     @cached_property
@@ -326,6 +333,7 @@ class OedSource:
         df = self.load_dataframe()
         if self.exposure.use_field:
             df = OedSchema.use_field(df, self.exposure.get_input_fields(self.oed_type))
+
         self.loaded = True
         if df.empty:
             logger.info(f'{self.oed_name} {self} is empty')
@@ -383,14 +391,21 @@ class OedSource:
                 ).filter(self.filters).as_pandas()
                 ods_fields = self.exposure.get_input_fields(self.oed_type)
                 column_to_field = OedSchema.column_to_field(oed_df.columns, ods_fields)
-                oed_df = self.as_oed_type(oed_df, column_to_field)
-                oed_df = self.prepare_df(oed_df, column_to_field, ods_fields)
+                oed_df = self.as_oed_type(oed_df, column_to_field, self.exposure.backend_dtype)
+                oed_df = self.prepare_df(oed_df, column_to_field, ods_fields, self.exposure.backend_dtype)
 
             else:  # default we assume it is csv like
                 read_params = {'keep_default_na': False,
-                               'na_values': PANDAS_DEFAULT_NULL_VALUES.difference({'NA'})}
+                               'na_values': PANDAS_DEFAULT_NULL_VALUES.difference({'NA'}),
+                               }
+                if self.exposure.backend_dtype == "pa_dtype":
+                    read_params['dtype_backend'] = "pyarrow"
+                    read_params['engine'] = "pyarrow"
                 read_params.update(source.get('read_param', {}))
-                oed_df = self.read_csv(filepath, self.exposure.get_input_fields(self.oed_type), engine, filter=self.filters, **read_params)
+                oed_df = self.read_csv(filepath, self.exposure.get_input_fields(self.oed_type), engine,
+                                       filter=self.filters,
+                                       backend_dtype=self.exposure.backend_dtype,
+                                       **read_params)
         else:
             raise Exception(f"Source type {source['source_type']} is not supported")
 
@@ -470,7 +485,7 @@ class OedSource:
         self.sources[version_name] = source
 
     @classmethod
-    def read_csv(cls, filepath_or_buffer, ods_fields, df_engine=pd, filter=None, **kwargs):
+    def read_csv(cls, filepath_or_buffer, ods_fields, df_engine=pd, filter=None, backend_dtype='pd_dtype', **kwargs):
         """
         the function read_csv will load a csv file as a DataFrame
         with all the columns converted to the correct dtype and having the correct default.
@@ -524,6 +539,8 @@ class OedSource:
                             " or pass your DataFrame engine (modin, dask,...)")
 
         header_read_arg = {**kwargs, 'nrows': 0, 'index_col': False}
+        if header_read_arg.get('engine') == 'pyarrow':
+            header_read_arg.pop('engine')  # The 'nrows' option is not supported with the 'pyarrow' engine
         if (stream_start is None
                 and Path(filepath_or_buffer).suffix == '.gzip' or header_read_arg.get('compression') == 'gzip'):
             # support for gzip https://stackoverflow.com/questions/60460814/pandas-read-csv-failing-on-gzipped-file-with-unicodedecodeerror-utf-8-codec-c
@@ -533,25 +550,33 @@ class OedSource:
 
         else:
             header = read_or_try_encoding_read(df_engine, filepath_or_buffer, **header_read_arg).columns
+
+        # match header column name to oed field name and prepare pd_dtype used to read the data
+        _dtype = {}
+        column_to_field = OedSchema.column_to_field(header, ods_fields)
+        for col in header:
+            if col in column_to_field:
+                field_info = column_to_field[col]
+                _dtype[col] = field_info[backend_dtype]
+            else:
+                _dtype[col] = default_string_dtype[backend_dtype]
+
         # read the oed file
         if kwargs.get('compression') == 'gzip':
             with open(filepath_or_buffer, 'rb') as f:
                 df = get_df_reader(
                     format_filepath_engine_as_config(filepath_or_buffer, df_engine),
-                    dtype=str,  # prevent inferring type
+                    dtype=_dtype,
                     **kwargs
                 ).filter(filter).as_pandas()
         else:
             df = get_df_reader(
                 format_filepath_engine_as_config(filepath_or_buffer, df_engine),
-                dtype=str,  # prevent inferring type
+                dtype=_dtype,
                 **kwargs
             ).filter(filter).as_pandas()
 
-        column_to_field = OedSchema.column_to_field(header, ods_fields)
-        df = cls.as_oed_type(df, column_to_field)
-
-        return cls.prepare_df(df, column_to_field, ods_fields)
+        return cls.prepare_df(df, column_to_field, ods_fields, backend_dtype)
 
 
 def format_filepath_engine_as_config(filepath, df_engine):
