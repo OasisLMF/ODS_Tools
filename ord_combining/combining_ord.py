@@ -53,8 +53,8 @@ if module_path not in sys.path:
 # %% specify input ORD dirs
 parent_path = Path('~/code/ODS_Tools/piwind-ord/').expanduser()
 
-ord_output_dirs = [parent_path / "split/1/runs/losses-20251127155026/output/",
-                   parent_path / "split/2/runs/losses-20251127155057/output"]
+ord_output_dirs = [parent_path / "split/1/runs/losses-20251201164501/output/",
+                   parent_path / "split/2/runs/losses-20251201164618/output/"]
 
 # %%
 # specify directory for outputs
@@ -318,12 +318,18 @@ from ord_combining.grouped_output import generate_al, generate_ep
 # %% [markdown]
 # ### GALT Output
 
+
+def save_output(full_df, output_dir, output_name, factor_col='group_set_id'):
+    for i in full_df[factor_col].unique():
+        full_df.query(f"{factor_col} == {i}").to_csv(output_dir / f'{i}_{output_name}', index=False)
+
+
 # %%
 aal_full = generate_al(gplt_full, total_group_periods)
 aal_mean = generate_al(gplt_mean, total_group_periods)
 
-aal_full.to_csv(output_dir / "aal_full.csv", index=False)
-aal_mean.to_csv(output_dir / "aal_mean.csv", index=False)
+save_output(aal_full, output_dir, 'aal_full.csv')
+save_output(aal_mean, output_dir, 'aal_mean.csv')
 
 # %% [markdown]
 # ### GEPT Output
@@ -332,5 +338,5 @@ aal_mean.to_csv(output_dir / "aal_mean.csv", index=False)
 ep_full_df = generate_ep(gplt_full, total_group_periods, oep=True, aep=True)
 ep_mean_df = generate_ep(gplt_mean, total_group_periods, oep=True, aep=True)
 
-ep_full_df.to_csv(output_dir / "ep_full.csv", index=False)
-ep_mean_df.to_csv(output_dir / "ep_mean.csv", index=False)
+save_output(ep_full_df, output_dir, 'ep_full.csv')
+save_output(ep_mean_df, output_dir, 'ep_mean.csv')
