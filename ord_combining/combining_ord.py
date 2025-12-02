@@ -222,7 +222,7 @@ for i in range(total_group_periods // total_periods):
 # %%
 from ord_combining.groupperiod import generate_group_periods
 
-total_group_periods = 2000  # config: set by user
+total_group_periods = 10000  # config: set by user
 
 # %%
 group_period = generate_group_periods(group_event_set_analysis, analysis, total_group_periods)
@@ -319,14 +319,24 @@ from ord_combining.grouped_output import generate_al, generate_ep
 # ### GALT Output
 
 
-def save_output(full_df, output_dir, output_name, factor_col='group_set_id'):
+def save_output(full_df, output_dir, output_name, factor_col='group_set_id', float_format='%.6f'):
     for i in full_df[factor_col].unique():
-        full_df.query(f"{factor_col} == {i}").to_csv(output_dir / f'{i}_{output_name}', index=False)
+        full_df.query(f"{factor_col} == {i}").to_csv(output_dir / f'{i}_{output_name}', index=False,
+                                                     float_format=float_format)
 
 
 # %%
-aal_full = generate_al(gplt_full, total_group_periods)
-aal_mean = generate_al(gplt_mean, total_group_periods)
+
+dtypes_aal = {
+    'group_set_id': 'int',
+    'SummaryId': 'int',
+    'LossType': 'int',
+    'Mean': 'float',
+    'Std': 'float'
+}
+
+aal_full = generate_al(gplt_full, total_group_periods).astype(dtypes_aal)
+aal_mean = generate_al(gplt_mean, total_group_periods).astype(dtypes_aal)
 
 save_output(aal_full, output_dir, 'aal_full.csv')
 save_output(aal_mean, output_dir, 'aal_mean.csv')
@@ -335,8 +345,16 @@ save_output(aal_mean, output_dir, 'aal_mean.csv')
 # ### GEPT Output
 
 # %%
-ep_full_df = generate_ep(gplt_full, total_group_periods, oep=True, aep=True)
-ep_mean_df = generate_ep(gplt_mean, total_group_periods, oep=True, aep=True)
+dtypes_ep = {
+    'group_set_id': 'int',
+    'SummaryId': 'int',
+    'EPCalc': 'int',
+    'EPType': 'int',
+    'RP': 'float',
+    'Loss': 'float'
+}
+ep_full_df = generate_ep(gplt_full, total_group_periods, oep=True, aep=True).astype(dtypes_ep)
+ep_mean_df = generate_ep(gplt_mean, total_group_periods, oep=True, aep=True).astype(dtypes_ep)
 
 save_output(ep_full_df, output_dir, 'ep_full.csv')
 save_output(ep_mean_df, output_dir, 'ep_mean.csv')
