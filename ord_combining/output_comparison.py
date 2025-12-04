@@ -1,7 +1,7 @@
 import pandas as pd
 from pathlib import Path
 
-generated_path = Path('~/code/ODS_Tools/combined_ord-021225162418/').expanduser()
+generated_path = Path('~/code/ODS_Tools/combined_ord-041225154521/').expanduser()
 expected_path = Path('~/code/ODS_Tools/piwind-ord/full/runs/losses-20251202160403/output/').expanduser()
 
 expected_slevel = 2
@@ -40,5 +40,4 @@ print('Mean ratio: ')
 expected_aal['MeanLoss'] / generated_aal_mean.reset_index()['Mean']
 
 print('Full ratio: ')
-expected_aal.query('SampleType==2')['MeanLoss'] / generated_aal_full['Mean']
-expected_aal.query('SampleType==2').reset_index()['MeanLoss'] / generated_aal_full['Mean']
+expected_aal.query('SampleType==1').reset_index()['MeanLoss'] / generated_aal_full['Mean']

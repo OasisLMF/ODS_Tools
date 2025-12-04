@@ -109,9 +109,8 @@ def load_period_eventid_from_plt(plt_paths, priority=['m', 'q', 's']):
 
 
 def load_period_eventid__occurrence_bin(run_dir, fname='occurrence.bin'):
-    period_event_id_list = []
     occ_map, _, _, _ = read_occurrence(run_dir, fname)
-    period_event_id = pd.DataFrame([{'Period': k, 'EventId': int(v[0][0])} for k, v in occ_map.items()])
+    period_event_id = pd.DataFrame([{'EventId': k, 'Period': int(v[0][0])} for k, v in occ_map.items()])
 
     return period_event_id.drop_duplicates(ignore_index=True)
 
@@ -302,7 +301,7 @@ def sample_single_row(row, selt):
 
 
 def do_loss_sampling_full_uncertainty(gpqt, output_set_df, group_output_set, analysis_dict,
-                                      priority=['m', 'q', 's'], outputset_summary_id_map=None, missing_gpqt_output_file=None):
+                                      priority=['m', 'q', 's'], outputset_summary_id_map=None, output_dir=None):
     """
     Calculate group period loss table using full loss sampling. Currently requires ELT files.
 
@@ -366,9 +365,9 @@ def do_loss_sampling_full_uncertainty(gpqt, output_set_df, group_output_set, ana
 
         if not curr_gpqt.empty:
             print(f'Could not perform loss sampling for {len(curr_gpqt)} events.')
-            if missing_gpqt_output_file is not None:
-                curr_gpqt.to_csv(Path(missing_gpqt_output_file) / 'missing_gpqt.csv')
-                print(f"Saved missing gpqt files to: {Path(missing_gpqt_output_file) / f'missing_gpqt_{output_set_id}.csv'}")
+            if output_dir is not None:
+                curr_gpqt.to_csv(Path(output_dir) / f'missing_gpqt_{output_set_id}.csv')
+                print(f"Saved missing gpqt files to: {Path(output_dir) / f'missing_gpqt_{output_set_id}.csv'}")
 
     gplt = pd.concat(gplt_fragments)
 

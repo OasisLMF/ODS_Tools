@@ -123,7 +123,7 @@ from ord_combining.groupeventset import generate_group_set, generate_group_event
 group_event_set_fields = ['event_set_id', 'event_occurrence_id', 'model_supplier_id']
 
 group_set, group_output_set = generate_group_set(outputsets_df)
-event_occurrence_set_df, group_event_set_analysis = generate_group_event_set(analysis, group_event_set_fields)
+event_occurrence_set_df, event_occurrence_set_analysis = generate_group_event_set(analysis, group_event_set_fields)
 
 # %%
 group_output_set
@@ -135,7 +135,7 @@ group_set
 event_occurrence_set_df
 
 # %%
-group_event_set_analysis
+event_occurrence_set_analysis
 
 # %% [markdown]
 # Once the groups have been assigned the SummaryId is aligned within each group_set.
@@ -169,7 +169,7 @@ with open(output_dir / 'group_output_set.json', 'w') as f:
     json.dump(group_output_set, f, indent=4)
 
 group_set.to_csv(output_dir / 'group_set.csv')
-group_event_set_analysis.to_csv(output_dir / 'group_event_set_analysis.csv', index=False)
+event_occurrence_set_analysis.to_csv(output_dir / 'group_event_set_analysis.csv', index=False)
 event_occurrence_set_df.to_csv(output_dir / 'event_occurrence_set.csv', index=False)
 
 outputsets_df.to_csv(output_dir / 'output_set.csv', index=False)
@@ -225,19 +225,17 @@ from ord_combining.groupperiod import generate_group_periods
 total_group_periods = 10000  # config: set by user
 
 # %%
+# todo correctlt generate group_event_set_analysis
+group_event_set_analysis = event_occurrence_set_analysis.rename(columns={'event_occurrence_set_id': 'group_event_set_id'})
+
 group_period = generate_group_periods(group_event_set_analysis, analysis, total_group_periods)
 
 group_period.head()
 
+print('No. of group periods: ', len(group_period))
 # %%
 # save csv
 group_period.to_csv(output_dir / 'group_period.csv', index=False)
-
-
-# %% [markdown]
-# **Q**:
-# - Currently loading Periods from single PLT file in ORD. Should this actually read all PLT files?
-# - How to load total periods from analysis settings (is it possible to have different total periods for individual grouped analyses)?
 
 # %% [markdown]
 # ## 3. Loss Sampling
@@ -268,7 +266,7 @@ gpqt = construct_gpqt(group_period, group_event_set_analysis, outputsets_df, ana
 
 # %%
 # save gpqt
-gpqt.to_csv(output_dir / "group_period_quantile.csv", index=False)
+gpqt.to_csv(output_dir / "gpqt.csv", index=False)
 
 # %% [markdown]
 # Finally the loss sampling can be done to produce the group period loss table (GPLT).
@@ -279,8 +277,9 @@ from ord_combining.losssampling import do_loss_sampling_full_uncertainty, do_los
 # %%
 gplt_full = do_loss_sampling_full_uncertainty(gpqt, outputsets_df,
                                               group_output_set, analysis,
-                                              priority=['q', 's'],
-                                              outputset_summary_id_map=outputset_summary_id_map)
+                                              priority=['s'],
+                                              outputset_summary_id_map=outputset_summary_id_map,
+                                              output_dir=output_dir)
 
 gplt_full.head()
 
@@ -324,8 +323,8 @@ def save_output(full_df, output_dir, output_name, factor_col='group_set_id', flo
         full_df.query(f"{factor_col} == {i}").to_csv(output_dir / f'{i}_{output_name}', index=False,
                                                      float_format=float_format)
 
-
 # %%
+
 
 dtypes_aal = {
     'group_set_id': 'int',
