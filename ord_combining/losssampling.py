@@ -238,7 +238,7 @@ def quantile_loss_sampling(gpqt, qelt):
     curr_gpqt = gpqt[merged]
     for summary_id in tqdm(summary_ids, desc="quantile ls"):
         qelt_summary_id = qelt.query(f"SummaryId == {summary_id}")
-        curr_loss_frag = curr_gpqt.apply(lambda x: quantile_single_row(x, qelt_summary_id), axis=1)
+        curr_loss_frag = quantile_loss_sampling__summary_id(curr_gpqt, qelt_summary_id)
         curr_loss_frag["SummaryId"] = summary_id
         sample_loss_frags.append(curr_loss_frag)
 
@@ -251,6 +251,46 @@ def quantile_loss_sampling(gpqt, qelt):
     sample_loss_df = sample_loss_df[original_cols + ["SummaryId", "LossType", "Loss"]]
 
     return sample_loss_df, remaining_gpqt[original_cols]
+
+
+def quantile_loss_sampling__summary_id(gpqt, qelt):
+    quantiles = sorted(qelt['LTQuantile'].unique().tolist())
+    quantile_map = {q: i for i, q in enumerate(quantiles)}
+    quantiles = [-1] + quantiles  # capture zero index
+    quantile_labels = range(len(quantiles) - 1)
+
+    print(quantiles)
+
+    loss_df = gpqt.copy()
+    _qelt = qelt.copy()
+
+    _qelt['quantile_idx'] = _qelt['LTQuantile'].replace(quantile_map).astype(int)
+    loss_df['quantile_idx_right'] = pd.cut(loss_df['Quantile'], quantiles, labels=quantile_labels).astype(int)
+    loss_df['quantile_idx_left'] = loss_df['quantile_idx_right'] - 1
+
+    print('Loss df before quantile assignment: ')
+    print(loss_df[['EventId', 'Quantile', 'quantile_idx_left', 'quantile_idx_right']].head())
+
+    loss_df[['QuantileLossLeft', 'QuantileLeft']] = loss_df.merge(_qelt, left_on=['EventId', 'quantile_idx_left'], right_on=[
+                                                                  'EventId', 'quantile_idx'], how='left')[['QuantileLoss', 'LTQuantile']]
+
+    print('Loss df after left assignment')
+    print(loss_df[['EventId', 'Quantile', 'quantile_idx_left', 'quantile_idx_right', 'QuantileLeft']].head())
+
+    loss_df[['QuantileLossRight', 'QuantileRight']] = loss_df.merge(_qelt, left_on=['EventId', 'quantile_idx_right'], right_on=[
+                                                                    'EventId', 'quantile_idx'], how='left')[['QuantileLoss', 'LTQuantile']]
+
+    print(_qelt.query('EventId==993'))
+
+    print('Loss df after right assignment')
+    print(loss_df[['EventId', 'Quantile', 'quantile_idx_left', 'quantile_idx_right', 'QuantileLeft', 'QuantileRight']].head())
+
+    loss_df['Loss'] = (loss_df['Quantile'] - loss_df['QuantileLeft']) / (loss_df['QuantileRight'] - loss_df['QuantileLeft'])
+    loss_df['Loss'] = loss_df['QuantileLossLeft'] + loss_df['Loss'] * (loss_df['QuantileLossRight'] - loss_df['QuantileLossLeft'])
+
+    print(loss_df[['Quantile', 'quantile_idx_left', 'QuantileLossLeft', 'QuantileLeft', 'QuantileLossRight', 'QuantileRight', 'Loss']].head())
+
+    return loss_df
 
 
 def quantile_single_row(row, qelt):  # todo speedup

@@ -277,7 +277,7 @@ from ord_combining.losssampling import do_loss_sampling_full_uncertainty, do_los
 # %%
 gplt_full = do_loss_sampling_full_uncertainty(gpqt, outputsets_df,
                                               group_output_set, analysis,
-                                              priority=['s'],
+                                              priority=['q'],
                                               outputset_summary_id_map=outputset_summary_id_map,
                                               output_dir=output_dir)
 
