@@ -4,6 +4,9 @@ import numpy as np
 from pathlib import Path
 from scipy.special import betaincinv
 from tqdm import tqdm
+import logging
+
+logger = logging.getLogger(__name__)
 
 from ord_combining.ordhandling import merge_melt, merge_qelt, merge_selt, read_melt, read_qelt, read_selt
 
@@ -266,20 +269,45 @@ def quantile_single_row(row, qelt):  # todo speedup
     return row
 
 
-def sample_loss_sampling(gpqt, selt):
+def sample_loss_sampling__summary_id(gpqt, selt, number_of_samples):
+    loss_df = gpqt.copy()
+    selt_loss = selt.copy()
+
+    selt_by_eventid = selt_loss.groupby('EventId')
+
+    missing_sampleids = selt_by_eventid.agg({'SampleId': 'count'}).rename(columns={'SampleId': 'count'})
+    missing_sampleids['missing'] = number_of_samples - missing_sampleids['count']
+
+    if missing_sampleids['count'].max() > number_of_samples:
+        logger.error('sample id count greater than number of samples')
+
+    loss_df = loss_df.merge(missing_sampleids[['missing']], how='left', left_on='EventId', right_index=True)
+    loss_df['sample_idx'] = (loss_df['Quantile'] * number_of_samples).astype(int) - loss_df['missing']
+
+    selt_loss['SampleLossRank'] = selt_by_eventid['SampleLoss'].rank(method='dense').astype(int) - 1
+
+    selt_loss = selt_loss[['EventId', 'SampleLossRank', 'SampleLoss']]
+    loss_df = loss_df.merge(selt_loss, left_on=['EventId', 'sample_idx'],
+                            right_on=['EventId', 'SampleLossRank'],
+                            how='left')
+    loss_df['Loss'] = loss_df['SampleLoss'].fillna(0.0)
+    return loss_df
+
+
+def sample_loss_sampling(gpqt, selt, number_of_samples=10):
     original_cols = list(gpqt.columns)
     merged = gpqt["EventId"].isin(selt["EventId"].unique())
 
     remaining_gpqt = gpqt[~merged][original_cols]
 
-    selt = selt.sort_values(by=['EventId', 'SampleLoss'], ascending=True)
+    # selt = selt.sort_values(by=['EventId', 'SampleLoss'], ascending=True)
     summary_ids = selt["SummaryId"].unique()
 
     curr_gpqt = gpqt[merged]
     sample_loss_frags = []
     for summary_id in tqdm(summary_ids, desc="sample ls"):
-        selt_summary_id = selt.query(f"SummaryId == {summary_id}")
-        curr_loss_frag = curr_gpqt.apply(lambda x: sample_single_row(x, selt_summary_id), axis=1)
+        selt_summary_id = selt.query(f"SummaryId == {summary_id}").reset_index(drop=True)
+        curr_loss_frag = sample_loss_sampling__summary_id(curr_gpqt, selt_summary_id, number_of_samples)
         curr_loss_frag["SummaryId"] = summary_id
         sample_loss_frags.append(curr_loss_frag)
 
@@ -292,12 +320,6 @@ def sample_loss_sampling(gpqt, selt):
     sample_loss_df = sample_loss_df[original_cols + ["SummaryId", "LossType", "Loss"]]
 
     return sample_loss_df, remaining_gpqt
-
-
-def sample_single_row(row, selt):
-    selt_loss = selt.query(f"EventId == {row['EventId']}")["SampleLoss"].sort_values()
-    row["Loss"] = selt_loss.iloc[int(row["Quantile"] * len(selt_loss))]
-    return row
 
 
 def do_loss_sampling_full_uncertainty(gpqt, output_set_df, group_output_set, analysis_dict,
