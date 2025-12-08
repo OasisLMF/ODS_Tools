@@ -73,8 +73,6 @@ class OedExposure:
             exposure_df_engine (Union[str, InputReaderConfig]):
                 The exposure specific engine to use when loading dataframes
         """
-        if location is None and account is None:
-            raise OdsException("OedExposure requires at least one of location or account file. Are they missing from your config?")
         self.use_field = use_field
         self.oed_schema = OedSchema.from_oed_schema_info(oed_schema_info)
         if backend_dtype is not None:
@@ -195,6 +193,8 @@ class OedExposure:
             # Marine and Property have mostly the same column, default to Property if undetermined
             return ClassOfBusiness.prop
         else:
+            if self.location is None and self.account is None:
+                raise OdsException("OedExposure requires at least one of location or account file. Are they missing from your config?")
             raise OdsException(f"could not determine the COB of the exposure between those {final_cobs}")
 
     @property
