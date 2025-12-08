@@ -2,7 +2,7 @@ import pandas as pd
 from pathlib import Path
 
 # generated_path = Path('~/code/ODS_Tools/combined_ord-051225151343/').expanduser() # selt
-generated_path = Path('~/code/ODS_Tools/combined_ord-051225165701/').expanduser()  # qelt
+generated_path = Path('~/code/ODS_Tools/combined_ord-081225164434/').expanduser()  # qelt
 expected_path = Path('~/code/ODS_Tools/piwind-ord/full/runs/losses-20251202160403/output/').expanduser()
 
 expected_slevel = 2
