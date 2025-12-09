@@ -51,7 +51,7 @@ if module_path not in sys.path:
 # The input files are multiple runs of PiWind.
 
 # %% specify input ORD dirs
-parent_path = Path().absolute().parent / 'piwind-ord'
+parent_path = Path().absolute() / 'piwind-ord'
 # parent_path = Path().absolute() / 'piwind-ord'
 
 ord_output_dirs = [parent_path / "split/1/runs/losses-20251201164501/output/",
@@ -128,7 +128,7 @@ event_occurrence_set_analysis
 # value of `output_set_id`.
 # Note only adds mapping where summary_id != SummaryId
 #
-# To demo this swapped LocNumber for summary_id 1 and 2 in /home/vinulw/code/ODS_Tools/ord_combining/losses-20251021131718 SummaryLevel 2
+# To demo this swapped LocNumber for summary_id 1 and 2 in SummaryLevel 2
 
 
 # %%
