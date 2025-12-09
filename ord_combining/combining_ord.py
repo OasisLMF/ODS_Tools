@@ -51,7 +51,8 @@ if module_path not in sys.path:
 # The input files are multiple runs of PiWind.
 
 # %% specify input ORD dirs
-parent_path = Path('~/code/ODS_Tools/piwind-ord/').expanduser()
+parent_path = Path().absolute().parent / 'piwind-ord'
+# parent_path = Path().absolute() / 'piwind-ord'
 
 ord_output_dirs = [parent_path / "split/1/runs/losses-20251201164501/output/",
                    parent_path / "split/2/runs/losses-20251201164618/output/"]
@@ -69,38 +70,20 @@ print(f'Output Path: {output_dir}')
 # In this section we create the objects required prior to grouping, namely:
 # - Analysis table which contains the meta data from the analyses
 # - OutputSet table which contains references to the ORD results.
-
-# %% [markdown]
+#
 #
 # The `analysis_settings.json` files for each ORD analysis are parsed to read the Analysis and OutputSet tables.
 
 # %%
-from ord_combining.outputset import parse_analysis_settings
+from ord_combining.outputset import load_analysis_and_outputsets
 from ord_combining.common import dataclass_list_to_dataframe
 
+analysis, outputsets = load_analysis_and_outputsets(ord_output_dirs)
 
-def load_analysis_and_output_sets(ord_output_dirs):
-    analysis_set = []
-    output_sets = []
-    analysis_id = 1
-    for ord_dir in ord_output_dirs:
-        analysis, _outputsets = parse_analysis_settings(ord_dir / 'analysis_settings.json')
-
-        # set the uid for the analysis
-        analysis.id = analysis_id
-        for i in range(len(_outputsets)):
-            _outputsets[i].analysis_id = analysis_id
-        analysis_id += 1
-
-        analysis_set.append(analysis)
-        output_sets += _outputsets
-
-    return analysis_set, output_sets
-
-
-analysis, outputsets = load_analysis_and_output_sets(ord_output_dirs)
+# Convert to dict / df for remainder of notebook
 analysis = {a.id: a for a in analysis}
 outputsets_df = dataclass_list_to_dataframe(outputsets)
+
 outputsets_df['id'] = outputsets_df.index  # set id col
 
 # %%
@@ -191,33 +174,7 @@ for gs, g_summary_info_df in group_set_summary_info.items():
 # GroupPeriod randomly, and if the total number of GroupPeriods is larger than
 # the total number of Period then the GroupEventSet periods are cycled.
 #
-# In the example below we have a GroupEventSet with 25 total periods and 5 loss
-# causing events in periods 2, 10, 12, 15 and 21. The total number of GroupPeriods is 100.
-
-# %%
-from ord_combining.groupperiod import gen_group_periods_event_set_analysis
-
-total_periods = 25
-loss_periods = [2, 10, 12, 15, 21]
-total_group_periods = 100
-
-example_group_period = gen_group_periods_event_set_analysis(loss_periods,
-                                                            max_period=total_periods,
-                                                            max_group_periods=total_group_periods)
-
-# %%
-example_group_period = pd.concat(example_group_period)
-example_group_period = example_group_period.sort_values(by='GroupPeriod').reset_index(drop=True)
-
-for i in range(total_group_periods // total_periods):
-    slice = (i * total_periods, (i + 1) * total_periods)
-    print(f"Current cycle: {i + 1} : {slice}")
-    print(example_group_period[(example_group_period['GroupPeriod'] >= slice[0]) &
-                               (example_group_period['GroupPeriod'] < slice[1])])
-
-# %% [markdown]
-# The period information can be extracted from the PLT files or event
-# occurrence file. In this instance we load the periods from the PLT files.
+# The period information can be extracted from the header info of the `occurrence.bin` file.
 
 # %%
 from ord_combining.groupperiod import generate_group_periods
@@ -225,7 +182,6 @@ from ord_combining.groupperiod import generate_group_periods
 total_group_periods = 10000  # config: set by user
 
 # %%
-# todo correctlt generate group_event_set_analysis
 group_event_set_analysis = event_occurrence_set_analysis.rename(columns={'event_occurrence_set_id': 'group_event_set_id'})
 
 group_period = generate_group_periods(group_event_set_analysis, analysis, total_group_periods)
@@ -244,16 +200,22 @@ group_period.to_csv(output_dir / 'group_period.csv', index=False)
 # - Mean only (only for MELT files)
 # - Full uncertainty sampling
 #
-# The additional config options are demonstrated below:
+# The additional config options are demonstrated below. An example of a full config is:
+#
+# ```python
+# loss_sampling_config = {
+#     "group_mean": False, # mean only
+#     "group_mean_type": 1,  # SampleType filter
+#     "group_secondary_uncertainty": False,
+#     "group_parametric_distribution": 'gamma',  # either gamma or beta
+#     "group_format_priority": ["m", "q", "s"}
+# }
+# ```
+#
+# So far only `q` and `s` loss sampling are implemented. We output both mean only and full secondary uncertainty sampling below.
 
 # %%
-loss_sampling_config = {
-    "group_mean": False,
-    "group_mean_type": 1,  # SampleType filter
-    "group_secondary_uncertainty": False,
-    "group_parametric_distribution": 'gamma',  # either gamma or beta
-    "group_format_priority": {"M", "Q", "S"}
-}
+group_format_priority = ['s']
 
 # %% [markdown]
 # The first stage in loss sampling is generating the GroupPeriodQuantile table.
@@ -261,8 +223,7 @@ loss_sampling_config = {
 # %%
 from ord_combining.losssampling import construct_gpqt
 
-gpqt = construct_gpqt(group_period, group_event_set_analysis, outputsets_df, analysis,
-                      loss_sampling_config.get('group_mean', False))
+gpqt = construct_gpqt(group_period, group_event_set_analysis, outputsets_df, analysis)
 
 # %%
 # save gpqt
@@ -275,23 +236,21 @@ gpqt.to_csv(output_dir / "gpqt.csv", index=False)
 from ord_combining.losssampling import do_loss_sampling_full_uncertainty, do_loss_sampling_mean_only
 
 # %%
+# secondary uncertainty sampling
 gplt_full = do_loss_sampling_full_uncertainty(gpqt, outputsets_df,
                                               group_output_set, analysis,
-                                              priority=['q'],
+                                              priority=group_format_priority,
                                               outputset_summary_id_map=outputset_summary_id_map,
                                               output_dir=output_dir)
 
 gplt_full.head()
 
 # %%
+# mean only sampling
 gplt_mean = do_loss_sampling_mean_only(gpqt, outputsets_df, group_output_set, analysis,
                                        outputset_summary_id_map=outputset_summary_id_map)
 
-# %%
 gplt_mean.head()
-
-# %%
-gplt_mean.describe()
 
 # %% [markdown]
 #
@@ -314,18 +273,19 @@ gplt_mean.sort_values(by=sort_cols).to_csv(output_dir / "gplt_mean.csv", index=F
 # %%
 from ord_combining.grouped_output import generate_al, generate_ep
 
-# %% [markdown]
-# ### GALT Output
-
 
 def save_output(full_df, output_dir, output_name, factor_col='group_set_id', float_format='%.6f'):
     for i in full_df[factor_col].unique():
-        full_df.query(f"{factor_col} == {i}").to_csv(output_dir / f'{i}_{output_name}', index=False,
+        save_path = output_dir / f'{i}_{output_name}'
+        full_df.query(f"{factor_col} == {i}").to_csv(save_path, index=False,
                                                      float_format=float_format)
+        print('Saved: ', save_path)
 
+
+# %% [markdown]
+# ### GALT Output
+#
 # %%
-
-
 dtypes_aal = {
     'group_set_id': 'int',
     'SummaryId': 'int',

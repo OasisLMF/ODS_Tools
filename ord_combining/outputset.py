@@ -1,6 +1,26 @@
 import json
 from ord_combining.common import Analysis, OutputSet
 
+
+def load_analysis_and_outputsets(ord_output_dirs):
+    analysis_set = []
+    output_sets = []
+    analysis_id = 1
+    for ord_dir in ord_output_dirs:
+        analysis, _outputsets = parse_analysis_settings(ord_dir / 'analysis_settings.json')
+
+        # set the uid for the analysis
+        analysis.id = analysis_id
+        for i in range(len(_outputsets)):
+            _outputsets[i].analysis_id = analysis_id
+        analysis_id += 1
+
+        analysis_set.append(analysis)
+        output_sets += _outputsets
+
+    return analysis_set, output_sets
+
+
 def parse_analysis_settings(settings_fp):
     '''
     Parse an analysis settings file and extract necessary details for OutputSet and AnalysisSet
