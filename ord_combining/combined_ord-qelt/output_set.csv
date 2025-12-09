@@ -1,0 +1,5 @@
+id,perspective_code,analysis_id,exposure_summary_level_fields,exposure_summary_level_id,exposure_summary_level_fields_string
+0,gul,1,[],1,
+1,gul,1,['LocNumber'],2,LocNumber
+2,gul,2,[],1,
+3,gul,2,['LocNumber'],2,LocNumber
