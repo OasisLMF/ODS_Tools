@@ -405,6 +405,8 @@ class OedExposure:
             OdsException if some invalid data is found
 
         """
+        if self.location is None and self.account is None:
+            raise OdsException("OedExposure requires at least one of location or account file. Are they missing from your config?")
         if self.class_of_business is None:
             self.class_of_business = self.get_class_of_business()
 
