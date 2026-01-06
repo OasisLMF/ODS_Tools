@@ -1,6 +1,8 @@
 from pathlib import Path
-from jsonschema import validate
+from jsonschema import ValidationError, validate
 import json
+
+from ods_tools.oed.common import OdsException
 
 SCHEMA_PATH = Path('./config_schema.json')
 
@@ -23,8 +25,8 @@ DEFAULT_CONFIG = {
 }
 
 
-def combine(config_path):
-    print(f"Current config path: {config_path}")
+def read_config(config_path):
+    """Validate and read combine config"""
     with open(config_path, 'r') as f:
         config = json.load(f)
     config = DEFAULT_CONFIG | config
@@ -32,8 +34,16 @@ def combine(config_path):
     with open(SCHEMA_PATH, 'r') as f:
         schema = json.load(f)
 
-    print(config)
-    validate(config, schema)
+    try:
+        validate(config, schema)
+    except ValidationError as e:
+        raise OdsException(f'Config Validation error: {e.message}')
+
+    return config
+
+
+def combine(config_path):
+    config = read_config(config_path)
 
     print('Validated')
 
