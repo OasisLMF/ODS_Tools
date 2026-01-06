@@ -26,7 +26,10 @@ DEFAULT_CONFIG = {
 
 
 def read_config(config_path):
-    """Validate and read combine config"""
+    """
+    Read config and add defaults where necessary. Performs validation against
+    config schema.
+    """
     with open(config_path, 'r') as f:
         config = json.load(f)
     config = DEFAULT_CONFIG | config
@@ -42,8 +45,8 @@ def read_config(config_path):
     return config
 
 
-def combine(config_path):
-    config = read_config(config_path)
+def combine(config_file):
+    config = read_config(config_file)
 
     print('Validated')
 

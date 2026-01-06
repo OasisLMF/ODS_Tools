@@ -1,5 +1,4 @@
 {
   "analysis_dirs": ["./examples/inputs/1", "./examples/inputs/2/"],
-  "group_number_of_periods": 100000,
-  "group_mean": true
+  "group_number_of_periods": 100000
 }
