@@ -2,8 +2,10 @@ from dataclasses import asdict
 from pathlib import Path
 import tempfile
 import json
+import pytest
+from collections import namedtuple
 
-from ods_tools.combine.combine import combine
+from ods_tools.combine.combine import DEFAULT_CONFIG, combine
 from ods_tools.combine.grouping import ResultGroup
 from ods_tools.combine.result import load_analysis_dirs
 
@@ -65,8 +67,18 @@ def test_combine__load_analysis_dirs():
             outputset = asdict(outputset)
             assert outputset == expected_outputset
 
+# Grouping tests
 
-def test_combine__groupsets():
+
+@pytest.fixture
+def group_example():
+    analysis_dirs = [example_path / 'inputs/1', example_path / 'inputs/2']
+    analyses = load_analysis_dirs(analysis_dirs)
+
+    return ResultGroup(analyses, config=BASIC_CONFIG, id=1)
+
+
+def test_combine__groupset(group_example):
     expected_groupset = {0: {'id': 0, 'outputsets': [0, 2],
                              'exposure_summary_level_fields': [],
                              'perspective_code': 'gul'},
@@ -74,13 +86,30 @@ def test_combine__groupsets():
                              'exposure_summary_level_fields': ['LocNumber'],
                              'perspective_code': 'gul'}}
 
-    analysis_dirs = [example_path / 'inputs/1', example_path / 'inputs/2']
-    analyses = load_analysis_dirs(analysis_dirs)
-
-    group = ResultGroup(analyses, config=BASIC_CONFIG, id=1)
-
-    groupset = group.prepare_groupset()
+    groupset = group_example.prepare_groupset()
 
     assert expected_groupset.keys() == groupset.keys()
     for groupset_id in expected_groupset.keys():
         assert groupset[groupset_id] == expected_groupset[groupset_id]
+
+
+def test_combine__groupeventset(group_example):
+    EventSetField = namedtuple('EventSetField', DEFAULT_CONFIG['group_event_set_fields'])
+    expected_groupeventset = {0: {'id': 0,
+                                  'event_set_field':
+                                  EventSetField(event_set_id='p',
+                                                event_set_description='',
+                                                event_occurrence_id='lt',
+                                                event_occurrence_description='',
+                                                event_occurrence_max_periods='',
+                                                model_supplier_id='OasisLMF',
+                                                model_name_id='PiWind',
+                                                model_description='',
+                                                model_version=''),
+                                  'analysis_ids': [1, 2]}}
+
+    groupeventset = group_example.prepare_groupeventset()
+
+    assert expected_groupeventset.keys() == groupeventset.keys()
+    for groupeventset_id in groupeventset.keys():
+        assert groupeventset[groupeventset_id] == expected_groupeventset[groupeventset_id]

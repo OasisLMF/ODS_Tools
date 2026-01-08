@@ -1,11 +1,13 @@
 """
 This module handles the grouping interface.
 """
+from collections import namedtuple
 from dataclasses import dataclass, field
 from typing import Dict, List
 from pathlib import Path
 import os
 
+from ods_tools.combine.combine import DEFAULT_CONFIG
 from ods_tools.combine.utils import dataclass_list_to_dataframe, hash_summary_level_fields
 from ods_tools.combine.result import OutputSet, Analysis, load_analysis_dirs
 
@@ -16,16 +18,17 @@ class ResultGroup:
 
     Args:
         analyses (list[Analysis]): List of analyses to group together.
-        config (dict): grouping config
         id (int): id to identify grouping
+        group_event_set_fields (list[str]): list of fields to group event sets
     """
 
-    def __init__(self, analyses, config, id):
+    def __init__(self, analyses, id, group_event_set_fields=None, **kwargs):
         self.analyses = {a.id: a for a in analyses}
         self.outputsets = None
         self.groupset = None
         self.id = id
         self.set_outputsets()
+        self.group_event_set_fields = group_event_set_fields if group_event_set_fields is not None else DEFAULT_CONFIG['group_event_set_fields']
 
     def set_outputsets(self):
         """
@@ -74,24 +77,73 @@ class ResultGroup:
         self.groupset = groupset_dict
         return groupset_dict
 
+    def prepare_groupeventset(self):
+        """
+        Prepares the GroupEventSet info. This creates the event groupings based on the group_event_set_fields.
+        """
+        analysis_event_set_fields = {}
+        EventSetField = namedtuple('EventSetField', self.group_event_set_fields)
 
-@dataclass
-class GroupSet:
-    '''GroupSet class'''
-    perspective_code: str = None
-    outputsets: List[OutputSet] = field(default_factory=lambda: [])
-    group_id: int = None
-    exposure_summary_level_fields: List[str] = field(default_factory=lambda: [])
-    outputset_summary_info_map: Dict = field(default_factory=lambda: {})
+        for a_id, analysis in self.analyses.items():
+            analysis_event_set_fields[a_id] = EventSetField(**self.extract_group_event_set_fields(analysis, self.group_event_set_fields))
+
+        groupeventset_analyses = {}
+        groupeventset_ids = {}
+        max_groupeventset_id = 0
+        for a_id, fields in analysis_event_set_fields.items():
+            ges_id = groupeventset_ids.get(fields, None)
+            if ges_id is None:
+                groupeventset_ids[fields] = max_groupeventset_id
+                groupeventset_analyses[max_groupeventset_id] = [a_id]
+            else:
+                groupeventset_analyses[ges_id] += [a_id]
+
+        # format for output
+        groupeventset = {}
+        for eventsetfield, groupeventset_id in groupeventset_ids.items():
+            groupeventset[groupeventset_id] = {
+                'id': groupeventset_id,
+                'event_set_field': eventsetfield,
+                'analysis_ids': groupeventset_analyses[groupeventset_id]
+            }
+
+        self.groupeventset = groupeventset
+        return groupeventset
+
+    @staticmethod
+    def extract_group_event_set_fields(analysis, group_event_set_fields):
+        def parse_field_from_analysis_settings(field_name, settings):
+            # prepare path to walk
+            field_location_map = {
+                "event_set_id": ["model_settings", "event_set"],
+                "event_occurrence_id": ["model_settings", "event_occurrence_id"],
+            }
+
+            field_path = field_location_map.get(field_name, [field_name])
+
+            # walk path
+            value = settings
+            for key in field_path:
+                value = value.get(key, {})
+
+            if value:
+                return value
+            return ''
+
+        analysis_event_set_fields = {}
+        for field_name in group_event_set_fields:
+            analysis_event_set_fields[field_name] = parse_field_from_analysis_settings(field_name, analysis.settings)
+
+        return analysis_event_set_fields
 
 
 if __name__ == "__main__":
-    analyses_dirs = ["./examples/inputs/1", "./examples/inputs/2/"]
+    analyses_dirs = [Path(__file__).parent / "examples/inputs/1", Path(__file__).parent / "examples/inputs/2/"]
 
     analyses = load_analysis_dirs(analyses_dirs)
 
-    group = ResultGroup(analyses, config={}, id=1)
+    group = ResultGroup(analyses, config=DEFAULT_CONFIG, id=1)
 
-    output = group.prepare_groupset()
+    output = group.prepare_groupeventset()
 
     print(output)
