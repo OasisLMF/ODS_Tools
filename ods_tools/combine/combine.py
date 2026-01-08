@@ -4,7 +4,7 @@ import json
 
 from ods_tools.oed.common import OdsException
 
-SCHEMA_PATH = Path('./config_schema.json')
+SCHEMA_PATH = Path(Path(__file__).parent / 'config_schema.json')
 
 DEFAULT_CONFIG = {
     "group_fill_perspective": False,

@@ -11,7 +11,6 @@ from ods_tools.oed.setting_schema import AnalysisSettingSchema
 @dataclass
 class OutputSet():
     '''OutputSet class'''
-    id: int = None
     perspective_code: str = None
     analysis_id: int = None  # link to Analysis
     exposure_summary_level_fields: List[str] = field(default_factory=lambda: list)
