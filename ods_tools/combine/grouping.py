@@ -12,6 +12,7 @@ from ods_tools.combine.utils import dataclass_list_to_dataframe, hash_summary_le
 from ods_tools.combine.result import OutputSet, Analysis, load_analysis_dirs
 from ods_tools.oed.common import OdsException
 from ods_tools.combine.save import save_summary_info
+from ods_tools.combine.io import read_occurrence
 
 
 class ResultGroup:
@@ -204,6 +205,60 @@ class ResultGroup:
         return analysis_event_set_fields
 
 
+def generate_group_periods(groupeventsets, analysis, max_group_periods):
+    group_period_fragments = []
+    for groupeventset_id, curr_groupeventset in groupeventsets.items():
+        curr_analysis_ids = curr_groupeventset['analysis_ids']
+        curr_analyses = [analysis[a] for a in curr_analysis_ids]
+
+        periods, max_periods = load_analysis_periods(curr_analyses)
+        curr_frag = gen_group_periods_event_set_analysis(periods,
+                                                         max_period=max_periods,
+                                                         max_group_periods=max_group_periods)
+        curr_frag = pd.concat(curr_frag)
+        curr_frag['group_event_set_id'] = event_set_id
+
+        group_period_fragments.append(curr_frag)
+
+    group_period = pd.concat(group_period_fragments)
+    return group_period.sort_values(by=['group_event_set_id', 'GroupPeriod']).reset_index(drop=True)
+
+
+def load_analysis_periods(analyses):
+    period_list = []
+    max_periods = None
+
+    for analysis in analyses:
+        occ_map, _max_periods = read_occurrence(Path(analysis.path).parent / 'input' / 'occurrence.bin')
+        period_list += [int(v[0][0]) for v in occ_map.values()]
+
+        if max_periods is None:
+            max_periods = _max_periods
+        elif max_periods != _max_periods:
+            raise Exception('Currently does not support different max_periods in a group.')
+
+    return pd.Series(period_list, name="Period").drop_duplicates(ignore_index=True), max_periods
+
+
+def gen_group_periods_event_set_analysis(periods, max_period, max_group_periods):
+    # generate the group cycle slices
+    group_cycles = max_group_periods // max_period
+    group_slices = [(i * max_period, (i + 1) * max_period) for i in range(group_cycles)]
+
+    if group_cycles * max_period < max_group_periods:
+        group_slices += [(group_cycles * max_period, max_group_periods)]
+
+    group_period_fragments = []
+    for slice in group_slices:
+        shuffled_slice = np.arange(slice[0] + 1, slice[1] + 1)
+        shuffle(shuffled_slice)
+        shuffle_filter = min(len(shuffled_slice), len(periods))
+
+        group_period_fragments.append(pd.DataFrame({'GroupPeriod': shuffled_slice[:shuffle_filter],
+                                                    'Period': periods[:shuffle_filter]}))
+    return group_period_fragments
+
+
 if __name__ == "__main__":
     analyses_dirs = [Path(__file__).parent / "examples/inputs/1", Path(__file__).parent / "examples/inputs/2/"]
 
@@ -211,11 +266,6 @@ if __name__ == "__main__":
 
     group = ResultGroup(analyses, id=1, output_dir='./tmp', **DEFAULT_CONFIG)
 
-    groupset = group.prepare_groupset()
+    groupeventset = group.prepare_groupeventset()
 
-    output = group.prepare_summaryinfo_map()
-
-    print("output groupset")
-    for k, val in output.items():
-        print('Key: ', k)
-        print(val)
+    breakpoint()
