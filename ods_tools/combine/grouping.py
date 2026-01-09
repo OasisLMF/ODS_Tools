@@ -11,6 +11,7 @@ from ods_tools.combine.combine import DEFAULT_CONFIG
 from ods_tools.combine.utils import dataclass_list_to_dataframe, hash_summary_level_fields
 from ods_tools.combine.result import OutputSet, Analysis, load_analysis_dirs
 from ods_tools.oed.common import OdsException
+from ods_tools.combine.save import save_summary_info
 
 
 class ResultGroup:
@@ -23,13 +24,15 @@ class ResultGroup:
         group_event_set_fields (list[str]): list of fields to group event sets
     """
 
-    def __init__(self, analyses, id, group_event_set_fields=None, **kwargs):
+    def __init__(self, analyses, id, group_event_set_fields=None,
+                 output_dir=None, **kwargs):
         self.analyses = {a.id: a for a in analyses}
         self.outputsets = None
         self.groupset = None
         self.id = id
         self.set_outputsets()
         self.group_event_set_fields = group_event_set_fields if group_event_set_fields is not None else DEFAULT_CONFIG['group_event_set_fields']
+        self.output_dir = output_dir
 
     def set_outputsets(self):
         """
@@ -85,6 +88,9 @@ class ResultGroup:
         outputset_summaryinfo = self.load_outputset_summary_info(self.analyses, self.outputsets)
 
         groupset_summaryinfo = self.load_groupset_summaryinfo(self.groupset, outputset_summaryinfo)
+
+        if self.output_dir is not None:
+            save_summary_info(groupset_summaryinfo, self.groupset, self.output_dir)
 
         ignored_cols = ['SummaryId', 'summary_id']
 
@@ -203,12 +209,13 @@ if __name__ == "__main__":
 
     analyses = load_analysis_dirs(analyses_dirs)
 
-    group = ResultGroup(analyses, config=DEFAULT_CONFIG, id=1)
+    group = ResultGroup(analyses, id=1, output_dir='./tmp', **DEFAULT_CONFIG)
 
-    output = group.prepare_groupset()
+    groupset = group.prepare_groupset()
 
     output = group.prepare_summaryinfo_map()
 
+    print("output groupset")
     for k, val in output.items():
         print('Key: ', k)
         print(val)
