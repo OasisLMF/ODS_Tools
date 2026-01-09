@@ -5,11 +5,12 @@ from collections import namedtuple
 from dataclasses import dataclass, field
 from typing import Dict, List
 from pathlib import Path
-import os
+import pandas as pd
 
 from ods_tools.combine.combine import DEFAULT_CONFIG
 from ods_tools.combine.utils import dataclass_list_to_dataframe, hash_summary_level_fields
 from ods_tools.combine.result import OutputSet, Analysis, load_analysis_dirs
+from ods_tools.oed.common import OdsException
 
 
 class ResultGroup:
@@ -76,6 +77,66 @@ class ResultGroup:
 
         self.groupset = groupset_dict
         return groupset_dict
+
+    def prepare_summaryinfo_map(self):
+        """
+        Create a map for each outputset which maps the input summary_id to the group SummaryId.
+        """
+        outputset_summaryinfo = self.load_outputset_summary_info(self.analyses, self.outputsets)
+
+        groupset_summaryinfo = self.load_groupset_summaryinfo(self.groupset, outputset_summaryinfo)
+
+        ignored_cols = ['SummaryId', 'summary_id']
+
+        groupset_outputset = []
+        for groupset_id, groupset in self.groupset.items():
+            groupset_outputset += [(groupset_id, outputset_id) for outputset_id in groupset['outputsets']]
+
+        summaryinfo_map = {}
+        for groupset_id, outputset_id in groupset_outputset:
+            curr_group_summary_info = groupset_summaryinfo[groupset_id].drop(columns=['tiv'])
+            curr_os_summary_info = outputset_summaryinfo[outputset_id].drop(columns=['tiv'])
+
+            summary_oed_cols = [c for c in curr_group_summary_info.columns.to_list() if c not in ignored_cols]
+            output_set_map = pd.merge(curr_os_summary_info, curr_group_summary_info, how="left", on=summary_oed_cols)
+            output_set_map = output_set_map[['summary_id', 'SummaryId']]
+            output_set_map = output_set_map.query('~(summary_id == SummaryId)')
+
+            if not output_set_map.empty:
+                summaryinfo_map[outputset_id] = output_set_map.set_index('summary_id').to_dict()['SummaryId']
+
+        self.summaryinfo_map = summaryinfo_map
+
+        # todo need to save groupset_summaryinfo
+
+        return summaryinfo_map
+
+    @staticmethod
+    def load_outputset_summary_info(analyses, outputsets):
+        outputset_summary_info = {}
+
+        for outpuset_id, outputset in outputsets.items():
+            summary_info_path = Path(analyses[outputset.analysis_id].path) / 'output' / outputset.get_summary_info_fname()
+            outputset_summary_info[outpuset_id] = pd.read_csv(summary_info_path)
+
+        return outputset_summary_info
+
+    @staticmethod
+    def load_groupset_summaryinfo(groupset, outputset_summary_info):
+        group_summary_info = {}
+
+        ignored_cols = ['summary_id', 'tiv']
+
+        for group_set_id, group in groupset.items():
+            outputset_ids = group['outputsets']
+            curr_group_summary_info = pd.concat([outputset_summary_info[os_id] for os_id in outputset_ids])
+            summary_oed_cols = [c for c in curr_group_summary_info.columns.to_list() if c not in ignored_cols]
+            curr_group_summary_info = curr_group_summary_info.groupby(summary_oed_cols, as_index=False).agg({'tiv': 'sum'})
+            curr_group_summary_info['SummaryId'] = curr_group_summary_info.index + 1
+
+            group_summary_info[group_set_id] = curr_group_summary_info[['SummaryId'] + summary_oed_cols + ['tiv']]
+
+        return group_summary_info
 
     def prepare_groupeventset(self):
         """
@@ -144,6 +205,10 @@ if __name__ == "__main__":
 
     group = ResultGroup(analyses, config=DEFAULT_CONFIG, id=1)
 
-    output = group.prepare_groupeventset()
+    output = group.prepare_groupset()
 
-    print(output)
+    output = group.prepare_summaryinfo_map()
+
+    for k, val in output.items():
+        print('Key: ', k)
+        print(val)

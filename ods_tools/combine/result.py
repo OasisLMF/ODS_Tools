@@ -16,6 +16,9 @@ class OutputSet():
     exposure_summary_level_fields: List[str] = field(default_factory=lambda: list)
     exposure_summary_level_id: int = None
 
+    def get_summary_info_fname(self):
+        return f'{self.perspective_code}_S{self.exposure_summary_level_id}_summary-info.csv'
+
 
 @dataclass
 class Analysis():

@@ -78,7 +78,7 @@ def group_example():
     return ResultGroup(analyses, config=BASIC_CONFIG, id=1)
 
 
-def test_combine__groupset(group_example):
+def test_combine__groupset_and_summaryinfo(group_example):
     expected_groupset = {0: {'id': 0, 'outputsets': [0, 2],
                              'exposure_summary_level_fields': [],
                              'perspective_code': 'gul'},
@@ -86,11 +86,22 @@ def test_combine__groupset(group_example):
                              'exposure_summary_level_fields': ['LocNumber'],
                              'perspective_code': 'gul'}}
 
+    expected_summaryinfo_map = {
+        1: {2: 3, 3: 6, 4: 9, 5: 10},
+        3: {1: 2, 2: 4, 3: 5, 4: 7, 5: 8}
+    }
+
     groupset = group_example.prepare_groupset()
 
     assert expected_groupset.keys() == groupset.keys()
     for groupset_id in expected_groupset.keys():
         assert groupset[groupset_id] == expected_groupset[groupset_id]
+
+    summaryinfo_map = group_example.prepare_summaryinfo_map()
+
+    assert expected_summaryinfo_map.keys() == summaryinfo_map.keys()
+    for outputset_id, curr_summaryinfo_map in summaryinfo_map.items():
+        assert expected_summaryinfo_map[outputset_id] == curr_summaryinfo_map
 
 
 def test_combine__groupeventset(group_example):
