@@ -2,8 +2,12 @@ from dataclasses import asdict
 from pathlib import Path
 import tempfile
 import json
+from ods_tools.combine.sampling import generate_group_periods
 import pytest
 from collections import namedtuple
+import pandas as pd
+
+from pandas.testing import assert_frame_equal
 
 from ods_tools.combine.combine import DEFAULT_CONFIG, combine
 from ods_tools.combine.grouping import ResultGroup
@@ -11,6 +15,7 @@ from ods_tools.combine.result import load_analysis_dirs
 
 
 example_path = Path(Path(__file__).parent.parent, "ods_tools", "combine", "examples")
+validation_path = Path(Path(__file__).parent.parent, 'validation', 'combine_ord')
 
 BASIC_CONFIG = {}
 
@@ -124,3 +129,14 @@ def test_combine__groupeventset(group_example):
     assert expected_groupeventset.keys() == groupeventset.keys()
     for groupeventset_id in groupeventset.keys():
         assert groupeventset[groupeventset_id] == expected_groupeventset[groupeventset_id]
+
+
+def test_combine__generate_group_periods(group_example):
+    max_group_periods = 100000
+
+    expected_group_periods = pd.read_csv(validation_path / 'group_periods.csv')
+
+    group_example.prepare_groupeventset()
+    group_periods = generate_group_periods(group_example, max_group_periods)
+
+    assert_frame_equal(expected_group_periods, group_periods)

@@ -10,7 +10,10 @@ from ods_tools.combine.common import nb_oasis_int
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_OCC_DTYPE = ('i4', 'i4', 'i4')
+DEFAULT_OCC_DTYPE = [('event_id', 'i4'),
+                     ('period_no', 'i4'),
+                     ('occ_date_id', 'i4')  # granular dtype 'i8'
+                     ]
 
 
 def save_summary_info(groupset_summaryinfo, groupset_info, output_dir):
@@ -49,13 +52,12 @@ def read_occurrence_bin(occ_path, record_dtype=None):
     """Read the occurrence binary file and returns an occurrence map
     Args:
         occ_path (str | os.PathLike): Path to occurrence bin
-        record_dtype (list(str)) : definition of dtypes for each record in occurrence.bin
+        record_dtype (list(tuple(str))) : definition of dtypes for each record in occurrence.bin
     Returns:
         occ_map (nb.typed.Dict): numpy map of event_id, period_no, occ_date_id from the occurrence file
     """
-    # granular dtype should be ('i4', 'i4', 'i8')
     record_dtype = DEFAULT_OCC_DTYPE if record_dtype is None else record_dtype
-    record_size = np.sum([np.dtype(el).itemsize for el in record_dtype])
+    record_size = np.sum([np.dtype(el[1]).itemsize for el in record_dtype])
 
     fin = np.memmap(occ_path, mode="r", dtype="u1")
     cursor = np.dtype(np.int32).itemsize  # skip occ_date
@@ -73,6 +75,7 @@ def read_occurrence_bin(occ_path, record_dtype=None):
             f"Occurrence File size (num_records: {num_records}) does not align with expected record size (record_size: {record_size})"
         )
 
+    record_dtype = np.dtype(record_dtype)
     occ_arr = np.zeros(0, dtype=record_dtype)
 
     if num_records > 0:
@@ -81,7 +84,7 @@ def read_occurrence_bin(occ_path, record_dtype=None):
     return occ_arr, no_of_periods
 
 
-def read_occurrence(occ_path, record_dtype):
+def read_occurrence(occ_path, record_dtype=None):
     """Read the occurrence binary file and returns an occurrence map
     Args:
         occ_path (str | os.PathLike): occurrence binary path
@@ -90,9 +93,12 @@ def read_occurrence(occ_path, record_dtype):
         occ_map (nb.typed.Dict): numpy map of event_id, period_no, occ_date_id from the occurrence file
         no_of_periods (int) : total number of periods
     """
+    if record_dtype is None:
+        record_dtype = DEFAULT_OCC_DTYPE
     occ_arr, no_of_periods = read_occurrence_bin(occ_path, record_dtype)
 
-    occ_map_valtype = record_dtype[1:]  # first element is eventid
+    record_dtype = np.dtype(record_dtype)
+    occ_map_valtype = record_dtype[["period_no", "occ_date_id"]]
     NB_occ_map_valtype = nb.types.Array(nb.from_dtype(occ_map_valtype), 1, "C")
 
     occ_map = _read_occ_arr(occ_arr, occ_map_valtype, NB_occ_map_valtype)
