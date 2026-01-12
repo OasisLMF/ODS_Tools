@@ -2,18 +2,12 @@
 This module handles the grouping interface.
 """
 from collections import namedtuple
-from dataclasses import dataclass, field
-from typing import Dict, List
 from pathlib import Path
-from ods_tools.combine.sampling import generate_group_periods
 import pandas as pd
-import numpy as np
-from numpy.random import shuffle
 
 from ods_tools.combine.combine import DEFAULT_CONFIG
 from ods_tools.combine.utils import dataclass_list_to_dataframe, hash_summary_level_fields
-from ods_tools.combine.result import OutputSet, Analysis, load_analysis_dirs
-from ods_tools.oed.common import OdsException
+from ods_tools.combine.result import load_analysis_dirs
 from ods_tools.combine.io import DEFAULT_OCC_DTYPE, read_occurrence_bin, save_summary_info
 
 
