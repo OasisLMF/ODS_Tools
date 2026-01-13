@@ -433,21 +433,6 @@ class SettingHandler:
 
         return not bool(exception_msgs), exception_msgs
 
-    def validate_file(self, settings_fp, raise_error=True):
-        """
-        Validates the loaded JSON file against the schema.
-
-        Args:
-            settings_fp (str): The file path to the settings file.
-            raise_error (bool): raise execption on validation failuer
-
-        Returns:
-            tuple: A tuple containing a boolean indicating whether the JSON data is valid
-            and a dictionary containing any validation errors.
-        """
-        settings_data = self.load(settings_fp)
-        return self.validate(settings_data, raise_error=raise_error)
-
 
 class AnalysisSettingHandler(SettingHandler):
     default_analysis_setting_schema_json = 'analysis_settings_schema.json'
@@ -513,6 +498,56 @@ class AnalysisSettingHandler(SettingHandler):
             handler.add_schema(model_setting_induce_schema.to_json_schema(model_setting_subpart_validation), name='model_setting_induce_schema')
 
         return handler
+
+
+    def validate(self, setting_data, raise_error=True):
+        self.check_deprecated_ktools_outputs(setting_data, raise_error=True)
+        super(AnalysisSettingHandler, self).validate(setting_data, raise_error)
+
+
+    def check_deprecated_ktools_outputs(self, setting_data, raise_error=False):
+        """
+        Check for deprecated options in analysis settings JSON and print warnings.
+
+        Args:
+            setting_data: Dictionary containing the analysis settings
+        """
+        import ipdb; ipdb.set_trace()
+        warnings = []
+        deprecated_summary_fields = [
+            'summarycalc',
+            'eltcalc',
+            'aalcalc',
+            'aalcalcmeanonly',
+            'pltcalc',
+            'leccalc',
+            'lec_output'
+        ]
+
+
+        for summary_type in ['gul_summaries', 'il_summaries', 'ri_summaries']:
+            if summary_type in setting_data:
+                summaries = setting_data[summary_type]
+
+                if not isinstance(summaries, list):
+                    continue
+
+                for idx, summary in enumerate(summaries):
+                    summary_id = summary.get('id', f'index {idx}')
+
+                    # Check for deprecated summary-level fields
+                    for field in deprecated_summary_fields:
+                        if field in summary and summary[field]:
+                            warnings.append(
+                                f" Deprecated option set in {summary_type} (summary ID: {summary_id}) - "
+                                f"'{field}' has no effect in (oasis 2.5.x and newer)."
+                            )
+
+        for w in warnings:
+            settings_logger.warn(w)
+
+
+
 
     def check_unique_summary_ids(self, setting_data):
         """
