@@ -53,9 +53,9 @@ def check(**kwargs):
             oed_exposure = get_oed_exposure(**extract_exposure_args(kwargs))
             oed_exposure.check()
         if 'analysis_settings_json' in args_set:
-            AnalysisSettingHandler.make().validate_file(kwargs['analysis_settings_json'])
+            AnalysisSettingHandler.make().load(kwargs['analysis_settings_json'])
         if 'model_settings_json' in args_set:
-            ModelSettingHandler.make().validate_file(kwargs['model_settings_json'])
+            ModelSettingHandler.make().load(kwargs['model_settings_json'])
     except OdsException as e:
         logger.error('Validation failed:')
         logger.error(e)
