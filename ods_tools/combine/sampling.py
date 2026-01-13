@@ -1,9 +1,37 @@
-from ods_tools.combine.common import DEFAULT_RANDOM_SEED
-from ods_tools.combine.io import read_occurrence_bin
 import pandas as pd
 import numpy as np
+from pathlib import Path
+from scipy.stats import norm
+
+from ods_tools.combine.common import DEFAULT_RANDOM_SEED
+from ods_tools.combine.io import DEFAULT_OCC_DTYPE, read_occurrence_bin
 
 rng = np.random.default_rng(DEFAULT_RANDOM_SEED)  # todo implement configurable random seed
+
+gpqt_dtype = {
+    'GroupPeriod': np.int32,
+    'Period': np.int32,
+    'groupeventset_id': np.int32,
+    'EventId': np.int32,
+    'Quantile': np.float32,
+    'outputset_id': np.int32,
+}
+
+
+gplt_dtype = {
+    'groupset_id': np.int32,
+    'outputset_id': np.int32,
+    'SummaryId': "Int32",
+    'GroupPeriod': np.int32,
+    'Period': np.int32,
+    'groupeventset_id': np.int32,
+    'EventId': np.int32,
+    'Loss': np.float64,
+    'LossType': 'Int8'
+}
+
+
+# PERIOD SAMPLING
 
 
 def generate_group_periods(group, max_group_periods,
@@ -77,3 +105,88 @@ def gen_group_periods_event_set_analysis(periods, max_period, max_group_periods)
         group_period_fragments.append(pd.DataFrame({'GroupPeriod': shuffled_slice[:shuffle_filter],
                                                     'Period': periods[:shuffle_filter]}))
     return group_period_fragments
+
+# LOSS SAMPLING
+
+# Quantile Sampling
+
+
+def prepare_gpqt(group_period, group, mean_only=False, correlation=None):
+    '''
+    Create the group period quantile table.
+
+    Args:
+        group_period (pd.DataFrame) : Group Period dataframe.
+        group (ResultGroup) : Group object containig ORD info.
+        mean_only (bool) : If true, no quantiles sampled.
+        correlation (float) : Correlation parameter
+
+    Returns:
+        gpqt (pd.DataFrame) : Group Period Quantile Table
+    '''
+
+    gpqt_fragments = []
+
+    for groupeventset_id, groupeventset in group.groupeventset.items():
+        filtered_group_period = group_period.query(f'groupeventset_id == {groupeventset_id}')
+        filtered_analyses = [group.analyses[a] for a in groupeventset['analysis_ids']]
+        analysis_outpusets = [(a, os) for a in filtered_analyses for os in a.outputsets]
+
+        for a, os in analysis_outpusets:
+            # print(f'Currently processing groupeventset_id: {groupeventset_id},  outputset: {os.id}')
+
+            eventid_period, _ = read_occurrence_bin(Path(a.path) / 'input' / 'occurrence.bin', DEFAULT_OCC_DTYPE)
+
+            eventid_period = (pd.DataFrame(eventid_period)[['event_id', 'period_no']]
+                              .drop_duplicates(ignore_index=True)
+                              .rename(columns={'period_no': 'Period',
+                                               'event_id': 'EventId'})
+                              )
+
+            _gpqt_fragment = filtered_group_period.merge(eventid_period, on='Period',
+                                                         how='inner')
+
+            _gpqt_fragment['outputset_id'] = os.id
+
+            gpqt_fragments.append(_gpqt_fragment)
+
+    gpqt = pd.concat(gpqt_fragments).reset_index(drop=True)
+
+    gpqt = calculate_quantiles(gpqt, mean_only, correlation)
+    return gpqt.astype(gpqt_dtype)
+
+
+def calculate_quantiles(gpqt, mean_only=False, correlation=None):
+    '''
+    Calculat gpqt Quantiles, handling partial / full correlations.
+    '''
+    if mean_only:
+        gpqt['Quantile'] = None
+        return gpqt
+
+    if correlation is None or correlation == 0.0:  # uncorrelated
+        gpqt['Quantile'] = rng.random(size=len(gpqt))
+        return gpqt
+
+    output_cols = list(gpqt.columns) + ['Quantile']
+
+    correlated = gpqt.drop(columns=['outputset_id']).drop_duplicates()
+    merge_cols = list(correlated.columns)
+
+    if correlation == 1.:  # fully correlated
+        correlated['Quantile'] = rng.random(size=len(correlated))
+        return gpqt.merge(correlated, on=merge_cols)
+
+    # partial correlations
+    correlated['correlated'] = rng.normal(size=len(correlated))
+    gpqt = gpqt.merge(correlated, on=merge_cols)
+
+    gpqt['uncorrelated'] = rng.normal(size=len(gpqt))
+    gpqt['partial'] = (gpqt['correlated'] * np.sqrt(correlation)
+                       + gpqt['uncorrelated'] * np.sqrt((1 - correlation))
+                       )
+
+    gpqt['Quantile'] = norm.cdf(gpqt['partial'])
+    return gpqt[output_cols]
+
+# Loss Sampling

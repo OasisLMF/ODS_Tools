@@ -2,7 +2,9 @@
 This module handles the grouping interface.
 """
 from collections import namedtuple
+from copy import copy
 from pathlib import Path
+from ods_tools.combine.sampling import generate_group_periods, prepare_gpqt
 import pandas as pd
 
 from ods_tools.combine.combine import DEFAULT_CONFIG
@@ -23,7 +25,7 @@ class ResultGroup:
 
     def __init__(self, analyses, id, group_event_set_fields=None,
                  output_dir=None, **kwargs):
-        self.analyses = {a.id: a for a in analyses}
+        self.analyses = {a.id: copy(a) for a in analyses}
         self.outputsets = None
         self.groupset = None
         self.id = id
@@ -36,10 +38,17 @@ class ResultGroup:
         Prepare outputset for current grouping.
         """
         outputsets = []
+        outputset_id = 0
         for a in self.analyses.values():
-            outputsets += a.outputsets if a.outputsets is not None else []
+            if a.outputsets is None:
+                continue
 
-        self.outputsets = {i: outputset for i, outputset in enumerate(outputsets)}
+            for os in a.outputsets:
+                os.id = outputset_id
+                outputsets.append(os)
+                outputset_id += 1
+
+        self.outputsets = {os.id: os for os in outputsets}
 
     def prepare_groupset(self):
         """
@@ -209,3 +218,7 @@ if __name__ == "__main__":
     group = ResultGroup(analyses, id=1, output_dir='./tmp', **DEFAULT_CONFIG)
 
     groupeventset = group.prepare_groupeventset()
+
+    group_period = generate_group_periods(group, 10000)
+
+    gpqt = prepare_gpqt(group_period, group, mean_only=False, correlation=None)
