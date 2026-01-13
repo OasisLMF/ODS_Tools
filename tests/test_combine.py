@@ -2,7 +2,7 @@ from dataclasses import asdict
 from pathlib import Path
 import tempfile
 import json
-from ods_tools.combine.sampling import generate_group_periods
+from ods_tools.combine.sampling import generate_gpqt, generate_group_periods
 import pytest
 from collections import namedtuple
 import pandas as pd
@@ -140,3 +140,15 @@ def test_combine__generate_group_periods(group_example):
     group_periods = generate_group_periods(group_example, max_group_periods)
 
     assert_frame_equal(expected_group_periods, group_periods)
+
+
+def test_combine__generate_gpqt(group_example):
+    group_example.prepare_groupeventset()
+
+    group_period = pd.read_csv(validation_path / 'group_periods.csv')
+
+    expected_gpqt = pd.read_csv(validation_path / 'gpqt.csv')
+
+    gpqt = generate_gpqt(group_period, group_example)
+
+    assert_frame_equal(expected_gpqt, gpqt)

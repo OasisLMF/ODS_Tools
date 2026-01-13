@@ -111,7 +111,7 @@ def gen_group_periods_event_set_analysis(periods, max_period, max_group_periods)
 # Quantile Sampling
 
 
-def prepare_gpqt(group_period, group, mean_only=False, correlation=None):
+def generate_gpqt(group_period, group, mean_only=False, correlation=None):
     '''
     Create the group period quantile table.
 

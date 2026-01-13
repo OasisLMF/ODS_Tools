@@ -13,6 +13,22 @@
         "type": "string"
         }
       },
+    "occ_dtype": {
+      "title": "occ_dtype",
+      "description": "dtype for records in the occurrence.bin file",
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "output_dir": {
+      "title": "output_dir",
+      "description": "Path to directory to save output.",
+      "type": "string"
+    },
     "group_fill_perspectives": {
       "title": "group_fill_perspectives",
       "description": "Enable filling financial perspectives to enable more groupings of output sets.",
@@ -48,6 +64,11 @@
         "type": "integer",
         "default": 2479
       },
+    "correlation": {
+        "title": "correlation",
+        "description": "Correlation to apply to the grouping.",
+        "type": "float"
+    },
     "group_mean": {
         "title": "group_mean",
         "description": "Output the grouped mean results.",

@@ -5,6 +5,7 @@ from pathlib import Path
 import numpy as np
 import numba as nb
 import logging
+from datetime import datetime
 
 from ods_tools.combine.common import nb_oasis_int
 
@@ -14,6 +15,11 @@ DEFAULT_OCC_DTYPE = [('event_id', 'i4'),
                      ('period_no', 'i4'),
                      ('occ_date_id', 'i4')  # granular dtype 'i8'
                      ]
+
+
+def get_default_output_dir():
+    timestamp = datetime.now().strftime("%d%m%y%H%M%S")
+    return f"./combine_runs/{timestamp}"
 
 
 def save_summary_info(groupset_summaryinfo, groupset_info, output_dir):

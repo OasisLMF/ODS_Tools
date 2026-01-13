@@ -4,13 +4,10 @@ This module handles the grouping interface.
 from collections import namedtuple
 from copy import copy
 from pathlib import Path
-from ods_tools.combine.sampling import generate_group_periods, prepare_gpqt
 import pandas as pd
 
-from ods_tools.combine.combine import DEFAULT_CONFIG
-from ods_tools.combine.utils import dataclass_list_to_dataframe, hash_summary_level_fields
-from ods_tools.combine.result import load_analysis_dirs
-from ods_tools.combine.io import DEFAULT_OCC_DTYPE, read_occurrence_bin, save_summary_info
+from ods_tools.combine.utils import hash_summary_level_fields
+from ods_tools.combine.io import save_summary_info
 
 
 class ResultGroup:
@@ -23,12 +20,11 @@ class ResultGroup:
         group_event_set_fields (list[str]): list of fields to group event sets
     """
 
-    def __init__(self, analyses, id, group_event_set_fields=None,
+    def __init__(self, analyses, group_event_set_fields=None,
                  output_dir=None, **kwargs):
         self.analyses = {a.id: copy(a) for a in analyses}
         self.outputsets = None
         self.groupset = None
-        self.id = id
         self.set_outputsets()
         self.group_event_set_fields = group_event_set_fields if group_event_set_fields is not None else DEFAULT_CONFIG['group_event_set_fields']
         self.output_dir = output_dir
@@ -208,17 +204,3 @@ class ResultGroup:
             analysis_event_set_fields[field_name] = parse_field_from_analysis_settings(field_name, analysis.settings)
 
         return analysis_event_set_fields
-
-
-if __name__ == "__main__":
-    analyses_dirs = [Path(__file__).parent / "examples/inputs/1", Path(__file__).parent / "examples/inputs/2/"]
-
-    analyses = load_analysis_dirs(analyses_dirs)
-
-    group = ResultGroup(analyses, id=1, output_dir='./tmp', **DEFAULT_CONFIG)
-
-    groupeventset = group.prepare_groupeventset()
-
-    group_period = generate_group_periods(group, 10000)
-
-    gpqt = prepare_gpqt(group_period, group, mean_only=False, correlation=None)
