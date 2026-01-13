@@ -1,5 +1,6 @@
 import functools
 import json
+import re
 import numpy as np
 import logging
 import tqdm
@@ -367,8 +368,19 @@ class Validator:
             Returns:
                 str: Date string (date_str or "")
             """
+            # Date format YYYY-MM-DD regex
+            oasis_date_re = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+
+            # Is NAN
             if not date_str or str(date_str).lower() in ["nan", "nat"]:
                 return ""
+            # Is not String
+            if not isinstance(date_str, str):
+                return str(date_str)
+            # Is of correct regex format
+            if not oasis_date_re.match(date_str):
+                return str(date_str)
+            # Is a valid date
             try:
                 datetime.strptime(str(date_str), "%Y-%m-%d")
                 return ""
