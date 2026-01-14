@@ -1,5 +1,7 @@
 {
   "analysis_dirs": ["./ods_tools/combine/examples/inputs/1", "./ods_tools/combine/examples/inputs/2/"],
   "group_number_of_periods": 100000,
-  "group_mean": true
+  "group_mean": true,
+  "group_secondary_uncertainty": true,
+  "group_format_priority": ["M", "Q", "S"]
 }

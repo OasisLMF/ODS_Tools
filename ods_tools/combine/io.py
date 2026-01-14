@@ -7,10 +7,13 @@ import numba as nb
 import logging
 from datetime import datetime
 import pandas as pd
+import os
 
 from ods_tools.combine.common import nb_oasis_int
 
 logger = logging.getLogger(__name__)
+
+oasis_float = np.dtype(os.environ.get('OASIS_FLOAT', 'f4'))
 
 DEFAULT_OCC_DTYPE = [('event_id', 'i4'),
                      ('period_no', 'i4'),
@@ -164,14 +167,29 @@ def load_loss_table_paths(analysis, summary_level_id, perspective, output_type):
 
     return elt_path_dict
 
+
 # Loading ELT files
-
-
 MELT_DTYPE = {
-    "SummaryId": "Int64",
-    "SampleType": "Int64",
-    "EventId": "Int64",
-    "MeanLoss": "float",
+    "SummaryId": "i4",
+    "SampleType": "i4",
+    "EventId": "i4",
+    "MeanLoss": oasis_float,
+    "SDLoss": oasis_float,
+    "MaxLoss": oasis_float
+}
+
+QELT_DTYPE = {
+    "SummaryId": "i4",
+    "EventId": "i4",
+    "Quantile": "f4",
+    "Loss": "f4"
+}
+
+SELT_DTYPE = {
+    "SummaryId": "i4",
+    "EventId": "i4",
+    "SampleId": "i4",
+    "Loss": oasis_float
 }
 
 
@@ -182,3 +200,15 @@ def load_elt(path, dtype):
 
 def load_melt(path):
     return load_elt(path, MELT_DTYPE)
+
+
+def load_qelt(path):
+    df = load_elt(path, QELT_DTYPE)
+    return df.rename(columns={"Loss": "QuantileLoss",
+                              "Quantile": "LTQuantile"})
+
+
+def load_selt(path):
+    df = load_elt(path, SELT_DTYPE)
+    # Remove negative sampleids
+    return df.query('SampleId > 0').rename(columns={"Loss": "SampleLoss"}).reset_index(drop=True)
