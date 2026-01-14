@@ -14,6 +14,7 @@ class OutputSet():
     id: int = None
     perspective_code: str = None
     analysis_id: int = None  # link to Analysis
+    groupset_id: int = None  # link to GroupSet
     exposure_summary_level_fields: List[str] = field(default_factory=lambda: list)
     exposure_summary_level_id: int = None
 
@@ -40,7 +41,8 @@ class Analysis():
         init_params['path'] = path
         init_params['settings'] = analysis_settings
 
-        init_params['outputsets'] = cls.extract_outputsets(analysis_settings, analysis_id=id)
+        init_params['outputsets'] = cls.extract_outputsets(analysis_settings,
+                                                           analysis_id=id)
         return cls(**init_params)
 
     @staticmethod

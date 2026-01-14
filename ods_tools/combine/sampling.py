@@ -1,10 +1,14 @@
+from ods_tools.oed.common import OdsException
 import pandas as pd
 import numpy as np
 from pathlib import Path
 from scipy.stats import norm
+import logging
 
 from ods_tools.combine.common import DEFAULT_RANDOM_SEED
-from ods_tools.combine.io import DEFAULT_OCC_DTYPE, read_occurrence_bin
+from ods_tools.combine.io import DEFAULT_OCC_DTYPE, load_melt, read_occurrence_bin, load_loss_table_paths
+
+logger = logging.getLogger(__name__)
 
 rng = np.random.default_rng(DEFAULT_RANDOM_SEED)  # todo implement configurable random seed
 
@@ -111,14 +115,14 @@ def gen_group_periods_event_set_analysis(periods, max_period, max_group_periods)
 # Quantile Sampling
 
 
-def generate_gpqt(group_period, group, mean_only=False, correlation=None):
+def generate_gpqt(group_period, group, no_quantile_sampling=False, correlation=None):
     '''
     Create the group period quantile table.
 
     Args:
         group_period (pd.DataFrame) : Group Period dataframe.
         group (ResultGroup) : Group object containig ORD info.
-        mean_only (bool) : If true, no quantiles sampled.
+        no_quantile_sampling (bool) : If true, no quantiles sampled.
         correlation (float) : Correlation parameter
 
     Returns:
@@ -152,15 +156,15 @@ def generate_gpqt(group_period, group, mean_only=False, correlation=None):
 
     gpqt = pd.concat(gpqt_fragments).reset_index(drop=True)
 
-    gpqt = calculate_quantiles(gpqt, mean_only, correlation)
+    gpqt = calculate_quantiles(gpqt, no_quantile_sampling, correlation)
     return gpqt.astype(gpqt_dtype)
 
 
-def calculate_quantiles(gpqt, mean_only=False, correlation=None):
+def calculate_quantiles(gpqt, no_quantile_sampling=False, correlation=None):
     '''
     Calculat gpqt Quantiles, handling partial / full correlations.
     '''
-    if mean_only:
+    if no_quantile_sampling:
         gpqt['Quantile'] = None
         return gpqt
 
@@ -190,3 +194,102 @@ def calculate_quantiles(gpqt, mean_only=False, correlation=None):
     return gpqt[output_cols]
 
 # Loss Sampling
+
+
+def do_loss_sampling(gpqt,
+                     group,
+                     mean_only=False,
+                     secondary_uncertainty=False,
+                     parametric_distribution='beta',
+                     format_priority=['M', 'Q', 'S']
+                     ):
+    '''
+    Sample losses for grouped ORD.
+
+    Args:
+        gpqt (pd.DataFrame) : Group Period Quantile Table
+        group (ResultGroup) : ORD results group
+        mean_only (bool) : Do mean only loss sampling.
+        secondary_uncertainry (bool) : Perform secondary uncertainty loss sampling.
+        parametric_distribution (str) : The parameteric distribution used for sampling MELT files.
+        format_priority (List[str]) : ELT file format priority order to load loss information. `M` = MELT, `Q` = QELT, `S` = SELT
+
+    Returns:
+        gplt (pd.DataFrame) : group period loss table
+    '''
+    if not mean_only and not secondary_uncertainty:
+        logger.error("No loss sampling. Please set `group_mean` or `secondary_uncertainty`.")
+        raise OdsException('No loss sampling specified.')
+
+    gplt = None
+    if mean_only:
+        logger.info("Loss sampling: mean only")
+        gplt = do_loss_sampling_mean_only(gpqt, group)
+
+    if secondary_uncertainty:
+        _gplt = do_loss_sampling_secondary_uncertainty(gpqt, group,
+                                                       format_priority=format_priority,
+                                                       parametric_distribution=parametric_distribution)
+        gplt = pd.concat([gplt, _gplt])
+
+    return gplt.astype(gplt_dtype)[gplt_dtype.keys()]
+
+
+def do_loss_sampling_mean_only(gpqt, group):
+    """
+    Calculate group period loss table using mean only. Requires MPLT in individual ORD results.
+
+    Args:
+        gpqt (pd.DataFrame) : Group Period Quantile Table
+        group (ResultGroup) : ORD results group
+    """
+    gplt_fragments = []
+
+    for outputset_id in gpqt['outputset_id'].unique():
+        os = group.outputsets[outputset_id]
+        analysis = group.analyses[os.analysis_id]
+
+        elt_paths = load_loss_table_paths(analysis,
+                                          summary_level_id=os.exposure_summary_level_id,
+                                          perspective=os.perspective_code,
+                                          output_type='elt')
+
+        filtered_gpqt = gpqt.query(f'outputset_id == {outputset_id}')
+        gplt_fragment = loss_sample_mean_only(filtered_gpqt, elt_paths)
+        gplt_fragment['groupset_id'] = os.groupset_id
+
+        # filter na summaryids (no eventid in elt file)
+        missing_summary_ids = gplt_fragment["SummaryId"].isna()
+        if not gplt_fragment[missing_summary_ids].empty:
+            logger.info(f"Output set {outputset_id} has {missing_summary_ids.sum()} missing group events.")
+        gplt_fragment = gplt_fragment[~missing_summary_ids]
+
+        # do summary id mapping
+        if group.summaryinfo_map is not None:
+            summaryid_map = group.summaryinfo_map.get(outputset_id, None)
+        else:
+            summaryid_map = None
+
+        if summaryid_map is not None:
+            gplt_fragment["SummaryId"] = (gplt_fragment["SummaryId"].map(summaryid_map)
+                                                                    .fillna(gplt_fragment["SummaryId"]))
+
+        gplt_fragments.append(gplt_fragment)
+
+    return pd.concat(gplt_fragments).astype(gplt_dtype)[gplt_dtype.keys()]
+
+
+def loss_sample_mean_only(gpqt, elt_paths):
+    assert 'melt' in elt_paths, 'Mean only can only be performed if melt files present.'
+
+    melt_df = load_melt(elt_paths['melt'])
+
+    grouped_df = melt_df.groupby(["SummaryId", "SampleType", "EventId"], as_index=False)
+    melt_df = grouped_df.agg({'MeanLoss': 'sum'})
+
+    melt_df["LossType"] = melt_df["SampleType"].where(melt_df["SampleType"] == 1, 3)
+    melt_df = melt_df[["SummaryId", "EventId", "MeanLoss", "LossType"]]
+
+    # GroupPeriod unique in gpqt
+    gplt = gpqt.merge(melt_df, on='EventId', how='left').rename(columns={"MeanLoss": "Loss"})
+    return gplt

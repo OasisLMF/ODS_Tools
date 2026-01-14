@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 from ods_tools.combine.grouping import ResultGroup
 from ods_tools.combine.io import get_default_output_dir
 from ods_tools.combine.result import load_analysis_dirs
-from ods_tools.combine.sampling import generate_group_periods, generate_gpqt
+from ods_tools.combine.sampling import do_loss_sampling, generate_group_periods, generate_gpqt
 from ods_tools.oed.common import OdsException
 
 SCHEMA_PATH = Path(Path(__file__).parent / 'config_schema.json')
@@ -73,7 +73,7 @@ def combine(config_file):
     logger.info("Running: Group Step")
     analyses = load_analysis_dirs(analyses)
     group = ResultGroup(analyses, output_dir=output_dir, **config)
-    groupeventset = group.prepare_groupeventset()
+    group.prepare_group_info()
 
     # Period sampling
     logger.info("Running: Period Sampling")
@@ -84,17 +84,24 @@ def combine(config_file):
 
     # Loss sampling
     logger.info("Running: Quantile Sampling")
+    no_quantile_sampling = config.get('group_mean', False) and not config.get('group_secondary_uncertainty', False)
     gpqt = generate_gpqt(group_period, group,
-                         mean_only=config.get("group_mean", False),
+                         no_quantile_sampling=no_quantile_sampling,
                          correlation=config.get("correlation", None)
                          )
 
     logger.info("Running: Loss Sampling")
+    gplt = do_loss_sampling(gpqt, group,
+                            mean_only=config.get("group_mean", False),
+                            secondary_uncertainty=config.get("group_secondary_uncertainty", False),
+                            parametric_distribution=config.get("group_parametric_distribution"),
+                            format_priority=config.get("group_format_priority")
+                            )
 
     # Output generation
     logger.info("Running: Output Generation")
 
-    return gpqt
+    return gplt
 
 
 if __name__ == "__main__":

@@ -6,6 +6,7 @@ import numpy as np
 import numba as nb
 import logging
 from datetime import datetime
+import pandas as pd
 
 from ods_tools.combine.common import nb_oasis_int
 
@@ -141,3 +142,43 @@ def _read_occ_arr(occ_arr, occ_map_valtype, NB_occ_map_valtype):
         occ_map[event_id] = occ_map[event_id][:occ_map_sizes[event_id]]
 
     return occ_map
+
+
+def load_loss_table_paths(analysis, summary_level_id, perspective, output_type):
+    '''Load loss table paths to of type `output_type` from ord output directory of the selected
+    analysis, summary_id and perspective.
+
+    Args
+    ----
+    analysis (Analysis): Analysis info object
+    summary_level_id (int): Summary level to load.
+    perspective (str): Either `gul`, `il`, or `ri`
+    output_type (str): Either period loss table (`plt`), event loss table
+                       (`elt`), or `lt` for both.
+    '''
+
+    analysis_dir = Path(analysis.path) / 'output'
+    glob_str = f'*{perspective}*S{summary_level_id}*{output_type}.csv'
+    elt_path_dict = list(analysis_dir.glob(glob_str))
+    elt_path_dict = {path.stem.split('_')[-1]: path for path in elt_path_dict}
+
+    return elt_path_dict
+
+# Loading ELT files
+
+
+MELT_DTYPE = {
+    "SummaryId": "Int64",
+    "SampleType": "Int64",
+    "EventId": "Int64",
+    "MeanLoss": "float",
+}
+
+
+def load_elt(path, dtype):
+    df = pd.read_csv(path, dtype=dtype)
+    return df[dtype.keys()]
+
+
+def load_melt(path):
+    return load_elt(path, MELT_DTYPE)

@@ -29,6 +29,14 @@ class ResultGroup:
         self.group_event_set_fields = group_event_set_fields if group_event_set_fields is not None else DEFAULT_CONFIG['group_event_set_fields']
         self.output_dir = output_dir
 
+    def prepare_group_info(self):
+        '''
+        Meta function to prepare group for grouping.
+        '''
+        self.prepare_groupset()
+        self.prepare_groupeventset()
+        self.prepare_summaryinfo_map()
+
     def set_outputsets(self):
         """
         Prepare outputset for current grouping.
@@ -67,9 +75,11 @@ class ResultGroup:
             if groupset_id is None:
                 groupset_def_dict[perspective_code][summary_level_hash] = max_groupset_id
                 groupset_outputsets[max_groupset_id] = [os_id]
+                self.outputsets[os_id].groupset_id = max_groupset_id
                 max_groupset_id += 1
             else:
                 groupset_outputsets[groupset_id] += [os_id]
+                self.outputsets[os_id].groupset_id = groupset_id
 
         groupset_dict = {}
         for key, value in groupset_outputsets.items():
