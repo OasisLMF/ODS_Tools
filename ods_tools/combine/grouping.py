@@ -8,6 +8,7 @@ import pandas as pd
 
 from ods_tools.combine.utils import hash_summary_level_fields
 from ods_tools.combine.io import save_summary_info
+from ods_tools.combine.common import DEFAULT_CONFIG
 
 
 class ResultGroup:

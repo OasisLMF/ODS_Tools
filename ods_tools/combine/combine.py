@@ -3,33 +3,15 @@ from jsonschema import ValidationError, validate
 import json
 import logging
 
-logger = logging.getLogger(__name__)
-
 from ods_tools.combine.grouping import ResultGroup
 from ods_tools.combine.io import get_default_output_dir
 from ods_tools.combine.result import load_analysis_dirs
 from ods_tools.combine.sampling import do_loss_sampling, generate_group_periods, generate_gpqt
+from ods_tools.combine.common import DEFAULT_CONFIG
 from ods_tools.oed.common import OdsException
 
+logger = logging.getLogger(__name__)
 SCHEMA_PATH = Path(Path(__file__).parent / 'config_schema.json')
-
-DEFAULT_CONFIG = {
-    "group_fill_perspective": False,
-    "group_event_set_fields": [
-        "event_set_id",
-        "event_set_description",
-        "event_occurrence_id",
-        "event_occurrence_description",
-        "event_occurrence_max_periods",
-        "model_supplier_id",
-        "model_name_id",
-        "model_description",
-        "model_version"
-    ],
-    "group_period_seed": 2479,
-    "group_mean": False,
-    "group_secondary_uncertainty": False
-}
 
 
 def read_config(config_path):
@@ -107,4 +89,3 @@ def combine(config_file):
 if __name__ == "__main__":
     config_path = Path(Path(__file__).parent / 'config.json')
     output = combine(config_path)
-    breakpoint()

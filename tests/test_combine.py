@@ -2,22 +2,24 @@ from dataclasses import asdict
 from pathlib import Path
 import tempfile
 import json
-from ods_tools.combine.sampling import generate_gpqt, generate_group_periods
 import pytest
 from collections import namedtuple
 import pandas as pd
+import numpy as np
+from unittest import mock
 
 from pandas.testing import assert_frame_equal
 
 from ods_tools.combine.combine import DEFAULT_CONFIG, combine
 from ods_tools.combine.grouping import ResultGroup
 from ods_tools.combine.result import load_analysis_dirs
-
+from ods_tools.combine.sampling import generate_gpqt, generate_group_periods, do_loss_sampling, gpqt_dtype, gplt_dtype
 
 example_path = Path(Path(__file__).parent.parent, "ods_tools", "combine", "examples")
 validation_path = Path(Path(__file__).parent.parent, 'validation', 'combine_ord')
 
-BASIC_CONFIG = {}
+BASIC_CONFIG = {
+}
 
 
 def test_combine_as_expected():
@@ -28,10 +30,13 @@ def test_combine_as_expected():
         config_path = Path(tmp_dir, "config.json")
 
         with open(config_path, "w") as f:
-            json.dump({
+            config = {
                 "analysis_dirs": [str(child) for child in input_dir.iterdir()],
-                "group_number_of_periods": 1000
-            }, f)
+                "group_number_of_periods": 1000,
+                "group_mean": True
+            }
+
+            json.dump(config, f)
 
         combine_result = combine(str(config_path))
 
@@ -42,19 +47,27 @@ def test_combine__load_analysis_dirs():
          'outputsets': [{'perspective_code': 'gul',
                         'analysis_id': 1,
                          'exposure_summary_level_fields': [],
+                         'groupset_id': None,
+                         'id': None,
                          'exposure_summary_level_id': 1},
                         {'perspective_code': 'gul',
                         'analysis_id': 1,
+                         'groupset_id': None,
+                         'id': None,
                          'exposure_summary_level_fields': ['LocNumber'],
                          'exposure_summary_level_id': 2}]
          },
         {'id': 2,
          'outputsets': [{'perspective_code': 'gul',
                         'analysis_id': 2,
+                         'groupset_id': None,
+                         'id': None,
                          'exposure_summary_level_fields': [],
                          'exposure_summary_level_id': 1},
                         {'perspective_code': 'gul',
                         'analysis_id': 2,
+                         'groupset_id': None,
+                         'id': None,
                          'exposure_summary_level_fields': ['LocNumber'],
                          'exposure_summary_level_id': 2}]
          }
@@ -75,15 +88,25 @@ def test_combine__load_analysis_dirs():
 # Grouping tests
 
 
+@pytest.fixture()
+def seed_default_rng():
+    seeded_rng = np.random.default_rng(seed=0)
+    with mock.patch("ods_tools.combine.sampling.np.random.default_rng") as mocked:
+        mocked.return_value = seeded_rng
+        yield
+
+
 @pytest.fixture
-def group_example():
+def prepared_group_example(seed_default_rng):
     analysis_dirs = [example_path / 'inputs/1', example_path / 'inputs/2']
     analyses = load_analysis_dirs(analysis_dirs)
 
-    return ResultGroup(analyses, config=BASIC_CONFIG, id=1)
+    group = ResultGroup(analyses, config=BASIC_CONFIG, id=1)
+    group.prepare_group_info()
+    return group
 
 
-def test_combine__groupset_and_summaryinfo(group_example):
+def test_combine__groupset_and_summaryinfo(prepared_group_example):
     expected_groupset = {0: {'id': 0, 'outputsets': [0, 2],
                              'exposure_summary_level_fields': [],
                              'perspective_code': 'gul'},
@@ -96,20 +119,20 @@ def test_combine__groupset_and_summaryinfo(group_example):
         3: {1: 2, 2: 4, 3: 5, 4: 7, 5: 8}
     }
 
-    groupset = group_example.prepare_groupset()
+    groupset = prepared_group_example.groupset
 
     assert expected_groupset.keys() == groupset.keys()
     for groupset_id in expected_groupset.keys():
         assert groupset[groupset_id] == expected_groupset[groupset_id]
 
-    summaryinfo_map = group_example.prepare_summaryinfo_map()
+    summaryinfo_map = prepared_group_example.prepare_summaryinfo_map()
 
     assert expected_summaryinfo_map.keys() == summaryinfo_map.keys()
     for outputset_id, curr_summaryinfo_map in summaryinfo_map.items():
         assert expected_summaryinfo_map[outputset_id] == curr_summaryinfo_map
 
 
-def test_combine__groupeventset(group_example):
+def test_combine__groupeventset(prepared_group_example):
     EventSetField = namedtuple('EventSetField', DEFAULT_CONFIG['group_event_set_fields'])
     expected_groupeventset = {0: {'id': 0,
                                   'event_set_field':
@@ -124,31 +147,47 @@ def test_combine__groupeventset(group_example):
                                                 model_version=''),
                                   'analysis_ids': [1, 2]}}
 
-    groupeventset = group_example.prepare_groupeventset()
+    groupeventset = prepared_group_example.groupeventset
 
     assert expected_groupeventset.keys() == groupeventset.keys()
     for groupeventset_id in groupeventset.keys():
         assert groupeventset[groupeventset_id] == expected_groupeventset[groupeventset_id]
 
 
-def test_combine__generate_group_periods(group_example):
+def test_combine__generate_group_periods(prepared_group_example,
+                                         seed_default_rng):
     max_group_periods = 100000
 
     expected_group_periods = pd.read_csv(validation_path / 'group_periods.csv')
 
-    group_example.prepare_groupeventset()
-    group_periods = generate_group_periods(group_example, max_group_periods)
+    group_periods = generate_group_periods(prepared_group_example, max_group_periods)
+
+    group_periods.to_csv('expected_group_periods.csv', index=False)
 
     assert_frame_equal(expected_group_periods, group_periods)
 
 
-def test_combine__generate_gpqt(group_example):
-    group_example.prepare_groupeventset()
-
+def test_combine__generate_gpqt(prepared_group_example,
+                                seed_default_rng):
     group_period = pd.read_csv(validation_path / 'group_periods.csv')
+    expected_gpqt = pd.read_csv(validation_path / 'gpqt.csv', dtype=gpqt_dtype)
 
-    expected_gpqt = pd.read_csv(validation_path / 'gpqt.csv')
+    gpqt = generate_gpqt(group_period, prepared_group_example)
 
-    gpqt = generate_gpqt(group_period, group_example)
+    gpqt.to_csv('expected_gpqt.csv', index=False)
 
     assert_frame_equal(expected_gpqt, gpqt)
+
+
+def test_combine__loss_sampling(prepared_group_example,
+                                seed_default_rng):
+    gpqt = pd.read_csv(validation_path / 'gpqt.csv', dtype=gpqt_dtype)
+    expected_gplt = pd.read_csv(validation_path / 'gplt.csv', dtype=gplt_dtype)
+    config = {
+        'mean_only': True,
+    }
+
+    gplt = do_loss_sampling(gpqt, prepared_group_example, **config)
+    gplt.to_csv('expected_gplt.csv', index=False)
+
+    assert_frame_equal(expected_gplt, gplt)

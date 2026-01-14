@@ -270,7 +270,9 @@ def do_loss_sampling_mean_only(gpqt, group):
 
         gplt_fragments.append(gplt_fragment)
 
-    return pd.concat(gplt_fragments).astype(gplt_dtype)[gplt_dtype.keys()]
+    gplt = pd.concat(gplt_fragments, ignore_index=True)
+
+    return gplt.astype(gplt_dtype)[gplt_dtype.keys()]
 
 
 def _filter_missing_summaryids(df, outputset_id=None):
@@ -377,7 +379,7 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
             if curr_gpqt.empty:  # finished processing
                 break
 
-    gplt = pd.concat(gplt_fragments)
+    gplt = pd.concat(gplt_fragments, ignore_index=True)
 
     return gplt.astype(gplt_dtype)[gplt_dtype.keys()]
 
