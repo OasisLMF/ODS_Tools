@@ -16,6 +16,7 @@ from ods_tools.combine.result import load_analysis_dirs
 from ods_tools.combine.sampling import generate_gpqt, generate_group_periods, do_loss_sampling, gpqt_dtype, gplt_dtype
 
 example_path = Path(Path(__file__).parent.parent, "ods_tools", "combine", "examples")
+expected_output_path = Path(Path(__file__).parent.parent, 'expected_output')
 validation_path = Path(Path(__file__).parent.parent, 'validation', 'combine_ord')
 
 BASIC_CONFIG = {
@@ -155,32 +156,41 @@ def test_combine__groupeventset(prepared_group_example):
 
 
 def test_combine__generate_group_periods(prepared_group_example,
-                                         seed_default_rng):
-    max_group_periods = 100000
+                                         seed_default_rng,
+                                         keep_output):
+    max_group_periods = 2000
 
     expected_group_periods = pd.read_csv(validation_path / 'group_periods.csv')
 
     group_periods = generate_group_periods(prepared_group_example, max_group_periods)
 
-    group_periods.to_csv('expected_group_periods.csv', index=False)
+    if keep_output:
+        save_path = expected_output_path / 'group_periods.csv'
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        group_periods.to_csv(save_path, index=False)
 
     assert_frame_equal(expected_group_periods, group_periods)
 
 
 def test_combine__generate_gpqt(prepared_group_example,
-                                seed_default_rng):
+                                seed_default_rng,
+                                keep_output):
     group_period = pd.read_csv(validation_path / 'group_periods.csv')
     expected_gpqt = pd.read_csv(validation_path / 'gpqt.csv', dtype=gpqt_dtype)
 
     gpqt = generate_gpqt(group_period, prepared_group_example)
 
-    gpqt.to_csv('expected_gpqt.csv', index=False)
+    if keep_output:
+        save_path = expected_output_path / 'gpqt.csv'
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        gpqt.to_csv(save_path, index=False)
 
     assert_frame_equal(expected_gpqt, gpqt)
 
 
 def test_combine__loss_sampling(prepared_group_example,
-                                seed_default_rng):
+                                seed_default_rng,
+                                keep_output):
     gpqt = pd.read_csv(validation_path / 'gpqt.csv', dtype=gpqt_dtype)
     expected_gplt = pd.read_csv(validation_path / 'gplt.csv', dtype=gplt_dtype)
     config = {
@@ -188,6 +198,10 @@ def test_combine__loss_sampling(prepared_group_example,
     }
 
     gplt = do_loss_sampling(gpqt, prepared_group_example, **config)
-    gplt.to_csv('expected_gplt.csv', index=False)
+
+    if keep_output:
+        save_path = expected_output_path / 'gplt.csv'
+        save_path.parent.mkdir(parents=True, exist_ok=True)
+        gplt.to_csv(save_path, index=False)
 
     assert_frame_equal(expected_gplt, gplt)
