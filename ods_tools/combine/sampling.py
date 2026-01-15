@@ -136,9 +136,14 @@ def generate_gpqt(group_period, group, no_quantile_sampling=False, correlation=N
     for groupeventset_id, groupeventset in group.groupeventset.items():
         filtered_group_period = group_period.query(f'groupeventset_id == {groupeventset_id}')
         filtered_analyses = [group.analyses[a] for a in groupeventset['analysis_ids']]
-        analysis_outpusets = [(a, os) for a in filtered_analyses for os in a.outputsets]
 
-        for a, os in analysis_outpusets:
+        analysis_outputsets = []
+        for a in filtered_analyses:
+            for os_id in group.analysis_outputset[a.id]:
+                os = group.outputsets[os_id]
+                analysis_outputsets.append((a, os))
+
+        for a, os in analysis_outputsets:
             # print(f'Currently processing groupeventset_id: {groupeventset_id},  outputset: {os.id}')
 
             eventid_period, _ = read_occurrence_bin(Path(a.path) / 'input' / 'occurrence.bin', DEFAULT_OCC_DTYPE)

@@ -3,7 +3,7 @@ from jsonschema import ValidationError, validate
 import json
 import logging
 
-from ods_tools.combine.grouping import ResultGroup
+from ods_tools.combine.grouping import ResultGroup, create_combine_group
 from ods_tools.combine.io import get_default_output_dir
 from ods_tools.combine.result import load_analysis_dirs
 from ods_tools.combine.sampling import do_loss_sampling, generate_group_periods, generate_gpqt
@@ -54,8 +54,9 @@ def combine(config_file):
     # Group meta data
     logger.info("Running: Group Step")
     analyses = load_analysis_dirs(analyses)
-    group = ResultGroup(analyses, output_dir=output_dir, **config)
-    group.prepare_group_info()
+    group = create_combine_group(analyses,
+                                 groupeventset_fields=config['group_event_set_fields'],
+                                 output_dir=config.get('output_dir', None))
 
     # Period sampling
     logger.info("Running: Period Sampling")

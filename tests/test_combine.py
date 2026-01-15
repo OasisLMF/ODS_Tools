@@ -11,7 +11,7 @@ from unittest import mock
 from pandas.testing import assert_frame_equal
 
 from ods_tools.combine.combine import DEFAULT_CONFIG, combine
-from ods_tools.combine.grouping import ResultGroup
+from ods_tools.combine.grouping import ResultGroup, create_combine_group
 from ods_tools.combine.result import load_analysis_dirs
 from ods_tools.combine.sampling import generate_gpqt, generate_group_periods, do_loss_sampling, gpqt_dtype, gplt_dtype
 
@@ -43,48 +43,27 @@ def test_combine_as_expected():
 
 
 def test_combine__load_analysis_dirs():
-    expected_analyses = [
+    parent_path = Path(__file__).parent.parent / 'ods_tools' / 'combine' / 'examples' / 'inputs'
+    expected_analyses = {
+        1:
         {'id': 1,
-         'outputsets': [{'perspective_code': 'gul',
-                        'analysis_id': 1,
-                         'exposure_summary_level_fields': [],
-                         'groupset_id': None,
-                         'id': None,
-                         'exposure_summary_level_id': 1},
-                        {'perspective_code': 'gul',
-                        'analysis_id': 1,
-                         'groupset_id': None,
-                         'id': None,
-                         'exposure_summary_level_fields': ['LocNumber'],
-                         'exposure_summary_level_id': 2}]
+         'path': parent_path / '1'
          },
+        2:
         {'id': 2,
-         'outputsets': [{'perspective_code': 'gul',
-                        'analysis_id': 2,
-                         'groupset_id': None,
-                         'id': None,
-                         'exposure_summary_level_fields': [],
-                         'exposure_summary_level_id': 1},
-                        {'perspective_code': 'gul',
-                        'analysis_id': 2,
-                         'groupset_id': None,
-                         'id': None,
-                         'exposure_summary_level_fields': ['LocNumber'],
-                         'exposure_summary_level_id': 2}]
+         'path': parent_path / '2'
          }
-    ]
+    }
 
     analysis_dirs = [example_path / 'inputs/1', example_path / 'inputs/2']
     analyses = load_analysis_dirs(analysis_dirs)
 
     assert len(analyses) == len(expected_analyses)
-    for analysis, expected_analysis in zip(analyses, expected_analyses):
+    for analysis_id, analysis in analyses.items():
+        expected_analysis = expected_analyses[analysis_id]
         assert analysis.id == expected_analysis['id']
-        assert len(analysis.outputsets) == len(expected_analysis['outputsets'])
+        assert analysis.path == expected_analysis['path']
 
-        for outputset, expected_outputset in zip(analysis.outputsets, expected_analysis['outputsets']):
-            outputset = asdict(outputset)
-            assert outputset == expected_outputset
 
 # Grouping tests
 
@@ -102,8 +81,9 @@ def prepared_group_example(seed_default_rng):
     analysis_dirs = [example_path / 'inputs/1', example_path / 'inputs/2']
     analyses = load_analysis_dirs(analysis_dirs)
 
-    group = ResultGroup(analyses, config=BASIC_CONFIG, id=1)
-    group.prepare_group_info()
+    group = create_combine_group(analyses,
+                                 groupeventset_fields=DEFAULT_CONFIG['group_event_set_fields'])
+
     return group
 
 
@@ -126,7 +106,7 @@ def test_combine__groupset_and_summaryinfo(prepared_group_example):
     for groupset_id in expected_groupset.keys():
         assert groupset[groupset_id] == expected_groupset[groupset_id]
 
-    summaryinfo_map = prepared_group_example.prepare_summaryinfo_map()
+    summaryinfo_map = prepared_group_example.summaryinfo_map
 
     assert expected_summaryinfo_map.keys() == summaryinfo_map.keys()
     for outputset_id, curr_summaryinfo_map in summaryinfo_map.items():
