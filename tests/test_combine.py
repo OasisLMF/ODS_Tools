@@ -10,7 +10,7 @@ from unittest import mock
 
 from pandas.testing import assert_frame_equal
 
-from ods_tools.combine.combine import DEFAULT_CONFIG, combine
+from ods_tools.combine.combine import DEFAULT_CONFIG, combine, read_config
 from ods_tools.combine.grouping import ResultGroup, create_combine_group
 from ods_tools.combine.result import load_analysis_dirs
 from ods_tools.combine.sampling import generate_gpqt, generate_group_periods, do_loss_sampling, gpqt_dtype, gplt_dtype
@@ -27,19 +27,15 @@ def test_combine_as_expected():
 
     input_dir = example_path / "inputs"
 
-    with tempfile.TemporaryDirectory() as tmp_dir:
-        config_path = Path(tmp_dir, "config.json")
+    config = {
+        "analysis_dirs": [str(child) for child in input_dir.iterdir()],
+        "group_number_of_periods": 1000,
+        "group_mean": True
+    }
 
-        with open(config_path, "w") as f:
-            config = {
-                "analysis_dirs": [str(child) for child in input_dir.iterdir()],
-                "group_number_of_periods": 1000,
-                "group_mean": True
-            }
+    config = DEFAULT_CONFIG | config
 
-            json.dump(config, f)
-
-        combine_result = combine(str(config_path))
+    combine_result = combine(**config)
 
 
 def test_combine__load_analysis_dirs():
@@ -81,8 +77,8 @@ def prepared_group_example(seed_default_rng):
     analysis_dirs = [example_path / 'inputs/1', example_path / 'inputs/2']
     analyses = load_analysis_dirs(analysis_dirs)
 
-    group = create_combine_group(analyses,
-                                 groupeventset_fields=DEFAULT_CONFIG['group_event_set_fields'])
+    group, _ = create_combine_group(analyses,
+                                    groupeventset_fields=DEFAULT_CONFIG['group_event_set_fields'])
 
     return group
 

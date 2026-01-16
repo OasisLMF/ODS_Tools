@@ -64,9 +64,9 @@
         "type": "integer",
         "default": 2479
       },
-    "correlation": {
-        "title": "correlation",
-        "description": "Correlation to apply to the grouping.",
+    "group_correlation": {
+        "title": "group_correlation",
+        "description": "Correlation to apply to the group.",
         "type": "float"
     },
     "group_mean": {

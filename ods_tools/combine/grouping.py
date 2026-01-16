@@ -44,11 +44,9 @@ class ResultGroup:
         self.summaryinfo_map = summaryinfo_map
 
 
-def create_combine_group(analyses,
-                         groupeventset_fields,
-                         output_dir=None):
+def create_combine_group(analyses, groupeventset_fields):
     '''
-    Create and prepare a ResultGroup for the analyses.
+    Create and prepare a ResultGroup for the analyses. Returns group and group summaryinfo.
 
     Args:
         analyses (dict): Map of analysis_id to anlayses in group.
@@ -71,10 +69,7 @@ def create_combine_group(analyses,
                                                     groupset_summaryinfo,
                                                     group.groupset)
 
-    if output_dir is not None:
-        Path(output_dir).mkdir(parents=True, exist_ok=True)
-        save_summary_info(groupset_summaryinfo, group.groupset, output_dir)
-    return group
+    return group, groupset_summaryinfo
 
 
 def prepare_outputsets(analyses):

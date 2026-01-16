@@ -4,7 +4,7 @@ import json
 import logging
 
 from ods_tools.combine.grouping import ResultGroup, create_combine_group
-from ods_tools.combine.io import get_default_output_dir
+from ods_tools.combine.io import get_default_output_dir, save_summary_info
 from ods_tools.combine.result import load_analysis_dirs
 from ods_tools.combine.sampling import do_loss_sampling, generate_group_periods, generate_gpqt
 from ods_tools.combine.common import DEFAULT_CONFIG
@@ -34,16 +34,19 @@ def read_config(config_path):
     return config
 
 
-def combine(config_file):
-    config = read_config(config_file)
-
-    analyses = config.get("analysis_dirs", None)
-    if analyses is None:
-        logger.error('No `analysis_dirs` set in config.')
-        raise OdsException("ORD analyses could not be loaded.")
-
-    output_dir = config.get("output_dir", None)
-
+def combine(analysis_dirs,
+            group_event_set_fields,
+            group_number_of_periods,
+            group_mean=False,
+            group_secondary_uncertainty=False,
+            group_parametric_distribution='beta',
+            group_format_priority=['M', 'Q', 'S'],
+            group_correlation=None,
+            occ_dtype=None,
+            output_dir=None,
+            **kwargs
+            ):
+    # prepare output dir
     if output_dir is None:
         output_dir = get_default_output_dir()
 
@@ -53,32 +56,33 @@ def combine(config_file):
 
     # Group meta data
     logger.info("Running: Group Step")
-    analyses = load_analysis_dirs(analyses)
-    group = create_combine_group(analyses,
-                                 groupeventset_fields=config['group_event_set_fields'],
-                                 output_dir=config.get('output_dir', None))
+    analyses = load_analysis_dirs(analysis_dirs)
+    group, groupset_summaryinfo = create_combine_group(analyses,
+                                                       groupeventset_fields=group_event_set_fields)
+
+    save_summary_info(groupset_summaryinfo, group.groupset, output_dir)
 
     # Period sampling
     logger.info("Running: Period Sampling")
     group_period = generate_group_periods(group,
-                                          max_group_periods=config['group_number_of_periods'],
-                                          occ_dtype=config.get('occ_dtype', None)
+                                          max_group_periods=group_number_of_periods,
+                                          occ_dtype=occ_dtype
                                           )
 
     # Loss sampling
     logger.info("Running: Quantile Sampling")
-    no_quantile_sampling = config.get('group_mean', False) and not config.get('group_secondary_uncertainty', False)
+    no_quantile_sampling = group_mean and not group_secondary_uncertainty
     gpqt = generate_gpqt(group_period, group,
                          no_quantile_sampling=no_quantile_sampling,
-                         correlation=config.get("correlation", None)
+                         correlation=group_correlation
                          )
 
     logger.info("Running: Loss Sampling")
     gplt = do_loss_sampling(gpqt, group,
-                            mean_only=config.get("group_mean", False),
-                            secondary_uncertainty=config.get("group_secondary_uncertainty", False),
-                            parametric_distribution=config.get("group_parametric_distribution"),
-                            format_priority=config.get("group_format_priority")
+                            mean_only=group_mean,
+                            secondary_uncertainty=group_secondary_uncertainty,
+                            parametric_distribution=group_parametric_distribution,
+                            format_priority=group_format_priority
                             )
 
     # Output generation
@@ -89,4 +93,5 @@ def combine(config_file):
 
 if __name__ == "__main__":
     config_path = Path(Path(__file__).parent / 'config.json')
-    output = combine(config_path)
+    config = read_config(config_path)
+    output = combine(**config)
