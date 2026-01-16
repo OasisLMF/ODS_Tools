@@ -3,5 +3,8 @@
   "group_number_of_periods": 100000,
   "group_mean": true,
   "group_secondary_uncertainty": true,
-  "group_format_priority": ["M", "Q", "S"]
+  "group_format_priority": ["M", "Q", "S"],
+  "group_plt": true,
+  "group_alt": true,
+  "group_ept": true
 }

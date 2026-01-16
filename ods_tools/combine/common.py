@@ -3,6 +3,7 @@ import numba as nb
 import os
 
 oasis_int = np.dtype(os.environ.get('OASIS_INT', 'i4'))
+oasis_float = np.dtype(os.environ.get('OASIS_FLOAT', 'f4'))
 nb_oasis_int = nb.from_dtype(oasis_int)
 
 DEFAULT_RANDOM_SEED = 8762

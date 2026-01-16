@@ -4,7 +4,8 @@ import json
 import logging
 
 from ods_tools.combine.grouping import ResultGroup, create_combine_group
-from ods_tools.combine.io import get_default_output_dir, save_summary_info
+from ods_tools.combine.io import get_default_output_dir, save_output, save_summary_info
+from ods_tools.combine.output_generation import generate_alt, generate_ept
 from ods_tools.combine.result import load_analysis_dirs
 from ods_tools.combine.sampling import do_loss_sampling, generate_group_periods, generate_gpqt
 from ods_tools.combine.common import DEFAULT_CONFIG
@@ -43,6 +44,11 @@ def combine(analysis_dirs,
             group_format_priority=['M', 'Q', 'S'],
             group_correlation=None,
             occ_dtype=None,
+            group_plt=False,
+            group_alt=False,
+            group_ept=False,
+            group_ept_oep=True,
+            group_ept_aep=True,
             output_dir=None,
             **kwargs
             ):
@@ -87,6 +93,23 @@ def combine(analysis_dirs,
 
     # Output generation
     logger.info("Running: Output Generation")
+
+    outputs = []
+
+    if group_plt:
+        outputs.append(('plt', gplt))
+
+    if group_alt:
+        outputs.append(('alt', generate_alt(gplt, group_number_of_periods)))
+
+    if group_ept:
+        outputs.append(('ept',
+                        generate_ept(gplt, group_number_of_periods,
+                                     oep=group_ept_oep,
+                                     aep=group_ept_aep)))
+
+    for output_name, output_df in outputs:
+        save_output(output_df, output_dir, f'{output_name}.csv')
 
     return gplt
 

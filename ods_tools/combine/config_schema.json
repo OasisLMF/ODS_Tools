@@ -114,6 +114,18 @@
       "type": "boolean",
       "default": false
       },
+    "group_ept_oep": {
+      "title": "group_ept_oep",
+      "description": "Output grouped EPT with OEP if group_ept",
+      "type": "boolean",
+      "default": true
+    },
+    "group_ept_aep": {
+      "title": "group_ept_aep",
+      "description": "Output grouped EPT with AEP if group_ept",
+      "type": "boolean",
+      "default": true
+    },
     "group_plt": {
       "title": "group_plt",
       "description": "Output grouped PLT report",

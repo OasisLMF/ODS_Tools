@@ -7,13 +7,11 @@ import numba as nb
 import logging
 from datetime import datetime
 import pandas as pd
-import os
 
-from ods_tools.combine.common import nb_oasis_int
+from ods_tools.combine.common import nb_oasis_int, oasis_float
 
 logger = logging.getLogger(__name__)
 
-oasis_float = np.dtype(os.environ.get('OASIS_FLOAT', 'f4'))
 
 DEFAULT_OCC_DTYPE = [('event_id', 'i4'),
                      ('period_no', 'i4'),
@@ -37,10 +35,20 @@ def save_summary_info(groupset_summaryinfo, groupset_info, output_dir):
 
     for gs, g_summary_info_df in groupset_summaryinfo.items():
         summary_info_fname = f'{groupset_info[gs]['perspective_code']}_GS{gs}_summary-info.csv'
-        g_summary_info_df.to_csv(Path(output_dir) / summary_info_fname, index=False)
+        save_path = Path(output_dir) / summary_info_fname
+        g_summary_info_df.to_csv(save_path, index=False)
+        logger.info(f'Saved {summary_info_fname}: ', save_path)
 
+
+def save_output(full_df, output_dir, output_name, factor_col='groupset_id', float_format='%.6f'):
+    for i in full_df[factor_col].unique():
+        save_path = output_dir / f'{i}_{output_name}'
+        full_df.query(f"{factor_col} == {i}").to_csv(save_path, index=False,
+                                                     float_format=float_format)
+        logger.info(f'Saved {output_name}: ', save_path)
 
 # occurrence reading functions from oasislmf -> copied to avoid circular imports
+
 
 @nb.jit(nopython=True, cache=True)
 def mv_read(byte_mv, cursor, _dtype, itemsize):
