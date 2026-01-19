@@ -3,7 +3,6 @@ This module manages interfacing with ORD folders.
 """
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List
 
 from ods_tools.oed.setting_schema import AnalysisSettingSchema
 

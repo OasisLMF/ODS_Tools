@@ -1,7 +1,4 @@
-from dataclasses import asdict
 from pathlib import Path
-import tempfile
-import json
 import pytest
 from collections import namedtuple
 import pandas as pd
@@ -10,8 +7,8 @@ from unittest import mock
 
 from pandas.testing import assert_frame_equal
 
-from ods_tools.combine.combine import DEFAULT_CONFIG, combine, read_config
-from ods_tools.combine.grouping import ResultGroup, create_combine_group
+from ods_tools.combine.combine import DEFAULT_CONFIG, combine
+from ods_tools.combine.grouping import create_combine_group
 from ods_tools.combine.result import load_analysis_dirs
 from ods_tools.combine.sampling import generate_gpqt, generate_group_periods, do_loss_sampling, gpqt_dtype, gplt_dtype
 

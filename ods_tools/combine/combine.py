@@ -3,7 +3,7 @@ from jsonschema import ValidationError, validate
 import json
 import logging
 
-from ods_tools.combine.grouping import ResultGroup, create_combine_group
+from ods_tools.combine.grouping import create_combine_group
 from ods_tools.combine.io import get_default_output_dir, save_output, save_summary_info
 from ods_tools.combine.output_generation import generate_alt, generate_ept
 from ods_tools.combine.result import load_analysis_dirs

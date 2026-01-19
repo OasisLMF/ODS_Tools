@@ -8,7 +8,6 @@ import logging
 
 from ods_tools.combine.common import DEFAULT_RANDOM_SEED
 from ods_tools.combine.io import DEFAULT_OCC_DTYPE, load_melt, read_occurrence_bin, load_loss_table_paths
-from ods_tools.combine.io import load_melt, load_qelt, load_selt
 
 logger = logging.getLogger(__name__)
 
