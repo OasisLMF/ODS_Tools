@@ -93,7 +93,7 @@ def seed_default_rng():
 
 
 @pytest.fixture
-def prepared_group_example(seed_default_rng):
+def prepared_group_example():
     analysis_dirs = [example_path / 'inputs/1', example_path / 'inputs/2']
     analyses = load_analysis_dirs(analysis_dirs)
 
