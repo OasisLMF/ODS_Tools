@@ -3,7 +3,7 @@ import numpy as np
 
 from ods_tools.combine.common import oasis_float
 
-dtypes_al = {
+alt_dtype = {
     'groupset_id': 'i4',
     'SummaryId': 'i4',
     'LossType': 'i4',
@@ -12,7 +12,7 @@ dtypes_al = {
 
 }
 
-dtypes_ep = {
+ept_dtype = {
     'groupset_id': 'i4',
     'SummaryId': 'i4',
     'EPCalc': 'i4',
@@ -41,7 +41,7 @@ def generate_alt(gplt, max_period):
 
         records.append(record)
 
-    return pd.DataFrame(records).astype(dtypes_al)
+    return pd.DataFrame(records).astype(alt_dtype)
 
 
 def assign_exceedance_probability(df, max_period):
@@ -82,7 +82,7 @@ def generate_ept(gplt, max_group_period, oep=True, aep=True):
 
     return (
         pd.concat(ep_frags)[["groupset_id", "SummaryId", "EPCalc", "EPType", "RP", "Loss"]]
-        .astype(dtypes_ep)
+        .astype(ept_dtype)
         .sort_values(by=["groupset_id", "SummaryId", "EPType", "EPCalc", "Loss"],
                      ascending=[True, True, True, True, False])
     )

@@ -1,4 +1,6 @@
+import csv
 from pathlib import Path
+import tempfile
 import pytest
 from collections import namedtuple
 import pandas as pd
@@ -9,6 +11,8 @@ from pandas.testing import assert_frame_equal
 
 from ods_tools.combine.combine import DEFAULT_CONFIG, combine
 from ods_tools.combine.grouping import create_combine_group
+from ods_tools.combine.io import save_output
+from ods_tools.combine.output_generation import generate_alt, generate_ept, alt_dtype, ept_dtype
 from ods_tools.combine.result import load_analysis_dirs
 from ods_tools.combine.sampling import generate_gpqt, generate_group_periods, do_loss_sampling, gpqt_dtype, gplt_dtype
 
@@ -16,23 +20,43 @@ example_path = Path(Path(__file__).parent.parent, "ods_tools", "combine", "examp
 expected_output_path = Path(Path(__file__).parent.parent, 'expected_output')
 validation_path = Path(Path(__file__).parent.parent, 'validation', 'combine_ord')
 
-BASIC_CONFIG = {
-}
+TEST_GROUP_PERIODS = 2000
 
 
-def test_combine_as_expected():
+def test_combine__outputs_genrated():
 
     input_dir = example_path / "inputs"
 
     config = {
         "analysis_dirs": [str(child) for child in input_dir.iterdir()],
-        "group_number_of_periods": 1000,
-        "group_mean": True
+        "group_number_of_periods": TEST_GROUP_PERIODS,
+        "group_mean": True,
+        "group_alt": True,
+        "group_plt": True,
+        "group_ept": True
     }
 
     config = DEFAULT_CONFIG | config
 
-    combine_result = combine(**config)
+    groupset_ids = [0, 1]
+    expected_summaryinfo_paths = [f'gul_GS{gs_id}_summary-info.csv' for gs_id in groupset_ids]
+
+    expected_output_paths = [f'{gs_id}_alt.csv' for gs_id in groupset_ids]
+    expected_output_paths += [f'{gs_id}_ept.csv' for gs_id in groupset_ids]
+    expected_output_paths += [f'{gs_id}_plt.csv' for gs_id in groupset_ids]
+
+    with tempfile.TemporaryDirectory() as tmp_output_dir:
+        config['output_dir'] = tmp_output_dir
+
+        combine_result = combine(**config)
+
+        # make sure summary info output
+        for suminfo_path in expected_summaryinfo_paths:
+            assert (Path(tmp_output_dir) / suminfo_path).exists()
+
+        # make sure plt, ept and apt output
+        for output_path in expected_output_paths:
+            assert (Path(tmp_output_dir) / output_path).exists()
 
 
 def test_combine__load_analysis_dirs():
@@ -131,7 +155,7 @@ def test_combine__groupeventset(prepared_group_example):
 def test_combine__generate_group_periods(prepared_group_example,
                                          seed_default_rng,
                                          keep_output):
-    max_group_periods = 2000
+    max_group_periods = TEST_GROUP_PERIODS
 
     expected_group_periods = pd.read_csv(validation_path / 'group_periods.csv')
 
@@ -178,3 +202,27 @@ def test_combine__loss_sampling(prepared_group_example,
         gplt.to_csv(save_path, index=False)
 
     assert_frame_equal(expected_gplt, gplt)
+
+
+def test_combine__output_generation(seed_default_rng, keep_output):
+
+    gplt = pd.read_csv(validation_path / 'gplt.csv', dtype=gplt_dtype)
+    groupset_ids = [0, 1]
+
+    generated_alt = generate_alt(gplt, TEST_GROUP_PERIODS)
+    generated_ept = generate_ept(gplt, TEST_GROUP_PERIODS, oep=True, aep=True)
+
+    if keep_output:
+        expected_output_path.mkdir(parents=True, exist_ok=True)
+        save_output(generated_alt, expected_output_path, 'alt.csv')
+        save_output(generated_ept, expected_output_path, 'ept.csv')
+
+    for groupset_id in groupset_ids:
+        expected_alt = pd.read_csv(validation_path / f"{groupset_id}_alt.csv", dtype=alt_dtype)
+        expected_ept = pd.read_csv(validation_path / f"{groupset_id}_ept.csv", dtype=ept_dtype)
+        _generated_alt = generated_alt.query(f"groupset_id == {groupset_id}").reset_index(drop=True)
+
+        _generated_ept = generated_ept.query(f"groupset_id == {groupset_id}").reset_index(drop=True)
+
+        assert_frame_equal(expected_alt, _generated_alt)
+        assert_frame_equal(expected_ept, _generated_ept)

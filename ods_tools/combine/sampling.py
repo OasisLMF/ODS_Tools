@@ -7,6 +7,7 @@ from scipy.special import betaincinv
 import logging
 
 from ods_tools.combine.common import DEFAULT_RANDOM_SEED
+from ods_tools.combine import io
 from ods_tools.combine.io import DEFAULT_OCC_DTYPE, load_melt, read_occurrence_bin, load_loss_table_paths
 
 logger = logging.getLogger(__name__)
@@ -352,7 +353,7 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
                                           perspective=os.perspective_code,
                                           output_type='elt')
 
-        elt_dfs = {key: globals()[f'load_{key}'](value) for key, value in elt_paths.items()}  # todo handle this better (lazy load)
+        elt_dfs = {key: getattr(io, f'load_{key}')(value) for key, value in elt_paths.items()}  # todo handle this better (lazy load)
 
         curr_gpqt = gpqt.query('outputset_id == @outputset_id').reset_index(drop=True)
 
