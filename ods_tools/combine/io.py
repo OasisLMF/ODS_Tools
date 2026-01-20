@@ -34,7 +34,7 @@ def save_summary_info(groupset_summaryinfo, groupset_info, output_dir):
     '''
 
     for gs, g_summary_info_df in groupset_summaryinfo.items():
-        summary_info_fname = f'{groupset_info[gs]['perspective_code']}_GS{gs}_summary-info.csv'
+        summary_info_fname = groupset_info[gs]['perspective_code'] + f'_GS{gs}_summary-info.csv'
         save_path = Path(output_dir) / summary_info_fname
         g_summary_info_df.to_csv(save_path, index=False)
         logger.info(f'Saved {summary_info_fname}: ', save_path)
