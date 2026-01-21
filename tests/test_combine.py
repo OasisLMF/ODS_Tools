@@ -8,6 +8,12 @@ import tempfile
 #
 # from pandas.testing import assert_frame_equal
 
+import sys
+
+# WORKAROUND - this line to to force an import from the installed ods_tools package
+# from `python3.xx/site-packages/ods_tools` instead of the local module
+sys.path.append(sys.path.pop(0))
+
 from ods_tools.combine.combine import DEFAULT_CONFIG, combine
 # from ods_tools.combine.grouping import create_combine_group
 # from ods_tools.combine.io import save_output
