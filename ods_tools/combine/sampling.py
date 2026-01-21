@@ -1,3 +1,4 @@
+from collections import defaultdict
 from ods_tools.oed.common import OdsException
 import pandas as pd
 import numpy as np
@@ -338,7 +339,8 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
         'S': sample_loss_sampling
     }
 
-    sampling_args = {'M': {'sampling_func': parametric_distribution}}
+    sampling_args = defaultdict(dict)
+    sampling_args['M'] = {'sampling_func': parametric_distribution}
 
     n_outputsets = len(gpqt['outputset_id'].unique())
     count = 1

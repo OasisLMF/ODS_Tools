@@ -37,7 +37,7 @@ def save_summary_info(groupset_summaryinfo, groupset_info, output_dir):
         summary_info_fname = groupset_info[gs]['perspective_code'] + f'_GS{gs}_summary-info.csv'
         save_path = Path(output_dir) / summary_info_fname
         g_summary_info_df.to_csv(save_path, index=False)
-        logger.info(f'Saved {summary_info_fname}: ', save_path)
+        logger.info(f'Saved {summary_info_fname}: {save_path}')
 
 
 def save_output(full_df, output_dir, output_name, factor_col='groupset_id', float_format='%.6f'):
@@ -45,7 +45,7 @@ def save_output(full_df, output_dir, output_name, factor_col='groupset_id', floa
         save_path = output_dir / f'{i}_{output_name}'
         full_df.query(f"{factor_col} == {i}").to_csv(save_path, index=False,
                                                      float_format=float_format)
-        logger.info(f'Saved {output_name}: ', save_path)
+        logger.info(f'Saved {output_name}: {save_path}')
 
 # occurrence reading functions from oasislmf -> copied to avoid circular imports
 

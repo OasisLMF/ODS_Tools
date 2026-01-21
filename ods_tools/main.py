@@ -26,6 +26,7 @@ except ImportError as e:
 
 try:
     from ods_tools.combine.combine import combine as combine_ord
+    from ods_tools.combine.combine import read_config as read_combine_config
 except ImportError as e:
     logger.error("Combine ORD package requirements not installed.")
     logger.error(e)
@@ -130,7 +131,8 @@ def combine(**kwargs):
     Combines multiple ORD analyses.
     """
     try:
-        combine_result = combine_ord(config_file=kwargs.get('config_file'))
+        config = read_combine_config(kwargs.get('config_file'))
+        combine_result = combine_ord(**config)
     except OdsException as e:
         logger.error('Combine failed')
         logger.error(e)
