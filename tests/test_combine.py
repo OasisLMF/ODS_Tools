@@ -19,8 +19,8 @@ example_path = Path(Path(__file__).parent.parent, "ods_tools", "combine", "examp
 # expected_output_path = Path(Path(__file__).parent.parent, 'expected_output')
 # validation_path = Path(Path(__file__).parent.parent, 'validation', 'combine_ord')
 #
-# ORIGINAL_PERIODS = 1000
-# PERIOD_REPEATS = 2
+ORIGINAL_PERIODS = 1000
+PERIOD_REPEATS = 2
 TEST_GROUP_PERIODS = PERIOD_REPEATS * ORIGINAL_PERIODS
 
 
