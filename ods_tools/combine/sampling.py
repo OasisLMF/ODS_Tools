@@ -338,6 +338,8 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
         'S': sample_loss_sampling
     }
 
+    sampling_args = {'M': {'sampling_func': parametric_distribution}}
+
     n_outputsets = len(gpqt['outputset_id'].unique())
     count = 1
 
@@ -347,6 +349,10 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
 
         os = group.outputsets[outputset_id]
         analysis = group.analyses[os.analysis_id]
+        sampling_args['S'] = {'number_of_samples': analysis.settings.get('number_of_samples', None)}
+
+        if sampling_args['S']['number_of_samples'] is None:
+            logger.warning(f'No `number_of_samples` in analysis {analysis.run_id} settings')
 
         elt_paths = load_loss_table_paths(analysis,
                                           summary_level_id=os.exposure_summary_level_id,
@@ -367,7 +373,7 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
             if p not in loss_sampling_func_map:
                 raise NotImplementedError(f"loss sampling function for format {p}elt not implemented")
 
-            _gplt_fragment, curr_gpqt = loss_sampling_func_map[p.upper()](curr_gpqt, elt_df)
+            _gplt_fragment, curr_gpqt = loss_sampling_func_map[p.upper()](curr_gpqt, elt_df, **sampling_args[p.upper()])
 
             if _gplt_fragment is None:  # no fragment
                 continue
@@ -411,7 +417,11 @@ def beta_sampling_group_loss(df):
     return df
 
 
-def mean_loss_sampling(gpqt, melt, sampling_func=beta_sampling_group_loss):
+def mean_loss_sampling(gpqt, melt, sampling_func='beta'):
+    if sampling_func == 'beta':
+        sampling_func = beta_sampling_group_loss
+    else:
+        raise NotImplementedError(f'sampling func: {sampling_func} not implemented.')
     original_cols = list(gpqt.columns)
 
     # sampling only works on SampleType 2
@@ -501,6 +511,8 @@ def quantile_single_row(row, qelt):  # todo speedup
 
 
 def sample_loss_sampling__summary_id(gpqt, selt, number_of_samples):
+    if number_of_samples is None:
+        raise OdsException('Number of samples not provided.')
     loss_df = gpqt.copy()
     selt_loss = selt.copy()
 
