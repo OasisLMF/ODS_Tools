@@ -23,7 +23,7 @@
 # PERIOD_REPEATS = 2
 # TEST_GROUP_PERIODS = PERIOD_REPEATS * ORIGINAL_PERIODS
 
-def basic_test(keep_output):
+def test_basic(keep_output):
     assert True
 
 
