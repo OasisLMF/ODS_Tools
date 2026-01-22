@@ -503,7 +503,7 @@ class OdsPackageTests(TestCase):
             'ri_scope': base_url + '/SourceReinsScopeOEDPiWind.csv',
             'use_field': True})
 
-        original_exposure.location.dataframe.drop(columns=['ContentsTIV'], inplace=True)
+        original_exposure.location.dataframe = original_exposure.location.dataframe.drop(columns='ContentsTIV')
         original_exposure.location.dataframe['ContentsTIV'] = pd.NA
 
         original_exposure.location.dataframe['BITIV'] = pd.NA
@@ -513,7 +513,7 @@ class OdsPackageTests(TestCase):
         original_exposure.location.dataframe.loc[[4], 'BITIV'] = ''
         original_exposure.location.dataframe.loc[[5], 'BITIV'] = ' '
 
-        original_exposure.ri_info.dataframe.drop(columns='RiskLevel', inplace=True)
+        original_exposure.ri_info.dataframe = original_exposure.ri_info.dataframe.drop(columns='RiskLevel')
         original_exposure.ri_info.dataframe['RiskLevel'] = pd.NA
 
         with tempfile.TemporaryDirectory() as tmp_dir:
