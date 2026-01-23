@@ -67,7 +67,7 @@ class StrReplace:
         repls = (r for i, r in enumerate(pattern_repl) if i % 2 != 0)
 
         if isinstance(result, pd.Series):
-            results = result.map(str, na_action="ignore")
+            result = result.map(str, na_action="ignore")
             for pattern, repl in zip(patterns, repls):
                 result = result.str.replace(pattern, repl, regex=True)
         else:
