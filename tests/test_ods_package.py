@@ -1,3 +1,4 @@
+import io
 import json
 import logging
 import os
@@ -1037,3 +1038,93 @@ class OdsPackageTests(TestCase):
 
         self.assertEqual(expected_list, global__valid_output_metrics)
         self.assertEqual(expected_list, event_set__valid_metrics)
+
+    def test_probe_oedversion_from_oedsource(self):
+        exposure = OedExposure(
+            location=base_url + "/SourceLocOEDPiWind.csv",
+            account=base_url + "/SourceAccOEDPiWind.csv",
+        )
+
+        df = exposure.location.dataframe
+        df.insert(0, "oedversion", "4.0.0")
+
+        oedversion = OedExposure.probe_oedversion_from_source(exposure.location)
+        self.assertEqual(oedversion, "4.0.0")
+
+    def test_probe_oedversion_from_dataframe(self):
+        df = pd.read_csv(base_url + "/SourceLocOEDPiWind.csv",
+                         dtype=str, keep_default_na=False)
+        df.insert(0, "oedversion", "4.0.0")
+
+        oedversion = OedExposure.probe_oedversion_from_source(df)
+        self.assertEqual(oedversion, "4.0.0")
+
+    def test_probe_oedversion_from_resolved_dict(self):
+        df = pd.read_csv(base_url + "/SourceLocOEDPiWind.csv",
+                         dtype=str, keep_default_na=False)
+        df.insert(0, "oedversion", "4.0.0")
+        with tempfile.TemporaryDirectory() as d:
+            mod_csv = pathlib.Path(d, "loc.csv")
+            df.to_csv(mod_csv, index=False)
+
+            oed_info = {
+                "cur_version_name": "curr",
+                "sources": {
+                    "curr": {
+                        "source_type": "filepath",
+                        "filepath": mod_csv,
+                        "read_param": {},
+                        "engine": pd,
+                    }
+                },
+            }
+
+            oedversion = OedExposure.probe_oedversion_from_source(oed_info)
+            self.assertEqual(oedversion, "4.0.0")
+
+    def test_probe_oedversion_from_csv_stream(self):
+        df = pd.read_csv(base_url + "/SourceLocOEDPiWind.csv",
+                         dtype=str, keep_default_na=False)
+        df.insert(0, "oedversion", "4.0.0")
+
+        buf = io.BytesIO()
+        df.to_csv(buf, index=False)
+        buf.seek(0)
+
+        oedversion = OedExposure.probe_oedversion_from_source(buf)
+        self.assertEqual(oedversion, "4.0.0")
+
+    def test_probe_oedversion_from_parquet_stream(self):
+        df = pd.read_csv(base_url + "/SourceLocOEDPiWind.csv",
+                         dtype=str, keep_default_na=False)
+        df.insert(0, "oedversion", "4.0.0")
+
+        buf = io.BytesIO()
+        buf.name = "test.parquet"
+        df.to_parquet(buf, engine="pyarrow")
+        buf.seek(0)
+
+        oedversion = OedExposure.probe_oedversion_from_source(buf)
+        self.assertEqual(oedversion, "4.0.0")
+
+    def test_probe_oedversion_from_csv_path(self):
+        df = pd.read_csv(base_url + "/SourceLocOEDPiWind.csv",
+                         dtype=str, keep_default_na=False)
+        df.insert(0, "oedversion", "4.0.0")
+        with tempfile.TemporaryDirectory() as d:
+            mod_csv = pathlib.Path(d, "loc.csv")
+            df.to_csv(mod_csv, index=False)
+
+            oedversion = OedExposure.probe_oedversion_from_source(mod_csv)
+            self.assertEqual(oedversion, "4.0.0")
+
+    def test_probe_oedversion_from_parquet_path(self):
+        df = pd.read_csv(base_url + "/SourceLocOEDPiWind.csv",
+                         dtype=str, keep_default_na=False)
+        df.insert(0, "oedversion", "4.0.0")
+        with tempfile.TemporaryDirectory() as d:
+            mod_parquet = pathlib.Path(d, "loc.parquet")
+            df.to_parquet(mod_parquet, engine="pyarrow")
+
+            oedversion = OedExposure.probe_oedversion_from_source(mod_parquet)
+            self.assertEqual(oedversion, "4.0.0")
