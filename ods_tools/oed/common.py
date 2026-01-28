@@ -152,6 +152,8 @@ dtype_to_python = {
     'category': str
 }
 
+pd_default_string = object if pd.__version__ < "3" else "str"
+
 
 def is_empty(df, columns):
     return (df[columns].isnull()) | (df[columns] == '')
