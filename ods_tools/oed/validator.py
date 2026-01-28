@@ -360,7 +360,7 @@ class Validator:
         """
         Checks all rows of oedversion are the same across all exposure files if they are present in exposure files.
         """
-        oedversion_re = re.compile("^v?\\d+\\.\\d+\\.\\d+$")
+        oedversion_re = re.compile("v?\\d+\\.\\d+\\.\\d+|latest version")
         invalid_data = []
         first_val = None
         first_val_set = False

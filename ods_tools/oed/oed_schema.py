@@ -1,9 +1,12 @@
+from glob import glob
 import json
 import logging
 import os
 from pathlib import Path
+import re
 import numba as nb
 import numpy as np
+from packaging.version import parse
 
 from .common import OdsException, BLANK_VALUES, cached_property, dtype_to_python
 
@@ -99,6 +102,15 @@ class OedSchema:
                 logger.debug(f"loading default schema {cls.DEFAULT_ODS_SCHEMA_PATH}")
                 return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(OED_VERSION))
         if isinstance(oed_schema_info, str):
+            if oed_schema_info == "latest version":
+                ods_tools_root = Path(__file__).resolve().parent.parent
+                oed_spec_files = glob(str(Path(ods_tools_root, "data/OpenExposureData_*Spec.json")))
+
+                version_pattern = re.compile("\\d+\\.\\d+\\.\\d+")
+                versions = [re.search(version_pattern, path).group() for path in oed_spec_files]
+
+                max_version = max(versions, key=parse)
+                return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(max_version))
             try:
                 return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(oed_schema_info.lstrip('v')))
             except FileNotFoundError:

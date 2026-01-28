@@ -271,9 +271,9 @@
         "oed_version": {
             "type": "string",
             "title": "OED schema version",
-            "description": "The OED schema version of the file - 'major, minor, patch' format i.e. (2.0.0)",
+            "description": "The OED schema version of the file - 'major, minor, patch' format i.e. (2.0.0 or v2.0.0 or \"latest version\")",
             "minLength": 5,
-            "pattern": "^v?\\d+\\.\\d+\\.\\d+$"
+            "pattern": "v?\\d+\\.\\d+\\.\\d+|latest version"
         },
         "source_tag": {
             "type": ["integer","string"],
