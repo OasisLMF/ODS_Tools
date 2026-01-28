@@ -584,7 +584,7 @@ class OedExposure:
                     # Check done in advance to log what is being changed
                     changes = self.location.dataframe["OccupancyCode"][self.location.dataframe["OccupancyCode"] == key].count()
                     if changes:
-                        self.location.dataframe["OccupancyCode"].replace({key: value}, inplace=True)
+                        self.location.dataframe['OccupancyCode'] = self.location.dataframe['OccupancyCode'].replace({key: value})
                         logger.info(f"{key} -> {value}: {changes} occurrences in OccupancyCode.")
 
             # Replace and log changes for ConstructionCode
@@ -593,7 +593,7 @@ class OedExposure:
                     # Check done in advance to log what is being changed
                     changes = self.location.dataframe["ConstructionCode"][self.location.dataframe["ConstructionCode"] == key].count()
                     if changes:
-                        self.location.dataframe["ConstructionCode"].replace({key: value}, inplace=True)
+                        self.location.dataframe["ConstructionCode"] = self.location.dataframe["ConstructionCode"].replace({key: value})
                         logger.info(f"{key} -> {value}: {changes} occurrences in ConstructionCode.")
 
         return self  # Return the updated object
