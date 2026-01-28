@@ -6,9 +6,10 @@ import pandas as pd
 from oasis_data_manager.df_reader.config import get_df_reader
 import numpy as np
 from chardet.universaldetector import UniversalDetector
+from pandas.api.types import is_numeric_dtype
 
 from .common import (OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, fill_empty,
-                     UnknownColumnSaveOption, cached_property, is_empty, dtype_str_to_dtype, default_string_dtype)
+                     UnknownColumnSaveOption, cached_property, is_empty, dtype_str_to_dtype, default_string_dtype, pd_default_string)
 from .forex import convert_currency
 from .oed_schema import OedSchema
 
@@ -282,6 +283,10 @@ class OedSource:
             if _dtype == default_string_dtype[backend_dtype]:
                 if oed_df[column].dtype.name == 'category' and '' not in oed_df[column].dtype.categories:
                     oed_df[column] = oed_df[column].cat.add_categories('')
+
+                if is_numeric_dtype(oed_df[column].dtype):
+                    oed_df[column] = oed_df[column].map(str, na_action='ignore').astype(pd_default_string)
+
                 try:
                     oed_df.loc[is_empty(oed_df, column), column] = ''
                 except ValueError:  # error raised if oed_df[column] is readonly

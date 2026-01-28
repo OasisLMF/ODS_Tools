@@ -221,6 +221,8 @@ default_string_dtype = {
     'pa_dtype': 'string[pyarrow]',
 }
 
+pd_default_string = object if pd.__version__ < "3" else "str"
+
 
 def is_empty(df, columns):
     return (df[columns].isnull()) | (df[columns] == '')
