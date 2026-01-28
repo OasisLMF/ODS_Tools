@@ -282,8 +282,15 @@ class OedSource:
                 to_tmp_dtype[column] = 'str'
                 if oed_df[column].dtype.name == 'category' and '' not in oed_df[column].dtype.categories:
                     oed_df[column] = oed_df[column].cat.add_categories('')
-                oed_df[column] = oed_df[column]  # make a copy f the col in case it is read_only
-                oed_df.loc[is_empty(oed_df, column), column] = ''
+
+                if is_numeric_dtype(oed_df[column].dtype):
+                    oed_df[column] = oed_df[column].map(str, na_action='ignore').astype(pd_default_string)
+
+                try:
+                    oed_df.loc[is_empty(oed_df, column), column] = ''
+                except ValueError:
+                    oed_df[column] = oed_df[column].copy()  # make a copy f the col in case it is read_only
+                    oed_df.loc[is_empty(oed_df, column), column] = ''
             if pd.api.types.is_numeric_dtype(pd_dtype[column]):  # make sure empty string are converted to nan
                 oed_df[column] = pd.to_numeric(oed_df[column], errors='coerce')
 
