@@ -13,6 +13,8 @@ from .transformers import run
 from .notset import NotSet, NotSetType
 from .validator import Validator
 
+from ods_tools.oed.common import pd_default_string
+
 if version.parse(pd.__version__) >= version.parse("2.1.9"):
     pd.set_option('future.no_silent_downcasting', True)
 logger = logging.getLogger(__name__)
@@ -26,13 +28,13 @@ class PandasRunner():
     name = "Pandas"
 
     row_value_conversions = {
-        "int": lambda col, nullable, null_values: col.astype(object).apply(
+        "int": lambda col, nullable, null_values: col.astype(pd_default_string).apply(
             type_converter((lambda v: int(float(v))), nullable, null_values),
         ),
-        "float": lambda col, nullable, null_values: col.astype(object).apply(
+        "float": lambda col, nullable, null_values: col.astype(pd_default_string).apply(
             type_converter(float, nullable, null_values),
         ),
-        "string": lambda col, nullable, null_values: col.astype(object).apply(
+        "string": lambda col, nullable, null_values: col.astype(pd_default_string).apply(
             type_converter(str, nullable, null_values),
         ),
     }
