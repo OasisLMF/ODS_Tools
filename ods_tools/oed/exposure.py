@@ -200,26 +200,26 @@ class OedExposure:
         # OedSource
         if isinstance(obj, OedSource):
             df = obj.dataframe
-            return OedExposure._first_non_empty(df.get("oedversion"))
+            return OedExposure._first_non_empty(df.get("OEDVersion"))
 
         # DataFrame
         if isinstance(obj, pd.DataFrame):
-            return OedExposure._first_non_empty(obj.get("oedversion"))
+            return OedExposure._first_non_empty(obj.get("OEDVersion"))
 
         # Dict
         if isinstance(obj, dict):
             if not obj.get("sources"):
-                logger.warning("No \"sources\" found in exposure data dictionary, cannot check for oedversion.")
+                logger.warning("No \"sources\" found in exposure data dictionary, cannot check for OEDVersion.")
                 return None
 
             version = obj.get("cur_version_name")
             if version is None:
-                logger.warning("No \"cur_version_name\" found in exposure data dictionary, cannot check for oedversion in sources.")
+                logger.warning("No \"cur_version_name\" found in exposure data dictionary, cannot check for OEDVersion in sources.")
                 return None
 
             source = obj["sources"].get(version)
             if source is None:
-                logger.warning(f"No \"source\" found for \"cur_version_name\": {version} in exposure data dictionary, cannot check for oedversion")
+                logger.warning(f"No \"source\" found for \"cur_version_name\": {version} in exposure data dictionary, cannot check for OEDVersion")
                 return None
 
             data = (
@@ -240,16 +240,16 @@ class OedExposure:
             try:
                 stype = detect_stream_type(obj)
                 if stype == "parquet":
-                    df = pd.read_parquet(obj, columns=["oedversion"])
-                    return OedExposure._first_non_empty(df.get("oedversion"))
+                    df = pd.read_parquet(obj, columns=["OEDVersion"])
+                    return OedExposure._first_non_empty(df.get("OEDVersion"))
                 df = pd.read_csv(
                     obj,
-                    usecols=["oedversion"],
+                    usecols=["OEDVersion"],
                     nrows=50,
                     dtype=str,
                     keep_default_na=False,
                 )
-                return OedExposure._first_non_empty(df.get("oedversion"))
+                return OedExposure._first_non_empty(df.get("OEDVersion"))
             except Exception:
                 return None
             finally:
@@ -260,16 +260,16 @@ class OedExposure:
         p = Path(obj)
         try:
             if p.suffix.lower() == ".parquet":
-                df = pd.read_parquet(p, columns=["oedversion"])
-                return OedExposure._first_non_empty(df.get("oedversion"))
+                df = pd.read_parquet(p, columns=["OEDVersion"])
+                return OedExposure._first_non_empty(df.get("OEDVersion"))
             df = pd.read_csv(
                 p,
-                usecols=["oedversion"],
+                usecols=["OEDVersion"],
                 nrows=50,
                 dtype=str,
                 keep_default_na=False
             )
-            return OedExposure._first_non_empty(df.get("oedversion"))
+            return OedExposure._first_non_empty(df.get("OEDVersion"))
         except Exception:
             return None
 

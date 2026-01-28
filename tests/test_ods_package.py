@@ -1046,7 +1046,7 @@ class OdsPackageTests(TestCase):
         )
 
         df = exposure.location.dataframe
-        df.insert(0, "oedversion", "4.0.0")
+        df["OEDVersion"] = "4.0.0"
 
         oedversion = OedExposure.probe_oedversion_from_source(exposure.location)
         self.assertEqual(oedversion, "4.0.0")
@@ -1054,7 +1054,7 @@ class OdsPackageTests(TestCase):
     def test_probe_oedversion_from_dataframe(self):
         df = pd.read_csv(base_url + "/SourceLocOEDPiWind.csv",
                          dtype=str, keep_default_na=False)
-        df.insert(0, "oedversion", "4.0.0")
+        df["OEDVersion"] = "4.0.0"
 
         oedversion = OedExposure.probe_oedversion_from_source(df)
         self.assertEqual(oedversion, "4.0.0")
@@ -1062,7 +1062,7 @@ class OdsPackageTests(TestCase):
     def test_probe_oedversion_from_resolved_dict(self):
         df = pd.read_csv(base_url + "/SourceLocOEDPiWind.csv",
                          dtype=str, keep_default_na=False)
-        df.insert(0, "oedversion", "4.0.0")
+        df["OEDVersion"] = "4.0.0"
         with tempfile.TemporaryDirectory() as d:
             mod_csv = pathlib.Path(d, "loc.csv")
             df.to_csv(mod_csv, index=False)
@@ -1085,7 +1085,7 @@ class OdsPackageTests(TestCase):
     def test_probe_oedversion_from_csv_stream(self):
         df = pd.read_csv(base_url + "/SourceLocOEDPiWind.csv",
                          dtype=str, keep_default_na=False)
-        df.insert(0, "oedversion", "4.0.0")
+        df["OEDVersion"] = "4.0.0"
 
         buf = io.BytesIO()
         df.to_csv(buf, index=False)
@@ -1097,7 +1097,7 @@ class OdsPackageTests(TestCase):
     def test_probe_oedversion_from_parquet_stream(self):
         df = pd.read_csv(base_url + "/SourceLocOEDPiWind.csv",
                          dtype=str, keep_default_na=False)
-        df.insert(0, "oedversion", "4.0.0")
+        df["OEDVersion"] = "4.0.0"
 
         buf = io.BytesIO()
         buf.name = "test.parquet"
@@ -1110,7 +1110,7 @@ class OdsPackageTests(TestCase):
     def test_probe_oedversion_from_csv_path(self):
         df = pd.read_csv(base_url + "/SourceLocOEDPiWind.csv",
                          dtype=str, keep_default_na=False)
-        df.insert(0, "oedversion", "4.0.0")
+        df["OEDVersion"] = "4.0.0"
         with tempfile.TemporaryDirectory() as d:
             mod_csv = pathlib.Path(d, "loc.csv")
             df.to_csv(mod_csv, index=False)
@@ -1121,10 +1121,74 @@ class OdsPackageTests(TestCase):
     def test_probe_oedversion_from_parquet_path(self):
         df = pd.read_csv(base_url + "/SourceLocOEDPiWind.csv",
                          dtype=str, keep_default_na=False)
-        df.insert(0, "oedversion", "4.0.0")
+        df["OEDVersion"] = "4.0.0"
         with tempfile.TemporaryDirectory() as d:
             mod_parquet = pathlib.Path(d, "loc.parquet")
             df.to_parquet(mod_parquet, engine="pyarrow")
 
             oedversion = OedExposure.probe_oedversion_from_source(mod_parquet)
             self.assertEqual(oedversion, "4.0.0")
+
+    def test_check_oedversion_consistency_valid_val(self):
+        exposure = OedExposure(
+            location=base_url + '/SourceLocOEDPiWind10.csv',
+            account=base_url + '/SourceAccOEDPiWind.csv',
+            ri_info=base_url + '/SourceReinsInfoOEDPiWind.csv',
+            ri_scope=base_url + '/SourceReinsScopeOEDPiWind.csv',
+        )
+        exposure.location.dataframe["OEDVersion"] = "4.0.0"
+        exposure.account.dataframe["OEDVersion"] = "4.0.0"
+        exposure.ri_info.dataframe["OEDVersion"] = "4.0.0"
+        exposure.ri_scope.dataframe["OEDVersion"] = "4.0.0"
+
+        try:
+            exposure.check()
+        except Exception as e:
+            self.fail(f"test_check_oedversion_consistency_valild failed: {e}")
+
+    def test_check_oedversion_consistency_valid_none(self):
+        exposure = OedExposure(
+            location=base_url + '/SourceLocOEDPiWind10.csv',
+            account=base_url + '/SourceAccOEDPiWind.csv',
+            ri_info=base_url + '/SourceReinsInfoOEDPiWind.csv',
+            ri_scope=base_url + '/SourceReinsScopeOEDPiWind.csv',
+        )
+        exposure.location.dataframe["OEDVersion"] = None
+        exposure.account.dataframe["OEDVersion"] = None
+        exposure.ri_info.dataframe["OEDVersion"] = None
+        exposure.ri_scope.dataframe["OEDVersion"] = None
+
+        try:
+            exposure.check()
+        except Exception as e:
+            self.fail(f"test_check_oedversion_consistency_valild failed: {e}")
+
+    def test_check_oedversion_consistency_invalid(self):
+        invalid_vals = [
+            ("location", 0, None),  # First value is None
+            ("location", 1, None),  # Other value is None
+            ("location", 0, "2.0.1"),  # First value is different version string
+            ("location", 1, "2.0.1"),  # Other value is different version string
+            ("account", 1, None),  # Different file has None
+            ("account", 1, "2.0.1"),  # Different file has different version string
+        ]
+        for exposure_type, pos, val in invalid_vals:
+            exposure = OedExposure(
+                location=base_url + '/SourceLocOEDPiWind10.csv',
+                account=base_url + '/SourceAccOEDPiWind.csv',
+                ri_info=base_url + '/SourceReinsInfoOEDPiWind.csv',
+                ri_scope=base_url + '/SourceReinsScopeOEDPiWind.csv',
+            )
+            exposure.location.dataframe["OEDVersion"] = "4.0.0"
+            exposure.account.dataframe["OEDVersion"] = "4.0.0"
+            exposure.ri_info.dataframe["OEDVersion"] = "4.0.0"
+            exposure.ri_scope.dataframe["OEDVersion"] = "4.0.0"
+
+            exposure_data = getattr(exposure, exposure_type)
+            exposure_data.dataframe['OEDVersion'] = exposure.location.dataframe['OEDVersion'].astype(str)
+            exposure_data.dataframe.loc[pos, 'OEDVersion'] = val
+
+            with self.assertRaises(OdsException) as e:
+                exposure.check()
+                self.assertTrue("Mismatched \"OEDVersion\" value found in exposure file" in e.msg)
+                self.assertTrue(f"{val} at row {pos}" in e.msg)
