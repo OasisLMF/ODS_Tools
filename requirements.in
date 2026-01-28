@@ -1,5 +1,6 @@
 pandas
 numba
+scipy
 chardet
 jsonschema>=4.0.1
 jsonref
