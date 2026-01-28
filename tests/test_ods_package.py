@@ -1185,10 +1185,47 @@ class OdsPackageTests(TestCase):
             exposure.ri_scope.dataframe["OEDVersion"] = "4.0.0"
 
             exposure_data = getattr(exposure, exposure_type)
-            exposure_data.dataframe['OEDVersion'] = exposure.location.dataframe['OEDVersion'].astype(str)
+            exposure_data.dataframe['OEDVersion'] = exposure_data.dataframe['OEDVersion'].astype(str)
             exposure_data.dataframe.loc[pos, 'OEDVersion'] = val
 
             with self.assertRaises(OdsException) as e:
                 exposure.check()
                 self.assertTrue("Mismatched \"OEDVersion\" value found in exposure file" in e.msg)
                 self.assertTrue(f"{val} at row {pos}" in e.msg)
+
+    def test_check_oedversion_consistency_regex_valid(self):
+        exposure = OedExposure(
+            location=base_url + '/SourceLocOEDPiWind10.csv',
+            account=base_url + '/SourceAccOEDPiWind.csv',
+            ri_info=base_url + '/SourceReinsInfoOEDPiWind.csv',
+            ri_scope=base_url + '/SourceReinsScopeOEDPiWind.csv',
+        )
+        exposure.location.dataframe["OEDVersion"] = "4.0.0"  # without starting v
+        exposure.account.dataframe["OEDVersion"] = "v4.0.0"  # with starting v
+        exposure.ri_info.dataframe["OEDVersion"] = "v4.0.0"
+        exposure.ri_scope.dataframe["OEDVersion"] = "4.0.0"
+
+        try:
+            exposure.check()
+        except Exception as e:
+            self.fail(f"test_check_oedversion_consistency_valild failed: {e}")
+
+    def test_check_oedversion_consistency_regex_invalid(self):
+        exposure = OedExposure(
+            location=base_url + '/SourceLocOEDPiWind10.csv',
+            account=base_url + '/SourceAccOEDPiWind.csv',
+            ri_info=base_url + '/SourceReinsInfoOEDPiWind.csv',
+            ri_scope=base_url + '/SourceReinsScopeOEDPiWind.csv',
+        )
+        exposure.location.dataframe["OEDVersion"] = "4.0.0"
+        exposure.account.dataframe["OEDVersion"] = "4.0.0"
+        exposure.ri_info.dataframe["OEDVersion"] = "4.0.0"
+        exposure.ri_scope.dataframe["OEDVersion"] = "4.0.0"
+
+        exposure.location.dataframe['OEDVersion'] = exposure.location.dataframe['OEDVersion'].astype(str)
+        exposure.location.dataframe.loc[0, 'OEDVersion'] = "v4"
+
+        with self.assertRaises(OdsException) as e:
+            exposure.check()
+            self.assertTrue("Mismatched \"OEDVersion\" value found in exposure file" in e.msg)
+            self.assertTrue("v4 at row 0" in e.msg)
