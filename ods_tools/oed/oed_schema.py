@@ -106,8 +106,8 @@ class OedSchema:
                 ods_tools_root = Path(__file__).resolve().parent.parent
                 oed_spec_files = glob(str(Path(ods_tools_root, "data/OpenExposureData_*Spec.json")))
 
-                version_pattern = re.compile("\\d+\\.\\d+\\.\\d+")
-                versions = [re.search(version_pattern, path).group() for path in oed_spec_files]
+                version_pattern = re.compile("OpenExposureData_(\\d+\\.\\d+\\.\\d+)Spec\.json")
+                versions = [version_pattern.search(path).group(1) for path in oed_spec_files if version_pattern.search(path)]
 
                 max_version = max(versions, key=parse)
                 return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(max_version))
