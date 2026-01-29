@@ -109,7 +109,10 @@ class OedSchema:
                 version_pattern = re.compile("OpenExposureData_(\\d+\\.\\d+\\.\\d+)Spec\.json")
                 versions = [version_pattern.search(path).group(1) for path in oed_spec_files if version_pattern.search(path)]
 
-                max_version = max(versions, key=parse)
+                try:
+                    max_version = max(versions, key=parse)
+                except ValueError as e:
+                    raise OdsException("Could not valid OED spec file of format \"OpenExposureData_X.Y.ZSpec.json\" with \"latest version\" selected.")
                 return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(max_version))
             try:
                 return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(oed_schema_info.lstrip('v')))
