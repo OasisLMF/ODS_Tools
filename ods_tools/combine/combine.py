@@ -61,7 +61,7 @@ def read_config(config_path):
         config = json.load(f)
     config = DEFAULT_CONFIG | config
 
-    config_schema = CombineSettingsSchema().validate(schema, raise_error=True)
+    config_schema = CombineSettingsSchema().validate(config, raise_error=True)
 
     return config
 

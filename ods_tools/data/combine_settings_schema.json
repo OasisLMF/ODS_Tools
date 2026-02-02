@@ -3,16 +3,8 @@
   "title": "Combine ORD Config",
   "description": "Configuration object for combine ORD.",
   "type": "object",
-  "required": ["analysis_dirs", "group_number_of_periods"],
+  "required": ["group_number_of_periods"],
   "properties": {
-    "analysis_dirs": {
-      "title": "analysis_dirs",
-      "description": "List of paths to analysis output ORD directories.",
-      "type": "array",
-      "items": {
-        "type": "string"
-        }
-      },
     "occ_dtype": {
       "title": "occ_dtype",
       "description": "dtype for records in the occurrence.bin file",
@@ -23,11 +15,6 @@
           "type": "string"
         }
       }
-    },
-    "output_dir": {
-      "title": "output_dir",
-      "description": "Path to directory to save output.",
-      "type": "string"
     },
     "group_fill_perspectives": {
       "title": "group_fill_perspectives",

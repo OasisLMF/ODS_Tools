@@ -132,7 +132,9 @@ def combine(**kwargs):
     """
     try:
         config = read_combine_config(kwargs.get('config_file'))
-        combine_result = combine_ord(**config)
+        combine_result = combine_ord(analysis_dirs=kwargs.get('analysis_dirs'),
+                                     output_dir=kwargs.get('output_dir'),
+                                     **config)
     except OdsException as e:
         logger.error('Combine failed')
         logger.error(e)
@@ -223,6 +225,8 @@ Combine multiple analyses with ORD output. This requires a combine config to be 
 """
 combine_command = command_parser.add_parser('combine', description=combine_description,
                                             formatter_class=argparse.RawTextHelpFormatter)
+combine_command.add_argument('--analysis-dirs', '-a', required=True, nargs='+', help='List of paths to analysis results directories')
+combine_command.add_argument('--output-dir', help='Path to output directory', default=None)
 combine_command.add_argument('--config-file', required=True, help='Path to the config file')
 combine_command.add_argument('-v', '--logging-level', help='logging level (debug:10, info:20, warning:30, error:40, critical:50)',
                              default=30, type=int)
