@@ -1,4 +1,5 @@
 from pathlib import Path
+import jsonschema
 from jsonschema import ValidationError, validate
 import json
 import logging
@@ -12,7 +13,44 @@ from ods_tools.combine.common import DEFAULT_CONFIG
 from ods_tools.oed.common import OdsException
 
 logger = logging.getLogger(__name__)
-SCHEMA_PATH = Path(Path(__file__).parent / 'config_schema.json')
+SCHEMA_PATH = Path(Path(__file__).parent.parent / 'data' / 'combine_settings_schema.json')
+
+
+class CombineSettingsSchema:
+    def __init__(self, schema_path=None):
+        if schema_path is None:
+            schema_path = SCHEMA_PATH
+
+        with open(schema_path, 'r') as f:
+            self.schema = json.load(f)
+
+    def validate(self, config, raise_error=True):
+        validator = jsonschema.Draft4Validator(self.schema)
+        validation_errors = [e for e in validator.iter_errors(config)]
+
+        is_valid = validator.is_valid(config)
+
+        exception_msgs = {}
+        if validation_errors:
+            for err in validation_errors:
+                if err.path:
+                    field = '-'.join([str(e) for e in err.path])
+                elif err.schema_path:
+                    field = '-'.join([str(e) for e in err.schema_path])
+                else:
+                    field = 'error'
+
+                if field in exception_msgs:
+                    exception_msgs[field].append(err.message)
+                else:
+                    exception_msgs[field] = [err.message]
+
+        if not is_valid and raise_error:
+            raise OdsException("\nCombine config validation error: {}".format(
+                json.dumps(exception_msgs, indent=4)
+            ))
+
+        return is_valid, exception_msgs
 
 
 def read_config(config_path):
@@ -24,13 +62,7 @@ def read_config(config_path):
         config = json.load(f)
     config = DEFAULT_CONFIG | config
 
-    with open(SCHEMA_PATH, 'r') as f:
-        schema = json.load(f)
-
-    try:
-        validate(config, schema)
-    except ValidationError as e:
-        raise OdsException(f'Config Validation error: {e.message}')
+    config_schema = CombineSettingsSchema().validate(schema, raise_error=True)
 
     return config
 
