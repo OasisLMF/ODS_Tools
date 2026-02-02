@@ -1,6 +1,5 @@
 from pathlib import Path
 import jsonschema
-from jsonschema import ValidationError
 import json
 import logging
 
