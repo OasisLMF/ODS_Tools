@@ -39,7 +39,7 @@
               "model_description",
               "model_version"
           ]
-      },
+      }},
     "group_number_of_periods": {
           "title": "group_number_of_periods",
           "description": "Number of periods for grouping",
@@ -119,7 +119,5 @@
       "type": "boolean",
       "default": false
       }
-    }
   }
 }
-
