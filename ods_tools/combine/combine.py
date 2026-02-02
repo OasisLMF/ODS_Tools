@@ -1,6 +1,6 @@
 from pathlib import Path
 import jsonschema
-from jsonschema import ValidationError, validate
+from jsonschema import ValidationError
 import json
 import logging
 
