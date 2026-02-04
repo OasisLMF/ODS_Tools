@@ -500,7 +500,6 @@ class AnalysisSettingHandler(SettingHandler):
 
         return handler
 
-
     def check_deprecated_ktools_outputs(self, setting_data, raise_error=False):
         """
         Check for deprecated options in analysis settings JSON.
@@ -539,8 +538,6 @@ class AnalysisSettingHandler(SettingHandler):
                             )
                             warning_msgs.append(msg)
 
-
-
                             settings_logger.warn(
                                 f" Deprecated option set in {summary_type} (summary ID: {summary_id}) - "
                                 f"'{field}' has no effect in (oasis 2.5.x and newer)."
@@ -549,9 +546,8 @@ class AnalysisSettingHandler(SettingHandler):
                 if warning_msgs:
                     exception_msgs[summary_type] = warning_msgs
 
-        #return exception_msgs
+        # return exception_msgs
         return {}
-
 
     def check_unique_summary_ids(self, setting_data):
         """
