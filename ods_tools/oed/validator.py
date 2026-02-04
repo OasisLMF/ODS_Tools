@@ -391,7 +391,7 @@ class Validator:
                                      f"{first_val} != {oedversion_rows[idx]} at row {idx}"})
             # Check regex for oedversion
             for idx, val in enumerate(oedversion_rows):
-                if val is not None and not re.fullmatch(oedversion_re, val):
+                if not pd.isna(val) and not re.fullmatch(oedversion_re, str(val)):
                     invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                          'msg': f"Mismatched regex for \"OEDVersion\" found in exposure file."
                                          " Ensure all \"OEDVersion\" values are of format \"^v?\\d+\\.\\d+\\.\\d+$\". (e.g. v4.0.0 or 4.0.0)\n"
