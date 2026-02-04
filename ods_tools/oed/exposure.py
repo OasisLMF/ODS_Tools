@@ -9,6 +9,7 @@ import json
 from copy import deepcopy
 import logging
 import numpy as np
+import pandas as pd
 from packaging import version
 from pathlib import Path
 
@@ -17,7 +18,7 @@ from .common import (PANDAS_COMPRESSION_MAP,
                      UnknownColumnSaveOption, CLASS_OF_BUSINESSES, OdsException,
                      ClassOfBusiness)
 from .oed_schema import OedSchema
-from .source import OedSource
+from .source import OedSource, detect_stream_type, is_readable
 from .validator import Validator
 from .forex import create_currency_rates
 
@@ -74,6 +75,26 @@ class OedExposure:
                 The exposure specific engine to use when loading dataframes
         """
         self.use_field = use_field
+
+        self.df_engine = (
+            exposure_df_engine or
+            base_df_engine or
+            'oasis_data_manager.df_reader.reader.OasisPandasReader'
+        )
+
+        location_oed_info = self.resolve_oed_info(location, self.df_engine)
+        account_oed_info = self.resolve_oed_info(account, self.df_engine)
+        ri_info_oed_info = self.resolve_oed_info(ri_info, self.df_engine)
+        ri_scope_oed_info = self.resolve_oed_info(ri_scope, self.df_engine)
+
+        if oed_schema_info is None:
+            oed_schema_info = self._get_oed_version_from_sources(
+                location_oed_info,
+                account_oed_info,
+                ri_info_oed_info,
+                ri_scope_oed_info,
+            )
+
         self.oed_schema = OedSchema.from_oed_schema_info(oed_schema_info)
         if backend_dtype is not None:
             if backend_dtype not in self.oed_schema.get_available_backend_dtype():
@@ -83,11 +104,6 @@ class OedExposure:
         else:
             backend_dtype = self.oed_schema.get_default_backend_dtype()
         self.backend_dtype = backend_dtype
-        self.df_engine = (
-            exposure_df_engine or
-            base_df_engine or
-            'oasis_data_manager.df_reader.reader.OasisPandasReader'
-        )
 
         if additional_fields is None:
             additional_fields = {}
@@ -109,7 +125,7 @@ class OedExposure:
         self.location = OedSource.from_oed_info(
             exposure=self,
             oed_type='Loc',
-            oed_info=self.resolve_oed_info(location, self.df_engine),
+            oed_info=location_oed_info,
             filters=loc_filters,
         )
 
@@ -120,14 +136,14 @@ class OedExposure:
         self.account = OedSource.from_oed_info(
             exposure=self,
             oed_type='Acc',
-            oed_info=self.resolve_oed_info(account, self.df_engine),
+            oed_info=account_oed_info,
             filters=acc_filters,
         )
 
         self.ri_info = OedSource.from_oed_info(
             exposure=self,
             oed_type='ReinsInfo',
-            oed_info=self.resolve_oed_info(ri_info, self.df_engine),
+            oed_info=ri_info_oed_info,
         )
 
         ri_scope_filters = [
@@ -138,7 +154,7 @@ class OedExposure:
         self.ri_scope = OedSource.from_oed_info(
             exposure=self,
             oed_type='ReinsScope',
-            oed_info=self.resolve_oed_info(ri_scope, self.df_engine),
+            oed_info=ri_scope_oed_info,
             filters=ri_scope_filters,
         )
 
@@ -157,6 +173,105 @@ class OedExposure:
 
         if check_oed:
             self.check()
+
+    def _get_oed_version_from_sources(self, *oed_infos):
+        for oed_info in oed_infos:
+            if oed_info is None:
+                continue
+            try:
+                return OedExposure.probe_oedversion_from_source(oed_info)
+            except Exception:
+                pass
+        return None
+
+    @staticmethod
+    def _first_non_empty(series):
+        if series is None:
+            return None
+        s = series.astype(str).str.strip()
+        s = s[s != ""]
+        return s.iloc[0] if not s.empty else None
+
+    @staticmethod
+    def probe_oedversion_from_source(obj):
+        if obj is None:
+            return None
+
+        # OedSource
+        if isinstance(obj, OedSource):
+            df = obj.dataframe
+            return OedExposure._first_non_empty(df.get("OEDVersion"))
+
+        # DataFrame
+        if isinstance(obj, pd.DataFrame):
+            return OedExposure._first_non_empty(obj.get("OEDVersion"))
+
+        # Dict
+        if isinstance(obj, dict):
+            if not obj.get("sources"):
+                logger.warning("No \"sources\" found in exposure data dictionary, cannot check for OEDVersion.")
+                return None
+
+            version = obj.get("cur_version_name")
+            if version is None:
+                logger.warning("No \"cur_version_name\" found in exposure data dictionary, cannot check for OEDVersion in sources.")
+                return None
+
+            source = obj["sources"].get(version)
+            if source is None:
+                logger.warning(f"No \"source\" found for \"cur_version_name\": {version} in exposure data dictionary, cannot check for OEDVersion")
+                return None
+
+            data = (
+                source.get("filepath") or
+                source.get("stream_obj") or
+                source.get("dataframe")
+            )
+            return OedExposure.probe_oedversion_from_source(data)
+
+        # Stream
+        if is_readable(obj):
+            pos = None
+            if hasattr(obj, "tell") and hasattr(obj, "seek"):
+                try:
+                    pos = obj.tell()
+                except Exception:
+                    pass
+            try:
+                stype = detect_stream_type(obj)
+                if stype == "parquet":
+                    df = pd.read_parquet(obj, columns=["OEDVersion"])
+                    return OedExposure._first_non_empty(df.get("OEDVersion"))
+                df = pd.read_csv(
+                    obj,
+                    usecols=["OEDVersion"],
+                    nrows=50,
+                    dtype=str,
+                    keep_default_na=False,
+                )
+                return OedExposure._first_non_empty(df.get("OEDVersion"))
+            except Exception:
+                return None
+            finally:
+                if pos is not None:
+                    obj.seek(pos)
+
+        # Path
+        p = Path(obj)
+        try:
+            if p.suffix.lower() == ".parquet":
+                df = pd.read_parquet(p, columns=["OEDVersion"])
+                return OedExposure._first_non_empty(df.get("OEDVersion"))
+            df = pd.read_csv(
+                p,
+                usecols=["OEDVersion"],
+                nrows=50,
+                dtype=str,
+                keep_default_na=False
+            )
+            return OedExposure._first_non_empty(df.get("OEDVersion"))
+        except Exception:
+            return None
 
     def get_class_of_business(self):
         any_field_info = next(iter(self.get_input_fields('null').values()))
