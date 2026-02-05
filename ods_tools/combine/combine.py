@@ -59,10 +59,12 @@ def read_config(config_path):
     """
     with open(config_path, 'r') as f:
         config = json.load(f)
+    return prepare_config(config)
+
+
+def prepare_config(config, raise_error=True):
     config = DEFAULT_CONFIG | config
-
-    config_schema = CombineSettingsSchema().validate(config, raise_error=True)
-
+    CombineSettingsSchema().validate(config, raise_error=raise_error)
     return config
 
 
@@ -141,8 +143,6 @@ def combine(analysis_dirs,
 
     for output_name, output_df in outputs:
         save_output(output_df, output_dir, f'{output_name}.csv')
-
-    return gplt
 
 
 if __name__ == "__main__":
