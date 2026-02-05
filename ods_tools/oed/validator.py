@@ -6,7 +6,6 @@ import logging
 import pandas as pd
 import tqdm
 
-from datetime import datetime
 from pathlib import Path
 from collections.abc import Iterable
 
@@ -362,44 +361,29 @@ class Validator:
         Checks all OED_DATE_COLUMNS for correct YYYY-MM-DD ISO-8601 formatting.
         This is required for any lexicographical string comparison checks between dates.
         """
-        def invalid_date(date_str):
-            """Checks date strs and returns invalid date str. Returns "" for valid dates
-            Args:
-                date_str (str): Date string
-            Returns:
-                str: Date string (date_str or "")
-            """
-            # Date format YYYY-MM-DD regex
-            oasis_date_re = re.compile(r"^\d{4}-\d{2}-\d{2}$")
-
-            # Is NAN
-            if not date_str or str(date_str).lower() in ["nan", "nat"]:
-                return ""
-            # Is not String
-            if not isinstance(date_str, str):
-                return str(date_str)
-            # Is of correct regex format
-            if not oasis_date_re.match(date_str):
-                return str(date_str)
-            # Is a valid date
-            try:
-                datetime.strptime(str(date_str), "%Y-%m-%d")
-                return ""
-            except ValueError:
-                return str(date_str)
-
         invalid_data = []
         for oed_source in self.exposure.get_oed_sources():
             identifier_field = self.identifier_field_maps[oed_source]
             if oed_source.dataframe.empty:
                 continue
             for column in oed_source.dataframe.columns.intersection(set(OED_DATE_COLUMNS)):
-                invalid_dates_col = oed_source.dataframe[column].apply(invalid_date)
-                invalid_mask = invalid_dates_col != ""
+                col_series = oed_source.dataframe[column]
+                str_series = col_series.astype(str)
+
+                # Empty/NaN/NaT/None columns
+                is_empty = col_series.isna() | str_series.str.lower().isin(['nan', 'nat', ''])
+
+                # String matches regex of YYYY-MM-DD
+                regex_match = str_series.str.match(r'^\d{4}-\d{2}-\d{2}$', na=False)
+
+                # Checks is a valid date
+                parsed = pd.to_datetime(str_series, format='%Y-%m-%d', errors='coerce')
+
+                # Invalid mask: (doesn't match regex OR doesn't parse correctly) AND not empty
+                invalid_mask = (~regex_match | parsed.isna()) & ~is_empty
 
                 if invalid_mask.any():
                     invalid_rows = oed_source.dataframe[invalid_mask].copy()
-                    invalid_rows[column] = invalid_dates_col[invalid_mask]
 
                     invalid_data.append({
                         'name': oed_source.oed_name,
