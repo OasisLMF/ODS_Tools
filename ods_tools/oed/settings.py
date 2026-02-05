@@ -360,7 +360,7 @@ class SettingHandler:
 
         return updated_settings_data
 
-    def load(self, settings_fp, version=None, validate=True, raise_error=True):
+    def load(self, settings_fp, version=None, validate=True, raise_error=True, raise_warnings=False):
         """
         Loads the JSON data from a file path.
 
@@ -369,6 +369,7 @@ class SettingHandler:
             version: version to compare to when updating obsolete keys
             validate: if True validate the file after load
             raise_error:  raise exception on validation failure
+            raise_warnings: if True, treat deprecated ktools output warnings as validation errors
         Raises:
             OdsException: If the JSON file is invalid.
 
@@ -385,16 +386,17 @@ class SettingHandler:
         settings_data = self.update_obsolete_keys(settings_raw, version)
 
         if validate:
-            self.validate(settings_data, raise_error=raise_error)
+            self.validate(settings_data, raise_error=raise_error, raise_warnings=raise_warnings)
         return settings_data
 
-    def validate(self, setting_data, raise_error=True):
+    def validate(self, setting_data, raise_error=True, raise_warnings=False):
         """
         Validates the loaded JSON data against the schema.
 
         Args:
             setting_data (dict): The loaded JSON data.
             raise_error (bool): raise exception on validation failure
+            raise_warnings (bool): if True, treat deprecated ktools output warnings as validation errors
 
         Returns:
             tuple: A tuple containing a boolean indicating whether the JSON data is valid
@@ -403,6 +405,8 @@ class SettingHandler:
         """
         # special validation
         exception_msgs = {}
+        # Store temporarily for check methods to access
+        self._raise_warnings = raise_warnings
         for check in self.extra_checks:
             settings_logger.info(f"Running check_{check}")
             for field_name, message in getattr(self, f"check_{check}")(setting_data).items():
@@ -449,10 +453,6 @@ class AnalysisSettingHandler(SettingHandler):
             "updated_to": "model_name_id"
         }
     }
-
-    def __init__(self, raise_deprecated_ktools_warnings=False, **kwargs):
-        super().__init__(**kwargs)
-        self.raise_deprecated_ktools_warnings = raise_deprecated_ktools_warnings
 
     @classmethod
     def make(cls,
@@ -511,7 +511,7 @@ class AnalysisSettingHandler(SettingHandler):
         Returns:
             dict: Exception messages organized by summary type. Will be empty if
             warnings are not raised as errors (controlled by
-            self.raise_deprecated_ktools_warnings).
+            raise_warnings parameter passed to validate/load).
         """
         exception_msgs = {}
         deprecated_summary_fields = [
@@ -549,7 +549,7 @@ class AnalysisSettingHandler(SettingHandler):
                 if warning_msgs:
                     exception_msgs[summary_type] = warning_msgs
 
-        if self.raise_deprecated_ktools_warnings:
+        if getattr(self, '_raise_warnings', False):
             return exception_msgs
         return {}
 
