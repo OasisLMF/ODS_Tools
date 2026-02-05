@@ -360,7 +360,7 @@ class SettingHandler:
 
         return updated_settings_data
 
-    def load(self, settings_fp, version=None, validate=True, raise_error=True, raise_warnings=False):
+    def load(self, settings_fp, version=None, validate=True, raise_error=True, raise_warnings=None):
         """
         Loads the JSON data from a file path.
 
@@ -369,7 +369,8 @@ class SettingHandler:
             version: version to compare to when updating obsolete keys
             validate: if True validate the file after load
             raise_error:  raise exception on validation failure
-            raise_warnings: if True, treat deprecated ktools output warnings as validation errors
+            raise_warnings: if True, treat deprecated ktools output warnings as validation errors.
+                If None, uses the default set in make() (defaults to False).
         Raises:
             OdsException: If the JSON file is invalid.
 
@@ -386,6 +387,8 @@ class SettingHandler:
         settings_data = self.update_obsolete_keys(settings_raw, version)
 
         if validate:
+            if raise_warnings is None:
+                raise_warnings = getattr(self, 'raise_warnings', False)
             self.validate(settings_data, raise_error=raise_error, raise_warnings=raise_warnings)
         return settings_data
 
@@ -458,9 +461,11 @@ class AnalysisSettingHandler(SettingHandler):
     def make(cls,
              analysis_setting_schema_json=None, model_setting_json=None, computation_settings_json=None,
              analysis_compatibility_profile=None, model_compatibility_profile=None, computation_compatibility_profile=None,
+             raise_warnings=False,
              **kwargs):
 
         handler = cls(settings_type='analysis_settings', **kwargs)
+        handler.raise_warnings = raise_warnings
         if analysis_compatibility_profile is None:
             analysis_compatibility_profile = cls.default_analysis_compatibility_profile
         handler.add_compatibility_profile(analysis_compatibility_profile, [])
@@ -511,7 +516,7 @@ class AnalysisSettingHandler(SettingHandler):
         Returns:
             dict: Exception messages organized by summary type. Will be empty if
             warnings are not raised as errors (controlled by
-            raise_warnings parameter passed to validate/load).
+            raise_warnings parameter passed to make/validate/load).
         """
         exception_msgs = {}
         deprecated_summary_fields = [
