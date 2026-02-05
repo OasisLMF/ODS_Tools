@@ -3,6 +3,7 @@ import json
 import re
 import numpy as np
 import logging
+import pandas as pd
 import tqdm
 
 from datetime import datetime
@@ -406,4 +407,46 @@ class Validator:
                         'msg': f"{column} has invalid date formats (expected YYYY-MM-DD).\n"
                         f"{invalid_rows[identifier_field + [column]]}"
                     })
+        return invalid_data
+
+    def check_oedversion_consistency(self):
+        """
+        Checks all rows of oedversion are the same across all exposure files if they are present in exposure files.
+        """
+        oedversion_re = re.compile("v?\\d+\\.\\d+\\.\\d+|latest version")
+        invalid_data = []
+        first_val = None
+        first_val_set = False
+        for oed_source in self.exposure.get_oed_sources():
+            if oed_source.dataframe.empty:
+                continue
+
+            oedversion_rows = oed_source.dataframe.get("OEDVersion")
+            if oedversion_rows is None:
+                continue
+            oedversion_rows_normalised = oedversion_rows.str.lstrip("v")
+
+            if not first_val_set:
+                first_val = oedversion_rows_normalised.iloc[0]
+                first_val_set = True
+
+            if pd.isna(first_val):
+                wrong_oedversions_mask = oedversion_rows_normalised.notna()
+            else:
+                wrong_oedversions_mask = (oedversion_rows_normalised != first_val) | oedversion_rows_normalised.isna()
+
+            # Check for mismatching version numbers
+            mismatched_idxs = oedversion_rows[wrong_oedversions_mask].index.tolist()
+            for idx in mismatched_idxs:
+                invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
+                                     'msg': f"Mismatched \"OEDVersion\" value found in exposure file."
+                                     " Ensure all \"OEDVersion\" values are identical across all files and rows.\n"
+                                     f"{first_val} != {oedversion_rows[idx]} at row {idx}"})
+            # Check regex for oedversion
+            for idx, val in enumerate(oedversion_rows):
+                if not pd.isna(val) and not re.fullmatch(oedversion_re, str(val)):
+                    invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
+                                         'msg': f"Mismatched regex for \"OEDVersion\" found in exposure file."
+                                         " Ensure all \"OEDVersion\" values are of format \"^v?\\d+\\.\\d+\\.\\d+$\". (e.g. v4.0.0 or 4.0.0)\n"
+                                         f"{val} at row {idx}"})
         return invalid_data
