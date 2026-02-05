@@ -462,9 +462,9 @@ class OdsPackageTests(TestCase):
             )
 
             date_cols = ['PolInceptionDate', 'PolExpiryDate']
-            exposure.account.dataframe[date_cols] = exposure.account.dataframe[date_cols].astype(str)
+            exposure.account.dataframe[date_cols] = exposure.account.dataframe[date_cols].astype('object')
 
-            exposure.account.dataframe.loc[0, 'PolInceptionDate'] = invalid_value
+            exposure.account.dataframe.loc[0, 'PolInceptionDate'] = str(invalid_value)
             exposure.account.dataframe.loc[0, 'PolExpiryDate'] = '2018-12-31'  # valid control value
 
             with self.assertRaises(OdsException) as e:
@@ -490,7 +490,7 @@ class OdsPackageTests(TestCase):
             )
 
             date_cols = ['PolInceptionDate', 'PolExpiryDate']
-            exposure.account.dataframe[date_cols] = exposure.account.dataframe[date_cols].astype(str)
+            exposure.account.dataframe[date_cols] = exposure.account.dataframe[date_cols].astype('object')
 
             exposure.account.dataframe.loc[0, 'PolInceptionDate'] = valid_value
 
