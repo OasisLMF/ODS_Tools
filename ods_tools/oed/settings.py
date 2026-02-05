@@ -437,7 +437,6 @@ class SettingHandler:
 class AnalysisSettingHandler(SettingHandler):
     default_analysis_setting_schema_json = 'analysis_settings_schema.json'
     extra_checks = ['unique_summary_ids', 'deprecated_ktools_outputs']
-   # extra_checks = ['unique_summary_ids']
     default_analysis_compatibility_profile = {
         "module_supplier_id": {
             "from_ver": "1.23.0",
@@ -450,6 +449,10 @@ class AnalysisSettingHandler(SettingHandler):
             "updated_to": "model_name_id"
         }
     }
+
+    def __init__(self, raise_deprecated_ktools_warnings=False, **kwargs):
+        super().__init__(**kwargs)
+        self.raise_deprecated_ktools_warnings = raise_deprecated_ktools_warnings
 
     @classmethod
     def make(cls,
@@ -500,15 +503,15 @@ class AnalysisSettingHandler(SettingHandler):
 
         return handler
 
-    def check_deprecated_ktools_outputs(self, setting_data, raise_error=False):
+    def check_deprecated_ktools_outputs(self, setting_data):
         """
         Check for deprecated options in analysis settings JSON.
         Args:
             setting_data: Dictionary containing the analysis settings
-            raise_error: If True, raises an error; otherwise returns warnings
         Returns:
             dict: Exception messages organized by summary type. Will be empty if
-            there are no deprecated options.
+            warnings are not raised as errors (controlled by
+            self.raise_deprecated_ktools_warnings).
         """
         exception_msgs = {}
         deprecated_summary_fields = [
@@ -546,7 +549,8 @@ class AnalysisSettingHandler(SettingHandler):
                 if warning_msgs:
                     exception_msgs[summary_type] = warning_msgs
 
-        # return exception_msgs
+        if self.raise_deprecated_ktools_warnings:
+            return exception_msgs
         return {}
 
     def check_unique_summary_ids(self, setting_data):
