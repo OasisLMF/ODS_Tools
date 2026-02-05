@@ -754,7 +754,7 @@ class OdsPackageTests(TestCase):
             valid, errors = ods_model_setting.validate(settings_dict, raise_error=False)
             self.assertFalse(valid)
             expected_err = {
-                'model_settings_schema additionalProperties': ["Additional properties are not allowed ('model_setting', 'unknown_key' were unexpected)"], 
+                'model_settings_schema additionalProperties': ["Additional properties are not allowed ('model_setting', 'unknown_key' were unexpected)"],
                 'model_settings_schema required': ["'model_settings' is a required property"]
             }
             self.assertEqual(expected_err, errors)
