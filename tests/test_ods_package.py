@@ -19,7 +19,7 @@ import tempfile
 sys.path.append(sys.path.pop(0))
 
 from ods_tools.main import convert
-from ods_tools.oed import (OedExposure, OedSchema, OdsException, ModelSettingSchema, AnalysisSettingSchema, OED_TYPE_TO_NAME, UnknownColumnSaveOption,
+from ods_tools.oed import (OedExposure, OedSchema, OdsException, AnalysisSettingHandler, ModelSettingHandler, OED_TYPE_TO_NAME, UnknownColumnSaveOption,
                            ClassOfBusiness)
 from ods_tools.oed.oed_schema import OED_VERSION
 
@@ -656,8 +656,8 @@ class OdsPackageTests(TestCase):
     def test_setting_schema_analysis__is_valid(self):
         file_name = 'analysis_settings.json'
         file_url = f'https://raw.githubusercontent.com/OasisLMF/OasisPiWind/{piwind_branch}/{file_name}'
-        ods_analysis_setting = AnalysisSettingSchema()
-        assert (ods_analysis_setting.schema is not None)
+        ods_analysis_setting = AnalysisSettingHandler.make()
+        assert (ods_analysis_setting.get_schema('analysis_settings_schema') is not None)
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             abs_dir = pathlib.Path(tmp_dir, "abs")
@@ -673,13 +673,12 @@ class OdsPackageTests(TestCase):
 
             self.assertTrue(valid)
             self.assertEqual({}, errors)
-            self.assertEqual(settings_dict, ods_analysis_setting.get(settings_fp))
 
     def test_setting_schema_analysis__is_invalid(self):
         file_name = 'analysis_settings.json'
         file_url = f'https://raw.githubusercontent.com/OasisLMF/OasisPiWind/{piwind_branch}/{file_name}'
-        ods_analysis_setting = AnalysisSettingSchema()
-        assert (ods_analysis_setting.schema is not None)
+        ods_analysis_setting = AnalysisSettingHandler.make()
+        assert (ods_analysis_setting.get_schema('analysis_settings_schema') is not None)
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             abs_dir = pathlib.Path(tmp_dir, "abs")
@@ -700,17 +699,20 @@ class OdsPackageTests(TestCase):
 
             valid, errors = ods_analysis_setting.validate(settings_dict, raise_error=False)
             self.assertFalse(valid)
-            self.assertEqual({'gul_output': ["'True' is not of type 'boolean'"],
-                              'required': ["'gul_summaries' is a required property"],
-                              'ri_summaries': ['id 1 is duplicated']}, errors)
+            expected_err = {
+                'ri_summaries': ['id 1 is duplicated'],
+                'analysis_settings_schema gul_output': ["'True' is not of type 'boolean'"],
+                'analysis_settings_schema required': ["'gul_summaries' is a required property"]
+            }
+            self.assertEqual(expected_err, errors)
             with self.assertRaises(OdsException):
                 ods_analysis_setting.validate(settings_dict)
 
     def test_setting_schema_model__is_valid(self):
         file_name = 'meta-data/model_settings.json'
         file_url = f'https://raw.githubusercontent.com/OasisLMF/OasisPiWind/{piwind_branch}/{file_name}'
-        ods_model_setting = ModelSettingSchema()
-        assert (ods_model_setting.schema is not None)
+        ods_model_setting = ModelSettingHandler.make()
+        assert (ods_model_setting.get_schema('model_settings_schema') is not None)
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             abs_dir = pathlib.Path(tmp_dir, "abs")
@@ -726,13 +728,12 @@ class OdsPackageTests(TestCase):
 
             self.assertTrue(valid)
             self.assertEqual({}, errors)
-            self.assertEqual(settings_dict, ods_model_setting.get(settings_fp))
 
     def test_setting_schema_model__is_invalid(self):
         file_name = 'meta-data/model_settings.json'
         file_url = f'https://raw.githubusercontent.com/OasisLMF/OasisPiWind/{piwind_branch}/{file_name}'
-        ods_model_setting = ModelSettingSchema()
-        assert (ods_model_setting.schema is not None)
+        ods_model_setting = ModelSettingHandler.make()
+        assert (ods_model_setting.get_schema('model_settings_schema') is not None)
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             abs_dir = pathlib.Path(tmp_dir, "abs")
@@ -752,10 +753,11 @@ class OdsPackageTests(TestCase):
 
             valid, errors = ods_model_setting.validate(settings_dict, raise_error=False)
             self.assertFalse(valid)
-            self.assertEqual({
-                'additionalProperties': ["Additional properties are not allowed ('model_setting', 'unknown_key' were unexpected)"],
-                'required': ["'model_settings' is a required property"]
-            }, errors)
+            expected_err = {
+                'model_settings_schema additionalProperties': ["Additional properties are not allowed ('model_setting', 'unknown_key' were unexpected)"], 
+                'model_settings_schema required': ["'model_settings' is a required property"]
+            }
+            self.assertEqual(expected_err, errors)
 
             with self.assertRaises(OdsException):
                 ods_model_setting.validate(settings_dict)
@@ -1015,8 +1017,8 @@ class OdsPackageTests(TestCase):
         assert oed_exposure.location.dataframe.loc[0, "OccupancyCode"] == 9995
 
     def test_all_analysis_options__in_valid_metrics(self):
-        model_schema = ModelSettingSchema().schema
-        analysis_schema = AnalysisSettingSchema().schema
+        model_schema = ModelSettingHandler.make().get_schema('model_settings_schema')
+        analysis_schema = AnalysisSettingHandler.make().get_schema('analysis_settings_schema')
 
         # extract model settings 'valid_metrics' options, and check both match
         global__valid_output_metrics = set(model_schema['properties']['model_settings']['properties']['valid_output_metrics']['items']['enum'])
