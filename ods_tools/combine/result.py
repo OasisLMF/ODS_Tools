@@ -4,7 +4,7 @@ This module manages interfacing with ORD folders.
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from ods_tools.oed.setting_schema import AnalysisSettingSchema
+from ods_tools.oed import AnalysisSettingHandler
 
 
 @dataclass
@@ -37,7 +37,7 @@ def load_analysis_dirs(analysis_dirs):
     '''
     analyses = {}
 
-    ods_analysis_settings_schema = AnalysisSettingSchema()
+    ods_analysis_settings_schema = AnalysisSettingHandler.make()
     curr_id = 1
     for dir in analysis_dirs:
         curr_settings = ods_analysis_settings_schema.load(Path(dir) / 'analysis_settings.json')
