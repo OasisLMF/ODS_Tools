@@ -1,6 +1,9 @@
 ODS_Tools Changelog
 ===================
 
+* [#222](https://github.com/OasisLMF/ODS_Tools/pull/223) - bug/pandas v3.0 causing tests to fail
+.. _`4.0.6`:  https://github.com/OasisLMF/ODS_Tools/compare/4.0.5...4.0.6
+
 `4.0.5`_
  ---------
 * [#209](https://github.com/OasisLMF/ODS_Tools/pull/209) - acceptance conditions for oed_schema
