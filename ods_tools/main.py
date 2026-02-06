@@ -15,13 +15,19 @@ from ods_tools import logger
 from ods_tools.oed import (
     OedExposure,
     OdsException,
-    ModelSettingSchema,
-    AnalysisSettingSchema,
+    AnalysisSettingHandler,
+    ModelSettingHandler
 )
 try:
     from ods_tools.odtf.controller import transform_format
 except ImportError as e:
-    logger.error("Data transformation package requirements not installed.")
+    pass
+
+try:
+    from ods_tools.combine.combine import combine as combine_ord
+    from ods_tools.combine.combine import read_config as read_combine_config
+except ImportError as e:
+    logger.error("Combine ORD package requirements not installed.")
     logger.error(e)
 
 
@@ -54,9 +60,9 @@ def check(**kwargs):
             oed_exposure = get_oed_exposure(**extract_exposure_args(kwargs))
             oed_exposure.check()
         if 'analysis_settings_json' in args_set:
-            AnalysisSettingSchema().validate_file(kwargs['analysis_settings_json'])
+            AnalysisSettingHandler.make().load(kwargs['analysis_settings_json'])
         if 'model_settings_json' in args_set:
-            ModelSettingSchema().validate_file(kwargs['model_settings_json'])
+            ModelSettingHandler.make().load(kwargs['model_settings_json'])
     except OdsException as e:
         logger.error('Validation failed:')
         logger.error(e)
@@ -119,10 +125,28 @@ def transform(**kwargs):
         logger.error(e)
 
 
+def combine(**kwargs):
+    """Wrapper function for the combine command.
+    Combines multiple ORD analyses.
+    """
+    try:
+        config = read_combine_config(kwargs.get('config_file'))
+        combine_result = combine_ord(analysis_dirs=kwargs.get('analysis_dirs'),
+                                     output_dir=kwargs.get('output_dir'),
+                                     **config)
+    except OdsException as e:
+        logger.error('Combine failed')
+        logger.error(e)
+    except NameError as e:
+        logger.error("Combine ORD package requirements not installed.")
+        logger.error(e)
+
+
 command_action = {
     'check': check,
     'convert': convert,
     'transform': transform,
+    'combine': combine
 }
 
 
@@ -194,6 +218,17 @@ transform_command.add_argument('--mapping-file', help='Path to the mapping file'
 transform_command.add_argument('-v', '--logging-level', help='logging level (debug:10, info:20, warning:30, error:40, critical:50)',
                                default=30, type=int)
 transform_command.add_argument('--check', help='if Location or Account, OED file will be checked on completion', default=None, action='store_true')
+
+combine_description = """
+Combine multiple analyses with ORD output. This requires a combine config to be provided.
+"""
+combine_command = command_parser.add_parser('combine', description=combine_description,
+                                            formatter_class=argparse.RawTextHelpFormatter)
+combine_command.add_argument('--analysis-dirs', '-a', required=True, nargs='+', help='List of paths to analysis results directories')
+combine_command.add_argument('--output-dir', help='Path to output directory', default=None)
+combine_command.add_argument('--config-file', required=True, help='Path to the config file')
+combine_command.add_argument('-v', '--logging-level', help='logging level (debug:10, info:20, warning:30, error:40, critical:50)',
+                             default=30, type=int)
 
 
 def main():

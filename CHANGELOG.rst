@@ -1,6 +1,15 @@
 ODS_Tools Changelog
 ===================
 
+`5.0.0`_
+ ---------
+* [#224](https://github.com/OasisLMF/ODS_Tools/pull/225) - Extra OED Version sources
+* [#217](https://github.com/OasisLMF/ODS_Tools/pull/217) - error in check if missing loc acc
+* [#219](https://github.com/OasisLMF/ODS_Tools/pull/219) - Update settings schema for ktools removal 
+* [#221](https://github.com/OasisLMF/ODS_Tools/pull/220) - combine ORD files
+* [#222](https://github.com/OasisLMF/ODS_Tools/pull/223) - bug/pandas v3.0 causing tests to fail
+.. _`5.0.0`:  https://github.com/OasisLMF/ODS_Tools/compare/4.0.5...5.0.0
+
 `4.0.5`_
  ---------
 * [#209](https://github.com/OasisLMF/ODS_Tools/pull/209) - acceptance conditions for oed_schema

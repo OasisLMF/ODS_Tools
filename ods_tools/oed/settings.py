@@ -360,7 +360,7 @@ class SettingHandler:
 
         return updated_settings_data
 
-    def load(self, settings_fp, version=None, validate=True, raise_error=True):
+    def load(self, settings_fp, version=None, validate=True, raise_error=True, raise_warnings=None):
         """
         Loads the JSON data from a file path.
 
@@ -369,6 +369,8 @@ class SettingHandler:
             version: version to compare to when updating obsolete keys
             validate: if True validate the file after load
             raise_error:  raise exception on validation failure
+            raise_warnings: if True, treat deprecated ktools output warnings as validation errors.
+                If None, uses the default set in make() (defaults to False).
         Raises:
             OdsException: If the JSON file is invalid.
 
@@ -385,16 +387,19 @@ class SettingHandler:
         settings_data = self.update_obsolete_keys(settings_raw, version)
 
         if validate:
-            self.validate(settings_data, raise_error=raise_error)
+            if raise_warnings is None:
+                raise_warnings = getattr(self, 'raise_warnings', False)
+            self.validate(settings_data, raise_error=raise_error, raise_warnings=raise_warnings)
         return settings_data
 
-    def validate(self, setting_data, raise_error=True):
+    def validate(self, setting_data, raise_error=True, raise_warnings=False):
         """
         Validates the loaded JSON data against the schema.
 
         Args:
             setting_data (dict): The loaded JSON data.
             raise_error (bool): raise exception on validation failure
+            raise_warnings (bool): if True, treat deprecated ktools output warnings as validation errors
 
         Returns:
             tuple: A tuple containing a boolean indicating whether the JSON data is valid
@@ -403,6 +408,8 @@ class SettingHandler:
         """
         # special validation
         exception_msgs = {}
+        # Store temporarily for check methods to access
+        self._raise_warnings = raise_warnings
         for check in self.extra_checks:
             settings_logger.info(f"Running check_{check}")
             for field_name, message in getattr(self, f"check_{check}")(setting_data).items():
@@ -433,25 +440,10 @@ class SettingHandler:
 
         return not bool(exception_msgs), exception_msgs
 
-    def validate_file(self, settings_fp, raise_error=True):
-        """
-        Validates the loaded JSON file against the schema.
-
-        Args:
-            settings_fp (str): The file path to the settings file.
-            raise_error (bool): raise execption on validation failuer
-
-        Returns:
-            tuple: A tuple containing a boolean indicating whether the JSON data is valid
-            and a dictionary containing any validation errors.
-        """
-        settings_data = self.load(settings_fp)
-        return self.validate(settings_data, raise_error=raise_error)
-
 
 class AnalysisSettingHandler(SettingHandler):
     default_analysis_setting_schema_json = 'analysis_settings_schema.json'
-    extra_checks = ['unique_summary_ids']
+    extra_checks = ['unique_summary_ids', 'deprecated_ktools_outputs']
     default_analysis_compatibility_profile = {
         "module_supplier_id": {
             "from_ver": "1.23.0",
@@ -469,9 +461,11 @@ class AnalysisSettingHandler(SettingHandler):
     def make(cls,
              analysis_setting_schema_json=None, model_setting_json=None, computation_settings_json=None,
              analysis_compatibility_profile=None, model_compatibility_profile=None, computation_compatibility_profile=None,
+             raise_warnings=False,
              **kwargs):
 
         handler = cls(settings_type='analysis_settings', **kwargs)
+        handler.raise_warnings = raise_warnings
         if analysis_compatibility_profile is None:
             analysis_compatibility_profile = cls.default_analysis_compatibility_profile
         handler.add_compatibility_profile(analysis_compatibility_profile, [])
@@ -513,6 +507,56 @@ class AnalysisSettingHandler(SettingHandler):
             handler.add_schema(model_setting_induce_schema.to_json_schema(model_setting_subpart_validation), name='model_setting_induce_schema')
 
         return handler
+
+    def check_deprecated_ktools_outputs(self, setting_data):
+        """
+        Check for deprecated options in analysis settings JSON.
+        Args:
+            setting_data: Dictionary containing the analysis settings
+        Returns:
+            dict: Exception messages organized by summary type. Will be empty if
+            warnings are not raised as errors (controlled by
+            raise_warnings parameter passed to make/validate/load).
+        """
+        exception_msgs = {}
+        deprecated_summary_fields = [
+            'summarycalc',
+            'eltcalc',
+            'aalcalc',
+            'aalcalcmeanonly',
+            'pltcalc',
+            'leccalc',
+            'lec_output'
+        ]
+
+        for summary_type in ['gul_summaries', 'il_summaries', 'ri_summaries']:
+            if summary_type in setting_data:
+                summaries = setting_data[summary_type]
+                if not isinstance(summaries, list):
+                    continue
+
+                warning_msgs = []
+                for idx, summary in enumerate(summaries):
+                    summary_id = summary.get('id', f'index {idx}')
+                    # Check for deprecated summary-level fields
+                    for field in deprecated_summary_fields:
+                        if field in summary and summary[field]:
+                            msg = (
+                                f"id {summary_id}: '{field}' has no effect in oasis 2.5.x and newer"
+                            )
+                            warning_msgs.append(msg)
+
+                            settings_logger.warn(
+                                f" Deprecated option set in {summary_type} (summary ID: {summary_id}) - "
+                                f"'{field}' has no effect in (oasis 2.5.x and newer)."
+                            )
+
+                if warning_msgs:
+                    exception_msgs[summary_type] = warning_msgs
+
+        if getattr(self, '_raise_warnings', False):
+            return exception_msgs
+        return {}
 
     def check_unique_summary_ids(self, setting_data):
         """

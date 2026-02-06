@@ -1,3 +1,4 @@
+import io
 import json
 import logging
 import os
@@ -18,7 +19,7 @@ import tempfile
 sys.path.append(sys.path.pop(0))
 
 from ods_tools.main import convert
-from ods_tools.oed import (OedExposure, OedSchema, OdsException, ModelSettingSchema, AnalysisSettingSchema, OED_TYPE_TO_NAME, UnknownColumnSaveOption,
+from ods_tools.oed import (OedExposure, OedSchema, OdsException, AnalysisSettingHandler, ModelSettingHandler, OED_TYPE_TO_NAME, UnknownColumnSaveOption,
                            ClassOfBusiness)
 from ods_tools.oed.oed_schema import OED_VERSION
 
@@ -503,7 +504,7 @@ class OdsPackageTests(TestCase):
             'ri_scope': base_url + '/SourceReinsScopeOEDPiWind.csv',
             'use_field': True})
 
-        original_exposure.location.dataframe.drop(columns=['ContentsTIV'], inplace=True)
+        original_exposure.location.dataframe = original_exposure.location.dataframe.drop(columns='ContentsTIV')
         original_exposure.location.dataframe['ContentsTIV'] = pd.NA
 
         original_exposure.location.dataframe['BITIV'] = pd.NA
@@ -513,7 +514,7 @@ class OdsPackageTests(TestCase):
         original_exposure.location.dataframe.loc[[4], 'BITIV'] = ''
         original_exposure.location.dataframe.loc[[5], 'BITIV'] = ' '
 
-        original_exposure.ri_info.dataframe.drop(columns='RiskLevel', inplace=True)
+        original_exposure.ri_info.dataframe = original_exposure.ri_info.dataframe.drop(columns='RiskLevel')
         original_exposure.ri_info.dataframe['RiskLevel'] = pd.NA
 
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -655,8 +656,8 @@ class OdsPackageTests(TestCase):
     def test_setting_schema_analysis__is_valid(self):
         file_name = 'analysis_settings.json'
         file_url = f'https://raw.githubusercontent.com/OasisLMF/OasisPiWind/{piwind_branch}/{file_name}'
-        ods_analysis_setting = AnalysisSettingSchema()
-        assert (ods_analysis_setting.schema is not None)
+        ods_analysis_setting = AnalysisSettingHandler.make()
+        assert (ods_analysis_setting.get_schema('analysis_settings_schema') is not None)
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             abs_dir = pathlib.Path(tmp_dir, "abs")
@@ -672,13 +673,12 @@ class OdsPackageTests(TestCase):
 
             self.assertTrue(valid)
             self.assertEqual({}, errors)
-            self.assertEqual(settings_dict, ods_analysis_setting.get(settings_fp))
 
     def test_setting_schema_analysis__is_invalid(self):
         file_name = 'analysis_settings.json'
         file_url = f'https://raw.githubusercontent.com/OasisLMF/OasisPiWind/{piwind_branch}/{file_name}'
-        ods_analysis_setting = AnalysisSettingSchema()
-        assert (ods_analysis_setting.schema is not None)
+        ods_analysis_setting = AnalysisSettingHandler.make()
+        assert (ods_analysis_setting.get_schema('analysis_settings_schema') is not None)
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             abs_dir = pathlib.Path(tmp_dir, "abs")
@@ -699,17 +699,20 @@ class OdsPackageTests(TestCase):
 
             valid, errors = ods_analysis_setting.validate(settings_dict, raise_error=False)
             self.assertFalse(valid)
-            self.assertEqual({'gul_output': ["'True' is not of type 'boolean'"],
-                              'required': ["'gul_summaries' is a required property"],
-                              'ri_summaries': ['id 1 is duplicated']}, errors)
+            expected_err = {
+                'ri_summaries': ['id 1 is duplicated'],
+                'analysis_settings_schema gul_output': ["'True' is not of type 'boolean'"],
+                'analysis_settings_schema required': ["'gul_summaries' is a required property"]
+            }
+            self.assertEqual(expected_err, errors)
             with self.assertRaises(OdsException):
                 ods_analysis_setting.validate(settings_dict)
 
     def test_setting_schema_model__is_valid(self):
         file_name = 'meta-data/model_settings.json'
         file_url = f'https://raw.githubusercontent.com/OasisLMF/OasisPiWind/{piwind_branch}/{file_name}'
-        ods_model_setting = ModelSettingSchema()
-        assert (ods_model_setting.schema is not None)
+        ods_model_setting = ModelSettingHandler.make()
+        assert (ods_model_setting.get_schema('model_settings_schema') is not None)
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             abs_dir = pathlib.Path(tmp_dir, "abs")
@@ -725,13 +728,12 @@ class OdsPackageTests(TestCase):
 
             self.assertTrue(valid)
             self.assertEqual({}, errors)
-            self.assertEqual(settings_dict, ods_model_setting.get(settings_fp))
 
     def test_setting_schema_model__is_invalid(self):
         file_name = 'meta-data/model_settings.json'
         file_url = f'https://raw.githubusercontent.com/OasisLMF/OasisPiWind/{piwind_branch}/{file_name}'
-        ods_model_setting = ModelSettingSchema()
-        assert (ods_model_setting.schema is not None)
+        ods_model_setting = ModelSettingHandler.make()
+        assert (ods_model_setting.get_schema('model_settings_schema') is not None)
 
         with tempfile.TemporaryDirectory() as tmp_dir:
             abs_dir = pathlib.Path(tmp_dir, "abs")
@@ -751,10 +753,11 @@ class OdsPackageTests(TestCase):
 
             valid, errors = ods_model_setting.validate(settings_dict, raise_error=False)
             self.assertFalse(valid)
-            self.assertEqual({
-                'additionalProperties': ["Additional properties are not allowed ('model_setting', 'unknown_key' were unexpected)"],
-                'required': ["'model_settings' is a required property"]
-            }, errors)
+            expected_err = {
+                'model_settings_schema additionalProperties': ["Additional properties are not allowed ('model_setting', 'unknown_key' were unexpected)"],
+                'model_settings_schema required': ["'model_settings' is a required property"]
+            }
+            self.assertEqual(expected_err, errors)
 
             with self.assertRaises(OdsException):
                 ods_model_setting.validate(settings_dict)
@@ -1014,8 +1017,8 @@ class OdsPackageTests(TestCase):
         assert oed_exposure.location.dataframe.loc[0, "OccupancyCode"] == 9995
 
     def test_all_analysis_options__in_valid_metrics(self):
-        model_schema = ModelSettingSchema().schema
-        analysis_schema = AnalysisSettingSchema().schema
+        model_schema = ModelSettingHandler.make().get_schema('model_settings_schema')
+        analysis_schema = AnalysisSettingHandler.make().get_schema('analysis_settings_schema')
 
         # extract model settings 'valid_metrics' options, and check both match
         global__valid_output_metrics = set(model_schema['properties']['model_settings']['properties']['valid_output_metrics']['items']['enum'])
@@ -1037,3 +1040,194 @@ class OdsPackageTests(TestCase):
 
         self.assertEqual(expected_list, global__valid_output_metrics)
         self.assertEqual(expected_list, event_set__valid_metrics)
+
+    def test_probe_oedversion_from_oedsource(self):
+        exposure = OedExposure(
+            location=base_url + "/SourceLocOEDPiWind.csv",
+            account=base_url + "/SourceAccOEDPiWind.csv",
+        )
+
+        df = exposure.location.dataframe
+        df["OEDVersion"] = "4.0.0"
+
+        oedversion = OedExposure.probe_oedversion_from_source(exposure.location)
+        self.assertEqual(oedversion, "4.0.0")
+
+    def test_probe_oedversion_from_dataframe(self):
+        df = pd.read_csv(base_url + "/SourceLocOEDPiWind.csv",
+                         dtype=str, keep_default_na=False)
+        df["OEDVersion"] = "4.0.0"
+
+        oedversion = OedExposure.probe_oedversion_from_source(df)
+        self.assertEqual(oedversion, "4.0.0")
+
+    def test_probe_oedversion_from_resolved_dict(self):
+        df = pd.read_csv(base_url + "/SourceLocOEDPiWind.csv",
+                         dtype=str, keep_default_na=False)
+        df["OEDVersion"] = "4.0.0"
+        with tempfile.TemporaryDirectory() as d:
+            mod_csv = pathlib.Path(d, "loc.csv")
+            df.to_csv(mod_csv, index=False)
+
+            oed_info = {
+                "cur_version_name": "curr",
+                "sources": {
+                    "curr": {
+                        "source_type": "filepath",
+                        "filepath": mod_csv,
+                        "read_param": {},
+                        "engine": pd,
+                    }
+                },
+            }
+
+            oedversion = OedExposure.probe_oedversion_from_source(oed_info)
+            self.assertEqual(oedversion, "4.0.0")
+
+    def test_probe_oedversion_from_csv_stream(self):
+        df = pd.read_csv(base_url + "/SourceLocOEDPiWind.csv",
+                         dtype=str, keep_default_na=False)
+        df["OEDVersion"] = "4.0.0"
+
+        buf = io.BytesIO()
+        df.to_csv(buf, index=False)
+        buf.seek(0)
+
+        oedversion = OedExposure.probe_oedversion_from_source(buf)
+        self.assertEqual(oedversion, "4.0.0")
+
+    def test_probe_oedversion_from_parquet_stream(self):
+        df = pd.read_csv(base_url + "/SourceLocOEDPiWind.csv",
+                         dtype=str, keep_default_na=False)
+        df["OEDVersion"] = "4.0.0"
+
+        buf = io.BytesIO()
+        buf.name = "test.parquet"
+        df.to_parquet(buf, engine="pyarrow")
+        buf.seek(0)
+
+        oedversion = OedExposure.probe_oedversion_from_source(buf)
+        self.assertEqual(oedversion, "4.0.0")
+
+    def test_probe_oedversion_from_csv_path(self):
+        df = pd.read_csv(base_url + "/SourceLocOEDPiWind.csv",
+                         dtype=str, keep_default_na=False)
+        df["OEDVersion"] = "4.0.0"
+        with tempfile.TemporaryDirectory() as d:
+            mod_csv = pathlib.Path(d, "loc.csv")
+            df.to_csv(mod_csv, index=False)
+
+            oedversion = OedExposure.probe_oedversion_from_source(mod_csv)
+            self.assertEqual(oedversion, "4.0.0")
+
+    def test_probe_oedversion_from_parquet_path(self):
+        df = pd.read_csv(base_url + "/SourceLocOEDPiWind.csv",
+                         dtype=str, keep_default_na=False)
+        df["OEDVersion"] = "4.0.0"
+        with tempfile.TemporaryDirectory() as d:
+            mod_parquet = pathlib.Path(d, "loc.parquet")
+            df.to_parquet(mod_parquet, engine="pyarrow")
+
+            oedversion = OedExposure.probe_oedversion_from_source(mod_parquet)
+            self.assertEqual(oedversion, "4.0.0")
+
+    def test_check_oedversion_consistency_valid_val(self):
+        exposure = OedExposure(
+            location=base_url + '/SourceLocOEDPiWind10.csv',
+            account=base_url + '/SourceAccOEDPiWind.csv',
+            ri_info=base_url + '/SourceReinsInfoOEDPiWind.csv',
+            ri_scope=base_url + '/SourceReinsScopeOEDPiWind.csv',
+        )
+        exposure.location.dataframe["OEDVersion"] = "4.0.0"
+        exposure.account.dataframe["OEDVersion"] = "4.0.0"
+        exposure.ri_info.dataframe["OEDVersion"] = "4.0.0"
+        exposure.ri_scope.dataframe["OEDVersion"] = "4.0.0"
+
+        try:
+            exposure.check()
+        except Exception as e:
+            self.fail(f"test_check_oedversion_consistency_valild failed: {e}")
+
+    def test_check_oedversion_consistency_valid_none(self):
+        exposure = OedExposure(
+            location=base_url + '/SourceLocOEDPiWind10.csv',
+            account=base_url + '/SourceAccOEDPiWind.csv',
+            ri_info=base_url + '/SourceReinsInfoOEDPiWind.csv',
+            ri_scope=base_url + '/SourceReinsScopeOEDPiWind.csv',
+        )
+        exposure.location.dataframe["OEDVersion"] = None
+        exposure.account.dataframe["OEDVersion"] = None
+        exposure.ri_info.dataframe["OEDVersion"] = None
+        exposure.ri_scope.dataframe["OEDVersion"] = None
+
+        try:
+            exposure.check()
+        except Exception as e:
+            self.fail(f"test_check_oedversion_consistency_valild failed: {e}")
+
+    def test_check_oedversion_consistency_invalid(self):
+        invalid_vals = [
+            ("location", 0, None),  # First value is None
+            ("location", 1, None),  # Other value is None
+            ("location", 0, "2.0.1"),  # First value is different version string
+            ("location", 1, "2.0.1"),  # Other value is different version string
+            ("account", 1, None),  # Different file has None
+            ("account", 1, "2.0.1"),  # Different file has different version string
+        ]
+        for exposure_type, pos, val in invalid_vals:
+            exposure = OedExposure(
+                location=base_url + '/SourceLocOEDPiWind10.csv',
+                account=base_url + '/SourceAccOEDPiWind.csv',
+                ri_info=base_url + '/SourceReinsInfoOEDPiWind.csv',
+                ri_scope=base_url + '/SourceReinsScopeOEDPiWind.csv',
+            )
+            exposure.location.dataframe["OEDVersion"] = "4.0.0"
+            exposure.account.dataframe["OEDVersion"] = "4.0.0"
+            exposure.ri_info.dataframe["OEDVersion"] = "4.0.0"
+            exposure.ri_scope.dataframe["OEDVersion"] = "4.0.0"
+
+            exposure_data = getattr(exposure, exposure_type)
+            exposure_data.dataframe['OEDVersion'] = exposure_data.dataframe['OEDVersion'].astype(str)
+            exposure_data.dataframe.loc[pos, 'OEDVersion'] = val
+
+            with self.assertRaises(OdsException) as e:
+                exposure.check()
+                self.assertTrue("Mismatched \"OEDVersion\" value found in exposure file" in e.msg)
+                self.assertTrue(f"{val} at row {pos}" in e.msg)
+
+    def test_check_oedversion_consistency_regex_valid(self):
+        exposure = OedExposure(
+            location=base_url + '/SourceLocOEDPiWind10.csv',
+            account=base_url + '/SourceAccOEDPiWind.csv',
+            ri_info=base_url + '/SourceReinsInfoOEDPiWind.csv',
+            ri_scope=base_url + '/SourceReinsScopeOEDPiWind.csv',
+        )
+        exposure.location.dataframe["OEDVersion"] = "4.0.0"  # without starting v
+        exposure.account.dataframe["OEDVersion"] = "v4.0.0"  # with starting v
+        exposure.ri_info.dataframe["OEDVersion"] = "v4.0.0"
+        exposure.ri_scope.dataframe["OEDVersion"] = "4.0.0"
+
+        try:
+            exposure.check()
+        except Exception as e:
+            self.fail(f"test_check_oedversion_consistency_valild failed: {e}")
+
+    def test_check_oedversion_consistency_regex_invalid(self):
+        exposure = OedExposure(
+            location=base_url + '/SourceLocOEDPiWind10.csv',
+            account=base_url + '/SourceAccOEDPiWind.csv',
+            ri_info=base_url + '/SourceReinsInfoOEDPiWind.csv',
+            ri_scope=base_url + '/SourceReinsScopeOEDPiWind.csv',
+        )
+        exposure.location.dataframe["OEDVersion"] = "4.0.0"
+        exposure.account.dataframe["OEDVersion"] = "4.0.0"
+        exposure.ri_info.dataframe["OEDVersion"] = "4.0.0"
+        exposure.ri_scope.dataframe["OEDVersion"] = "4.0.0"
+
+        exposure.location.dataframe['OEDVersion'] = exposure.location.dataframe['OEDVersion'].astype(str)
+        exposure.location.dataframe.loc[0, 'OEDVersion'] = "v4"
+
+        with self.assertRaises(OdsException) as e:
+            exposure.check()
+            self.assertTrue("Mismatched \"OEDVersion\" value found in exposure file" in e.msg)
+            self.assertTrue("v4 at row 0" in e.msg)
