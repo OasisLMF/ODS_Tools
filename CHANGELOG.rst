@@ -1,6 +1,9 @@
 ODS_Tools Changelog
 ===================
 
+* [#233](https://github.com/OasisLMF/ODS_Tools/pull/234) - ods_tools package 5.0.0 does not include pyarrow despite needing it
+.. _`5.0.1`:  https://github.com/OasisLMF/ODS_Tools/compare/5.0.0...5.0.1
+
 `5.0.0`_
  ---------
 * [#224](https://github.com/OasisLMF/ODS_Tools/pull/225) - Extra OED Version sources
