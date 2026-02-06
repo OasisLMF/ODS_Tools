@@ -1,0 +1,123 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Combine ORD Config",
+  "description": "Configuration object for combine ORD.",
+  "type": "object",
+  "required": ["group_number_of_periods"],
+  "properties": {
+    "occ_dtype": {
+      "title": "occ_dtype",
+      "description": "dtype for records in the occurrence.bin file",
+      "type": "array",
+      "items": {
+        "type": "array",
+        "items": {
+          "type": "string"
+        }
+      }
+    },
+    "group_fill_perspectives": {
+      "title": "group_fill_perspectives",
+      "description": "Enable filling financial perspectives to enable more groupings of output sets.",
+      "type": "boolean",
+      "default": false
+      },
+    "group_event_set_fields": {
+      "description": "List of fields",
+      "title": "group_event_set_fields",
+      "type": "array",
+      "items": {
+          "type": "string",
+          "enum": [
+              "event_set_id",
+              "event_set_description",
+              "event_occurrence_id",
+              "event_occurrence_description",
+              "event_occurrence_max_periods",
+              "model_supplier_id",
+              "model_name_id",
+              "model_description",
+              "model_version"
+          ]
+      }},
+    "group_number_of_periods": {
+          "title": "group_number_of_periods",
+          "description": "Number of periods for grouping",
+          "type": "integer"
+      },
+    "group_period_seed": {
+        "title": "group_period_seed",
+        "description": "Seed for the grouping random number generator.",
+        "type": "integer",
+        "default": 2479
+      },
+    "group_correlation": {
+        "title": "group_correlation",
+        "description": "Correlation to apply to the group.",
+        "type": "float"
+    },
+    "group_mean": {
+        "title": "group_mean",
+        "description": "Output the grouped mean results.",
+        "type": "boolean",
+        "default": false
+      },
+    "group_mean_type": {
+        "title": "group_mean_type",
+        "description": "Output the grouped mean results.",
+        "type": "integer",
+        "enum": [1, 2]
+      },
+    "group_secondary_uncertainty": {
+        "title": "group_secondary_uncertainty",
+        "description": "Output the grouped results with secondary uncertainty (type 2)",
+        "type": "boolean",
+        "default": false
+      },
+    "group_parametric_distribution": {
+      "title": "group_parametric_distribution",
+      "description": "The parameteric distribution type to estimate values for from MELT.",
+      "type": "string",
+      "enum": ["beta", "gamma"]
+      },
+    "group_format_priority":  {
+      "title": "group_format_priority",
+      "description": "Control which format for ELTs is used for loss severity sampling when there are multiple formats available per output set. `M` = mean, `Q` = quantile, `S` = sample. `['M']` means only MELTs will be used for loss sampling. `['Q', 'M']` means that QELT will ber prioritised, falling back to MELT if QELT format is missing.",
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": ["M", "Q", "S"]
+        }
+      },
+    "group_alt": {
+      "title": "group_alt",
+      "description": "Output grouped ALT report",
+      "type": "boolean",
+      "default": false
+      },
+    "group_ept": {
+      "title": "group_ept",
+      "description": "Output grouped EPT report",
+      "type": "boolean",
+      "default": false
+      },
+    "group_ept_oep": {
+      "title": "group_ept_oep",
+      "description": "Output grouped EPT with OEP if group_ept",
+      "type": "boolean",
+      "default": true
+    },
+    "group_ept_aep": {
+      "title": "group_ept_aep",
+      "description": "Output grouped EPT with AEP if group_ept",
+      "type": "boolean",
+      "default": true
+    },
+    "group_plt": {
+      "title": "group_plt",
+      "description": "Output grouped PLT report",
+      "type": "boolean",
+      "default": false
+      }
+  }
+}
