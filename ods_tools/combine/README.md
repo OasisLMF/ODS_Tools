@@ -362,4 +362,3 @@ Common errors and solutions:
 ## References
 
 - [Combining Results in ORD v1.1](https://github.com/OasisLMF/ODS_OpenExposureData) - Full methodology specification
-- [ORD Requirements for Results Processing](https://github.com/OasisLMF/ODS_OpenExposureData) - Use cases and requirements
