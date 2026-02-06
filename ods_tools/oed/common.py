@@ -190,11 +190,15 @@ DEFAULT_VALIDATION_CONFIG = [
     {'name': 'construction_code', 'on_error': 'raise'},
     {'name': 'country_and_area_code', 'on_error': 'raise'},
     {'name': 'conditional_requirement', 'on_error': 'raise'},
+    {'name': 'dates', 'on_error': 'raise'},
     {'name': 'oedversion_consistency', 'on_error': 'raise'},
 ]
 
 OED_PERIL_COLUMNS = ['AccPeril', 'PolPerilsCovered', 'PolPeril', 'CondPeril', 'LocPerilsCovered', 'LocPeril',
                      'ReinsPeril']
+
+OED_DATE_COLUMNS = ['PolInceptionDate', 'PolExpiryDate', 'LocInceptionDate',
+                    'LocExpiryDate', 'ReinsInceptionDate', 'ReinsExpiryDate', 'CompletionDate']
 
 BLANK_VALUES = {np.nan, '', None, pd.NA, pd.NaT}
 
