@@ -15,14 +15,13 @@ from ods_tools import logger
 from ods_tools.oed import (
     OedExposure,
     OdsException,
-    ModelSettingSchema,
-    AnalysisSettingSchema,
+    AnalysisSettingHandler,
+    ModelSettingHandler
 )
 try:
     from ods_tools.odtf.controller import transform_format
 except ImportError as e:
-    logger.error("Data transformation package requirements not installed.")
-    logger.error(e)
+    pass
 
 
 def get_oed_exposure(config_json=None, oed_dir=None, **kwargs):
@@ -54,9 +53,9 @@ def check(**kwargs):
             oed_exposure = get_oed_exposure(**extract_exposure_args(kwargs))
             oed_exposure.check()
         if 'analysis_settings_json' in args_set:
-            AnalysisSettingSchema().validate_file(kwargs['analysis_settings_json'])
+            AnalysisSettingHandler.make().load(kwargs['analysis_settings_json'])
         if 'model_settings_json' in args_set:
-            ModelSettingSchema().validate_file(kwargs['model_settings_json'])
+            ModelSettingHandler.make().load(kwargs['model_settings_json'])
     except OdsException as e:
         logger.error('Validation failed:')
         logger.error(e)
