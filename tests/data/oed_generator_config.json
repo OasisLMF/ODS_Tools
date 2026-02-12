@@ -1,0 +1,130 @@
+{
+  "oed_version": "4.0.0",
+  "seed": 42,
+  "include_oed_version": true,
+  "output_format": "csv",
+  "global_defaults": {
+    "num_portfolios": 1,
+    "num_accounts_per_portfolio": 5,
+    "num_policies_per_account": 1,
+    "peril_code": "WTC",
+    "currency": "USD",
+    "country_codes": [
+      "US",
+      "GB",
+      "JP",
+      "DE",
+      "FR"
+    ],
+    "tiv_range": [
+      100000,
+      10000000
+    ],
+    "latitude_range": [
+      25.0,
+      55.0
+    ],
+    "longitude_range": [
+      -125.0,
+      -65.0
+    ],
+    "financial_terms": {
+      "deductible_range": [
+        1000,
+        100000
+      ],
+      "limit_range": [
+        500000,
+        50000000
+      ]
+    }
+  },
+  "files": {
+    "loc": {
+      "num_rows": 100,
+      "include_required": true,
+      "include_financial_terms": true,
+      "financial_field_patterns": [
+        "LocDed1Building",
+        "LocDedType1Building",
+        "LocLimit1Building",
+        "LocLimitType1Building",
+        "LocDed3Contents",
+        "LocDedType3Contents",
+        "LocLimit3Contents",
+        "LocLimitType3Contents"
+      ],
+      "fields": [
+        "Latitude",
+        "Longitude",
+        "OccupancyCode",
+        "ConstructionCode",
+        "NumberOfStoreys",
+        "YearBuilt",
+        "BuildingTIV",
+        "OtherTIV",
+        "ContentsTIV",
+        "BITIV"
+      ],
+      "include_optional_fields": [
+        "StreetAddress",
+        "PostalCode",
+        "City"
+      ],
+      "fixed_values": {},
+      "filename_prefix": "Test"
+    },
+    "acc": {
+      "num_rows": 5,
+      "include_required": true,
+      "include_financial_terms": true,
+      "financial_field_patterns": [
+        "PolDed6All",
+        "PolDedType6All",
+        "PolLimit6All",
+        "PolLimitType6All"
+      ],
+      "fields": [],
+      "fixed_values": {},
+      "filename_prefix": "Test"
+    },
+    "ri_info": {
+      "num_rows": 3,
+      "include_required": true,
+      "include_financial_terms": true,
+      "fields": [
+        "ReinsLayerNumber",
+        "ReinsName",
+        "ReinsInceptionDate",
+        "ReinsExpiryDate",
+        "CededPercent",
+        "RiskLimit",
+        "RiskAttachment",
+        "OccLimit",
+        "OccAttachment",
+        "TreatyShare",
+        "RiskLevel"
+      ],
+      "fixed_values": {
+        "ReinsType": [
+          "QS",
+          "CXL",
+          "PR"
+        ]
+      },
+      "filename_prefix": "Test"
+    },
+    "ri_scope": {
+      "num_rows": 5,
+      "include_required": true,
+      "fields": [
+        "PortNumber",
+        "AccNumber",
+        "PolNumber",
+        "LocNumber"
+      ],
+      "fixed_values": {},
+      "filename_prefix": "Test"
+    }
+  }
+}
