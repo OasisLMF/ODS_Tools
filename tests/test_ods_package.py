@@ -442,6 +442,63 @@ class OdsPackageTests(TestCase):
             self.assertTrue("Conditionally required column missing" in e.msg and 'LocPeril' in e.msg)
             self.assertfalse('CondPriority' in e.msg)
 
+    def test_check_date_invalid_cases(self):
+        invalid_values = [
+            " 2018-01-01",   # leading space
+            "2018-01-01 ",   # trailing space
+            "2018/01/01",    # wrong separator
+            "2018-1-01",     # wrong padding
+            "friday 13",     # not a date
+            "2018-01-32",    # invalid date
+            12345,           # non-string
+        ]
+
+        for invalid_value in invalid_values:
+            exposure = OedExposure(
+                location=base_url + '/SourceLocOEDPiWind10.csv',
+                account=base_url + '/SourceAccOEDPiWind.csv',
+                ri_info=base_url + '/SourceReinsInfoOEDPiWind.csv',
+                ri_scope=base_url + '/SourceReinsScopeOEDPiWind.csv',
+            )
+
+            date_cols = ['PolInceptionDate', 'PolExpiryDate']
+            exposure.account.dataframe[date_cols] = exposure.account.dataframe[date_cols].astype('object')
+
+            exposure.account.dataframe.loc[0, 'PolInceptionDate'] = str(invalid_value)
+            exposure.account.dataframe.loc[0, 'PolExpiryDate'] = '2018-12-31'  # valid control value
+
+            with self.assertRaises(OdsException) as e:
+                exposure.check()
+                self.assertTrue("PolInceptionDate has invalid date formats" in e.msg)
+                self.assertFalse("PolExpiryDate has invalid date formats" in e.msg)
+
+    def test_check_date_valid_cases(self):
+        valid_values = [
+            "2018-01-01",  # valid
+            None,          # empty
+            float('nan'),  # NaN
+            "NaN",         # string NaN
+            "NaT",         # string NaT
+        ]
+
+        for valid_value in valid_values:
+            exposure = OedExposure(
+                location=base_url + '/SourceLocOEDPiWind10.csv',
+                account=base_url + '/SourceAccOEDPiWind.csv',
+                ri_info=base_url + '/SourceReinsInfoOEDPiWind.csv',
+                ri_scope=base_url + '/SourceReinsScopeOEDPiWind.csv',
+            )
+
+            date_cols = ['PolInceptionDate', 'PolExpiryDate']
+            exposure.account.dataframe[date_cols] = exposure.account.dataframe[date_cols].astype('object')
+
+            exposure.account.dataframe.loc[0, 'PolInceptionDate'] = valid_value
+
+            try:
+                exposure.check()
+            except OdsException:
+                self.fail(f"Valid date value {valid_value} incorrectly raised OdsException")
+
     # load non utf-8 file
     def test_load_non_utf8(self):
         config = {'location': str(pathlib.Path(base_test_path, 'non_utf8_loc.csv'))
