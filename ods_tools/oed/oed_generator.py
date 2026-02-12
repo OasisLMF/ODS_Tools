@@ -20,10 +20,7 @@ import json
 import logging
 import os
 import random
-import string
-import sys
 from datetime import datetime, timedelta
-from pathlib import Path
 from typing import Any, Optional
 
 import pandas as pd
@@ -33,6 +30,7 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # OED Schema Access
 # ---------------------------------------------------------------------------
+
 
 def load_oed_schema(oed_version: str) -> dict:
     """Load the OED schema for a given version using the OedSchema class."""
@@ -208,9 +206,9 @@ class DataGenerator:
 
     def _gen_accnumber(self, spec, file_type, row_idx, ctx):
         if file_type == "Loc":
-            return ctx.get("acc_numbers", [f"A{row_idx+1}"])[row_idx % len(ctx.get("acc_numbers", [f"A{row_idx+1}"]))]
+            return ctx.get("acc_numbers", [f"A{row_idx + 1}"])[row_idx % len(ctx.get("acc_numbers", [f"A{row_idx + 1}"]))]
         if file_type == "Acc":
-            return ctx.get("acc_numbers", [f"A{row_idx+1}"])[row_idx % len(ctx.get("acc_numbers", [f"A{row_idx+1}"]))]
+            return ctx.get("acc_numbers", [f"A{row_idx + 1}"])[row_idx % len(ctx.get("acc_numbers", [f"A{row_idx + 1}"]))]
         if file_type == "ReinsScope":
             accs = ctx.get("acc_numbers", ["A1"])
             return self.rng.choice(accs)
@@ -224,7 +222,7 @@ class DataGenerator:
 
     def _gen_polnumber(self, spec, file_type, row_idx, ctx):
         if file_type == "Acc":
-            return ctx.get("pol_numbers", [f"POL{row_idx+1}"])[row_idx % len(ctx.get("pol_numbers", [f"POL{row_idx+1}"]))]
+            return ctx.get("pol_numbers", [f"POL{row_idx + 1}"])[row_idx % len(ctx.get("pol_numbers", [f"POL{row_idx + 1}"]))]
         if file_type == "ReinsScope":
             pols = ctx.get("pol_numbers", [])
             return self.rng.choice(pols) if pols else ""
@@ -317,7 +315,7 @@ class DataGenerator:
 
     def _gen_city(self, spec, file_type, row_idx, ctx):
         cities = ["London", "New York", "Tokyo", "Paris", "Munich", "Zurich",
-                   "Sydney", "Toronto", "Hamilton", "Singapore", "Miami", "Houston"]
+                  "Sydney", "Toronto", "Hamilton", "Singapore", "Miami", "Houston"]
         return self.rng.choice(cities)
 
     def _gen_streetaddress(self, spec, file_type, row_idx, ctx):
@@ -494,7 +492,7 @@ class OEDFileGenerator:
         num_accounts_per_port = global_cfg.get("num_accounts_per_portfolio", 5)
         num_pols_per_account = global_cfg.get("num_policies_per_account", 1)
 
-        self.port_numbers = [f"P{i+1}" for i in range(num_ports)]
+        self.port_numbers = [f"P{i + 1}" for i in range(num_ports)]
 
         # Generate account numbers (flat list)
         self.acc_numbers = []
@@ -691,7 +689,7 @@ class OEDFileGenerator:
         return pd.DataFrame(data)
 
     def _generate_with_integrity(self, field_name: str, field_spec: dict,
-                                  file_type: str, row_idx: int, ctx: dict) -> Any:
+                                 file_type: str, row_idx: int, ctx: dict) -> Any:
         """Generate a value maintaining referential integrity across files."""
 
         # Handle key fields that must be consistent across files
