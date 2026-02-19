@@ -16,8 +16,8 @@ class OutputSet():
     id: int = None
     perspective_code: str = None
     analysis_id: int = None  # link to Analysis
-    groupset_id: int = None  # link to GroupSet
-    exposure_summary_level_fields: List[str] = field(default_factory=lambda: list)
+    groupset_id: List[int] = field(default_factory=lambda: list())  # link to GroupSet
+    exposure_summary_level_fields: List[str] = field(default_factory=lambda: list())
     exposure_summary_level_id: int = None
 
 
@@ -43,19 +43,22 @@ class ResultGroup:
         self.summaryinfo_map = summaryinfo_map
 
 
-def create_combine_group(analyses, groupeventset_fields):
+def create_combine_group(analyses, group_fill_perspectives, groupeventset_fields):
     '''
     Create and prepare a ResultGroup for the analyses. Returns group and group summaryinfo.
 
     Args:
         analyses (dict): Map of analysis_id to anlayses in group.
+        group_fill_perspectives (bool): Enable filling financial perspectives to enable more groupings of output sets.
         groupeventset_fields (list[str]): List of columns used to define groupevenset.
     '''
     group = ResultGroup()
     group.analyses = analyses
 
     group.outputsets, group.analysis_outputset = prepare_outputsets(group.analyses)
-    group.groupset, group.outputsets = prepare_groupset(group.outputsets)
+    group.groupset, group.outputsets = prepare_groupset(group.outputsets,
+                                                        group_fill_perspectives=group_fill_perspectives)
+    breakpoint()
     group.groupeventset = prepare_groupeventset(analyses, groupeventset_fields)
 
     # Handle summaryinfo + alignment
@@ -115,7 +118,35 @@ def _outputset_from_analysis(analysis, outputset_id_offset=0):
     return outputsets, outputset_id
 
 
-def prepare_groupset(outputsets):
+def _fill_perspectives(groupset_outputsets, outputsets, groupset_def_dict,
+                       top_perspective, filler_perspective):
+    '''
+    Implement `group_fill_perspectives` logic. Fill in `top_perspective` with
+    outputsets from missing analyses that are present in `filler_perspective`.
+    '''
+    top_hashes = set(groupset_def_dict[top_perspective].keys())
+    filler_hashes = set(groupset_def_dict[filler_perspective].keys())
+    overlap_hashes = top_hashes & filler_hashes
+
+    for hash in overlap_hashes:
+        top_gs = groupset_def_dict[top_perspective][hash]
+        existing_analyses = [outputsets[os].analysis_id for os in groupset_outputsets[top_gs]]
+
+        filler_gs = groupset_def_dict[filler_perspective][hash]
+
+        for os in groupset_outputsets[filler_gs]:
+            _analysis_id = outputsets[os].analysis_id
+            if _analysis_id in existing_analyses:
+                continue
+
+            groupset_outputsets[top_gs].append(os)
+            existing_analyses.append(_analysis_id)
+            outputsets[os].groupset_id.append(top_gs)
+
+    return groupset_outputsets, outputsets
+
+
+def prepare_groupset(outputsets, group_fill_perspectives=False):
     """
     Prepares the GroupSet info. Needed to create summary info mappings.
 
@@ -130,6 +161,8 @@ def prepare_groupset(outputsets):
     groupset_outputsets = {}
 
     max_groupset_id = 0
+
+    # first pass with no filling
     for os_id, outputset in outputsets.items():
         perspective_code = outputset.perspective_code
         summary_level_hash = hash_summary_level_fields(outputset.exposure_summary_level_fields)
@@ -138,11 +171,26 @@ def prepare_groupset(outputsets):
         if groupset_id is None:
             groupset_def_dict[perspective_code][summary_level_hash] = max_groupset_id
             groupset_outputsets[max_groupset_id] = [os_id]
-            outputsets[os_id].groupset_id = max_groupset_id
+            outputsets[os_id].groupset_id.append(max_groupset_id)
             max_groupset_id += 1
         else:
             groupset_outputsets[groupset_id] += [os_id]
-            outputsets[os_id].groupset_id = groupset_id
+            outputsets[os_id].groupset_id.append(groupset_id)
+
+    # second pass if group_fill_perspectives
+    if group_fill_perspectives:
+        groupset_outputsets, outputsets = _fill_perspectives(groupset_outputsets,
+                                                             outputsets,
+                                                             groupset_def_dict,
+                                                             top_perspective='il',
+                                                             filler_perspective='gul')
+        groupset_outputsets, outputsets = _fill_perspectives(groupset_outputsets,
+                                                             outputsets,
+                                                             groupset_def_dict,
+                                                             top_perspective='ri',
+                                                             filler_perspective='il')
+
+        breakpoint()
 
     groupset_dict = {}
     for key, value in groupset_outputsets.items():
