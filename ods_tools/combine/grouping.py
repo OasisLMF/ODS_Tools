@@ -7,7 +7,7 @@ from collections import defaultdict, namedtuple
 from pathlib import Path
 import pandas as pd
 
-from ods_tools.combine.utils import hash_summary_level_fields
+from ods_tools.combine.utils import SummaryInfoMapKey, hash_summary_level_fields
 
 
 @dataclass
@@ -58,7 +58,6 @@ def create_combine_group(analyses, group_fill_perspectives, groupeventset_fields
     group.outputsets, group.analysis_outputset = prepare_outputsets(group.analyses)
     group.groupset, group.outputsets = prepare_groupset(group.outputsets,
                                                         group_fill_perspectives=group_fill_perspectives)
-    breakpoint()
     group.groupeventset = prepare_groupeventset(analyses, groupeventset_fields)
 
     # Handle summaryinfo + alignment
@@ -190,8 +189,6 @@ def prepare_groupset(outputsets, group_fill_perspectives=False):
                                                              top_perspective='ri',
                                                              filler_perspective='il')
 
-        breakpoint()
-
     groupset_dict = {}
     for key, value in groupset_outputsets.items():
         curr_groupset_dict = {'id': key,
@@ -262,7 +259,7 @@ def prepare_summaryinfo_map(outputset_summaryinfo, groupset_summaryinfo, groupse
         output_set_map = output_set_map.query('~(summary_id == SummaryId)')
 
         if not output_set_map.empty:
-            summaryinfo_map[outputset_id] = output_set_map.set_index('summary_id').to_dict()['SummaryId']
+            summaryinfo_map[SummaryInfoMapKey(groupset_id, outputset_id)] = output_set_map.set_index('summary_id').to_dict()['SummaryId']
 
     return summaryinfo_map
 
