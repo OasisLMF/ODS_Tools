@@ -308,6 +308,18 @@ def apply_summaryid_map(df, groupset_id, outputset_id, summaryinfo_map):
     return df
 
 
+def apply_summaryid_replace(chunk, group_summaryinfo_map):
+    '''
+    Used in `group.apply` to map summaryid.
+    '''
+    _map = group_summaryinfo_map.get(chunk.name, None)
+    if _map is None:
+        return chunk
+
+    chunk['summary_id'] = chunk['summary_id'].map(lambda x: _map.get(x, x))
+    return chunk
+
+
 def loss_sample_mean_only(gpqt, elt_paths):
     assert 'melt' in elt_paths, 'Mean only can only be performed if melt files present.'
 
@@ -385,13 +397,16 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
             if _gplt_fragment is None:  # no fragment
                 continue
 
-            _gplt_fragment["groupset_id"] = os.groupset_id
-
             _gplt_fragment = _filter_missing_summaryids(_gplt_fragment, outputset_id)
 
-            _gplt_fragment = apply_summaryid_map(_gplt_fragment, outputset_id,
-                                                 group.summaryinfo_map)
+            original_len = len(_gplt_fragment)
+            index_repeats = np.repeat(np.arange(original_len), len(os.groupset_id))
+            _gplt_fragment = _gplt_fragment.iloc[index_repeats].reset_index(drop=True)
+            _gplt_fragment['groupset_id'] = np.tile(os.groupset_id, original_len)
 
+            # Apply summaryid map
+            groups = _gplt_fragment.groupby(["groupset_id", "outputset_id"])
+            _gplt_fragment['SummaryId'] = groups.apply(apply_summaryid_replace, group_summaryinfo_map=group.summaryinfo_map)
             gplt_fragments.append(_gplt_fragment)
 
             if curr_gpqt.empty:  # finished processing
