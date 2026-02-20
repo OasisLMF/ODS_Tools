@@ -1,4 +1,5 @@
 from collections import defaultdict
+from ods_tools.combine.utils import SummaryInfoMapKey
 from ods_tools.oed.common import OdsException
 import pandas as pd
 import numpy as np
@@ -265,16 +266,20 @@ def do_loss_sampling_mean_only(gpqt, group):
 
         filtered_gpqt = gpqt.query(f'outputset_id == {outputset_id}')
         gplt_fragment = loss_sample_mean_only(filtered_gpqt, elt_paths)
-        gplt_fragment['groupset_id'] = os.groupset_id
-
         # filter na summaryids (no eventid in elt file)
         gplt_fragment = _filter_missing_summaryids(gplt_fragment, outputset_id)
 
-        # do summary id mapping
-        gplt_fragment = apply_summaryid_map(gplt_fragment, outputset_id,
-                                            group.summaryinfo_map)
+        for gs_id in os.groupset_id:
+            gplt_fragment['groupset_id'] = os.groupset_id
+            _gplt_fragment = gplt_fragment.copy()
+            _gplt_fragment['groupset_id'] = gs_id
 
-        gplt_fragments.append(gplt_fragment)
+            # do summary id mapping
+            _gplt_fragment = apply_summaryid_map(_gplt_fragment, gs_id,
+                                                 outputset_id,
+                                                 group.summaryinfo_map)
+
+            gplt_fragments.append(_gplt_fragment)
 
     gplt = pd.concat(gplt_fragments, ignore_index=True)
 
@@ -290,9 +295,9 @@ def _filter_missing_summaryids(df, outputset_id=None):
     return df
 
 
-def apply_summaryid_map(df, outputset_id, summaryinfo_map):
+def apply_summaryid_map(df, groupset_id, outputset_id, summaryinfo_map):
     if summaryinfo_map is not None:
-        summaryid_map = summaryinfo_map.get(outputset_id, None)
+        summaryid_map = summaryinfo_map.get(SummaryInfoMapKey(groupset_id, outputset_id), None)
     else:
         summaryid_map = None
 

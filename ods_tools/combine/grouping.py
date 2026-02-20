@@ -23,7 +23,7 @@ class OutputSet():
 
 class ResultGroup:
     """
-    A class for managing and running the grouping for a set of ORD analyses.
+    Container class for managing the grouping of ORD analyses.
 
     Args:
         analyses (list[Analysis]): List of analyses to group together.
