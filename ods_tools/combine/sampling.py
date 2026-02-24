@@ -1,5 +1,4 @@
 from collections import defaultdict
-from ods_tools.combine.utils import SummaryInfoMapKey
 from ods_tools.oed.common import OdsException
 import pandas as pd
 import numpy as np
@@ -269,11 +268,13 @@ def do_loss_sampling_mean_only(gpqt, group):
 
         # filter na summaryids (no eventid in elt file)
         gplt_fragment = _filter_missing_summaryids(gplt_fragment, outputset_id)
+        gplt_fragment = _fix_col_types(gplt_fragment)
         gplt_fragment = _duplicate_gplt_per_groupset(gplt_fragment, os)
 
         # Apply summaryid map
-        groups = gplt_fragment.groupby(["groupset_id", "outputset_id"])
-        gplt_fragment['SummaryId'] = groups.apply(apply_summaryid_replace, group_summaryinfo_map=group.summaryinfo_map)
+        groups = gplt_fragment.groupby(["groupset_id", "outputset_id"], group_keys=False)
+        gplt_fragment['SummaryId'] = groups.apply(apply_summaryid_replace,
+                                                  group_summaryinfo_map=group.summaryinfo_map)['SummaryId']
 
         gplt_fragments.append(gplt_fragment)
 
@@ -286,8 +287,14 @@ def _filter_missing_summaryids(df, outputset_id=None):
     missing_summary_ids = df["SummaryId"].isna()
     if not df[missing_summary_ids].empty:
         logger.info(f"Output set {outputset_id} has {missing_summary_ids.sum()} missing group events.")
-    df = df[~missing_summary_ids].reset_index()
+    df = df[~missing_summary_ids].reset_index(drop=True)
 
+    return df
+
+
+def _fix_col_types(df):
+    cols_to_fix = ["SummaryId", "EventId", "LossType"]
+    df[cols_to_fix] = df[cols_to_fix].astype(int)
     return df
 
 
@@ -311,7 +318,7 @@ def apply_summaryid_replace(chunk, group_summaryinfo_map):
     if _map is None:
         return chunk
 
-    chunk['summary_id'] = chunk['summary_id'].map(lambda x: _map.get(x, x))
+    chunk['SummaryId'] = chunk['SummaryId'].map(lambda x: _map.get(x, x))
     return chunk
 
 
@@ -393,11 +400,13 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
                 continue
 
             _gplt_fragment = _filter_missing_summaryids(_gplt_fragment, outputset_id)
+            _gplt_fragment = _fix_col_types(_gplt_fragment)
             _gplt_fragment = _duplicate_gplt_per_groupset(_gplt_fragment, os)
 
             # Apply summaryid map
-            groups = _gplt_fragment.groupby(["groupset_id", "outputset_id"])
-            _gplt_fragment['SummaryId'] = groups.apply(apply_summaryid_replace, group_summaryinfo_map=group.summaryinfo_map)
+            groups = _gplt_fragment.groupby(["groupset_id", "outputset_id"], group_keys=False)
+            _gplt_fragment['SummaryId'] = groups.apply(apply_summaryid_replace,
+                                                       group_summaryinfo_map=group.summaryinfo_map)['SummaryId']
             gplt_fragments.append(_gplt_fragment)
 
             if curr_gpqt.empty:  # finished processing
