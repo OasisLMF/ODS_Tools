@@ -1,5 +1,6 @@
 from pathlib import Path
 import tempfile
+from ods_tools.combine.utils import SummaryInfoMapKey
 import pytest
 from collections import namedtuple
 import pandas as pd
@@ -108,7 +109,7 @@ def prepared_group_example():
     analysis_dirs = [example_path / 'inputs/1', example_path / 'inputs/2']
     analyses = load_analysis_dirs(analysis_dirs)
 
-    group, _ = create_combine_group(analyses,
+    group, _ = create_combine_group(analyses, group_fill_perspectives=False,
                                     groupeventset_fields=DEFAULT_CONFIG['group_event_set_fields'])
 
     return group
@@ -123,8 +124,8 @@ def test_combine__groupset_and_summaryinfo(prepared_group_example):
                              'perspective_code': 'gul'}}
 
     expected_summaryinfo_map = {
-        1: {2: 3, 3: 6, 4: 9, 5: 10},
-        3: {1: 2, 2: 4, 3: 5, 4: 7, 5: 8}
+        SummaryInfoMapKey(groupset_id=1, outputset_id=1): {2: 3, 3: 6, 4: 9, 5: 10},
+        SummaryInfoMapKey(groupset_id=1, outputset_id=3): {1: 2, 2: 4, 3: 5, 4: 7, 5: 8}
     }
 
     groupset = prepared_group_example.groupset
