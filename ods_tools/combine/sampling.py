@@ -303,19 +303,6 @@ def _duplicate_gplt_per_groupset(gplt, outputset):
     return gplt
 
 
-def apply_summaryid_map(df, groupset_id, outputset_id, summaryinfo_map):
-    if summaryinfo_map is not None:
-        summaryid_map = summaryinfo_map.get(SummaryInfoMapKey(groupset_id, outputset_id), None)
-    else:
-        summaryid_map = None
-
-    if summaryid_map is not None:
-        df["SummaryId"] = (df["SummaryId"].map(summaryid_map)
-                           .fillna(df["SummaryId"]))
-
-    return df
-
-
 def apply_summaryid_replace(chunk, group_summaryinfo_map):
     '''
     Used in `group.apply` to map summaryid.
