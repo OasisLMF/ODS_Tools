@@ -230,17 +230,17 @@ def do_loss_sampling(gpqt,
         logger.error("No loss sampling. Please set `group_mean` or `secondary_uncertainty`.")
         raise OdsException('No loss sampling specified.')
 
-    gplt = None
+    gplts = []
     if mean_only:
         logger.info("Loss sampling: mean only")
-        gplt = do_loss_sampling_mean_only(gpqt, group)
+        gplts.append(do_loss_sampling_mean_only(gpqt, group))
 
     if secondary_uncertainty:
-        _gplt = do_loss_sampling_secondary_uncertainty(gpqt, group,
-                                                       format_priority=format_priority,
-                                                       parametric_distribution=parametric_distribution)
+        gplts.append(do_loss_sampling_secondary_uncertainty(gpqt, group,
+                                                            format_priority=format_priority,
+                                                            parametric_distribution=parametric_distribution))
 
-        gplt = _gplt if gplt is None else pd.concat([gplt, _gplt], ignore_index=True)
+    gplt = pd.concat(gplts, ignore_index=True)
 
     return gplt.astype(gplt_dtype)[gplt_dtype.keys()]
 
