@@ -1,6 +1,5 @@
 from pathlib import Path
 import tempfile
-from ods_tools.combine.utils import SummaryInfoMapKey
 import pytest
 from collections import namedtuple
 import pandas as pd
@@ -125,8 +124,8 @@ def test_combine__groupset_and_summaryinfo(prepared_group_example):
                              'perspective_code': 'gul'}}
 
     expected_summaryinfo_map = {
-        SummaryInfoMapKey(groupset_id=1, outputset_id=1): {2: 3, 3: 6, 4: 9, 5: 10},
-        SummaryInfoMapKey(groupset_id=1, outputset_id=3): {1: 2, 2: 4, 3: 5, 4: 7, 5: 8}
+        (1, 1): {2: 3, 3: 6, 4: 9, 5: 10},
+        (1, 3): {1: 2, 2: 4, 3: 5, 4: 7, 5: 8}
     }
 
     groupset = prepared_group_example.groupset
@@ -160,14 +159,10 @@ def test_combine__groupset_and_summaryinfo__group_fill_perspective():
                              'id': 3, 'outputsets': [7, 1, 3],
                              'perspective_code': 'il'}}
 
-    expected_summaryinfo_map = {SummaryInfoMapKey(groupset_id=1, outputset_id=1):
-                                {2: 3, 3: 6, 4: 9, 5: 10},
-                                SummaryInfoMapKey(groupset_id=1, outputset_id=3):
-                                    {1: 2, 2: 4, 3: 5, 4: 7, 5: 8},
-                                SummaryInfoMapKey(groupset_id=3, outputset_id=1):
-                                    {2: 3, 3: 6, 4: 9, 5: 10},
-                                SummaryInfoMapKey(groupset_id=3, outputset_id=3):
-                                    {1: 2, 2: 4, 3: 5, 4: 7, 5: 8}}
+    expected_summaryinfo_map = {(1, 1): {2: 3, 3: 6, 4: 9, 5: 10},
+                                (1, 3): {1: 2, 2: 4, 3: 5, 4: 7, 5: 8},
+                                (3, 1): {2: 3, 3: 6, 4: 9, 5: 10},
+                                (3, 3): {1: 2, 2: 4, 3: 5, 4: 7, 5: 8}}
 
     group, _ = create_combine_group(analyses, group_fill_perspectives=True,
                                     groupeventset_fields=DEFAULT_CONFIG['group_event_set_fields'])
