@@ -229,17 +229,17 @@ def do_loss_sampling(gpqt,
         logger.error("No loss sampling. Please set `group_mean` or `secondary_uncertainty`.")
         raise OdsException('No loss sampling specified.')
 
-    gplt = None
+    gplts = []
     if mean_only:
         logger.info("Loss sampling: mean only")
-        gplt = do_loss_sampling_mean_only(gpqt, group)
+        gplts.append(do_loss_sampling_mean_only(gpqt, group))
 
     if secondary_uncertainty:
-        _gplt = do_loss_sampling_secondary_uncertainty(gpqt, group,
-                                                       format_priority=format_priority,
-                                                       parametric_distribution=parametric_distribution)
+        gplts.append(do_loss_sampling_secondary_uncertainty(gpqt, group,
+                                                            format_priority=format_priority,
+                                                            parametric_distribution=parametric_distribution))
 
-        gplt = _gplt if gplt is None else pd.concat([gplt, _gplt], ignore_index=True)
+    gplt = pd.concat(gplts, ignore_index=True)
 
     return gplt.astype(gplt_dtype)[gplt_dtype.keys()]
 
@@ -265,14 +265,16 @@ def do_loss_sampling_mean_only(gpqt, group):
 
         filtered_gpqt = gpqt.query(f'outputset_id == {outputset_id}')
         gplt_fragment = loss_sample_mean_only(filtered_gpqt, elt_paths)
-        gplt_fragment['groupset_id'] = os.groupset_id
 
         # filter na summaryids (no eventid in elt file)
         gplt_fragment = _filter_missing_summaryids(gplt_fragment, outputset_id)
+        gplt_fragment = _fix_col_types(gplt_fragment)
+        gplt_fragment = _duplicate_gplt_per_groupset(gplt_fragment, os)
 
-        # do summary id mapping
-        gplt_fragment = apply_summaryid_map(gplt_fragment, outputset_id,
-                                            group.summaryinfo_map)
+        # Apply summaryid map
+        groups = gplt_fragment.groupby(["groupset_id", "outputset_id"], group_keys=False)
+        gplt_fragment['SummaryId'] = groups.apply(apply_summaryid_replace,
+                                                  group_summaryinfo_map=group.summaryinfo_map)['SummaryId']
 
         gplt_fragments.append(gplt_fragment)
 
@@ -285,22 +287,39 @@ def _filter_missing_summaryids(df, outputset_id=None):
     missing_summary_ids = df["SummaryId"].isna()
     if not df[missing_summary_ids].empty:
         logger.info(f"Output set {outputset_id} has {missing_summary_ids.sum()} missing group events.")
-    df = df[~missing_summary_ids].reset_index()
+    df = df[~missing_summary_ids].reset_index(drop=True)
 
     return df
 
 
-def apply_summaryid_map(df, outputset_id, summaryinfo_map):
-    if summaryinfo_map is not None:
-        summaryid_map = summaryinfo_map.get(outputset_id, None)
-    else:
-        summaryid_map = None
-
-    if summaryid_map is not None:
-        df["SummaryId"] = (df["SummaryId"].map(summaryid_map)
-                           .fillna(df["SummaryId"]))
-
+def _fix_col_types(df):
+    cols_to_fix = ["SummaryId", "EventId", "LossType"]
+    df[cols_to_fix] = df[cols_to_fix].astype(int)
     return df
+
+
+def _duplicate_gplt_per_groupset(gplt, outputset):
+    '''
+    Duplicates the gplt fragment based on the number of groupsets in the outputset.
+    '''
+    original_len = len(gplt)
+    index_repeats = np.repeat(np.arange(original_len), len(outputset.groupset_id))
+    gplt = gplt.iloc[index_repeats].reset_index(drop=True)
+    gplt['groupset_id'] = np.tile(outputset.groupset_id, original_len)
+
+    return gplt
+
+
+def apply_summaryid_replace(chunk, group_summaryinfo_map):
+    '''
+    Used in `group.apply` to map summaryid.
+    '''
+    _map = group_summaryinfo_map.get(chunk.name, None)
+    if _map is None:
+        return chunk
+
+    chunk['SummaryId'] = chunk['SummaryId'].map(lambda x: _map.get(x, x))
+    return chunk
 
 
 def loss_sample_mean_only(gpqt, elt_paths):
@@ -380,13 +399,14 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
             if _gplt_fragment is None:  # no fragment
                 continue
 
-            _gplt_fragment["groupset_id"] = os.groupset_id
-
             _gplt_fragment = _filter_missing_summaryids(_gplt_fragment, outputset_id)
+            _gplt_fragment = _fix_col_types(_gplt_fragment)
+            _gplt_fragment = _duplicate_gplt_per_groupset(_gplt_fragment, os)
 
-            _gplt_fragment = apply_summaryid_map(_gplt_fragment, outputset_id,
-                                                 group.summaryinfo_map)
-
+            # Apply summaryid map
+            groups = _gplt_fragment.groupby(["groupset_id", "outputset_id"], group_keys=False)
+            _gplt_fragment['SummaryId'] = groups.apply(apply_summaryid_replace,
+                                                       group_summaryinfo_map=group.summaryinfo_map)['SummaryId']
             gplt_fragments.append(_gplt_fragment)
 
             if curr_gpqt.empty:  # finished processing
