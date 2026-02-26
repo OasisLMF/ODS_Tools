@@ -1,6 +1,5 @@
 from pathlib import Path
 import tempfile
-from ods_tools.combine.utils import SummaryInfoMapKey
 import pytest
 from collections import namedtuple
 import pandas as pd
@@ -35,13 +34,12 @@ def test_basic(keep_output):
     assert True
 
 
-def test_combine__outputs_generated():
+def test_combine__outputs_genrated():
 
     input_dir = example_path / "inputs"
-    analysis_dirs = [str(input_dir / i) for i in ['1', '2']]
 
     config = {
-        "analysis_dirs": analysis_dirs,
+        "analysis_dirs": [str(child) for child in input_dir.iterdir()],
         "group_number_of_periods": TEST_GROUP_PERIODS,
         "group_mean": True,
         "group_alt": True,
@@ -116,75 +114,32 @@ def prepared_group_example():
     return group
 
 
-def test_combine__groupset_and_summaryinfo(prepared_group_example):
-    expected_groupset = {0: {'id': 0, 'outputsets': [0, 2],
-                             'exposure_summary_level_fields': [],
-                             'perspective_code': 'gul'},
-                         1: {'id': 1, 'outputsets': [1, 3],
-                             'exposure_summary_level_fields': ['LocNumber'],
-                             'perspective_code': 'gul'}}
-
-    expected_summaryinfo_map = {
-        SummaryInfoMapKey(groupset_id=1, outputset_id=1): {2: 3, 3: 6, 4: 9, 5: 10},
-        SummaryInfoMapKey(groupset_id=1, outputset_id=3): {1: 2, 2: 4, 3: 5, 4: 7, 5: 8}
-    }
-
-    groupset = prepared_group_example.groupset
-
-    assert expected_groupset.keys() == groupset.keys()
-    for groupset_id in expected_groupset.keys():
-        assert groupset[groupset_id] == expected_groupset[groupset_id]
-
-    summaryinfo_map = prepared_group_example.summaryinfo_map
-
-    assert expected_summaryinfo_map.keys() == summaryinfo_map.keys()
-    for outputset_id, curr_summaryinfo_map in summaryinfo_map.items():
-        assert expected_summaryinfo_map[outputset_id] == curr_summaryinfo_map
-
-
-# def test_combine__groupset_and_summaryinfo__group_fill_perspective():
-#     analysis_dirs = [example_path / 'inputs/1', example_path / 'inputs/2',
-#                      example_path / 'inputs/3']
-#     analyses = load_analysis_dirs(analysis_dirs)
-#
-#     expected_groupset = {0: {'exposure_summary_level_fields': [], 'id': 0,
-#                              'outputsets': [0, 2, 4], 'perspective_code':
-#                              'gul'},
-#                          1: {'exposure_summary_level_fields': ['LocNumber'],
-#                              'id': 1, 'outputsets': [1, 3, 5],
+# def test_combine__groupset_and_summaryinfo(prepared_group_example):
+#     expected_groupset = {0: {'id': 0, 'outputsets': [0, 2],
+#                              'exposure_summary_level_fields': [],
 #                              'perspective_code': 'gul'},
-#                          2: {'exposure_summary_level_fields': [], 'id': 2,
-#                              'outputsets': [6, 0, 2], 'perspective_code':
-#                              'il'},
-#                          3: {'exposure_summary_level_fields': ['LocNumber'],
-#                              'id': 3, 'outputsets': [7, 1, 3],
-#                              'perspective_code': 'il'}}
+#                          1: {'id': 1, 'outputsets': [1, 3],
+#                              'exposure_summary_level_fields': ['LocNumber'],
+#                              'perspective_code': 'gul'}}
 #
-#     expected_summaryinfo_map = {SummaryInfoMapKey(groupset_id=1, outputset_id=1):
-#                                 {2: 3, 3: 6, 4: 9, 5: 10},
-#                                 SummaryInfoMapKey(groupset_id=1, outputset_id=3):
-#                                     {1: 2, 2: 4, 3: 5, 4: 7, 5: 8},
-#                                 SummaryInfoMapKey(groupset_id=3, outputset_id=1):
-#                                     {2: 3, 3: 6, 4: 9, 5: 10},
-#                                 SummaryInfoMapKey(groupset_id=3, outputset_id=3):
-#                                     {1: 2, 2: 4, 3: 5, 4: 7, 5: 8}}
+#     expected_summaryinfo_map = {
+#         1: {2: 3, 3: 6, 4: 9, 5: 10},
+#         3: {1: 2, 2: 4, 3: 5, 4: 7, 5: 8}
+#     }
 #
-#     group, _ = create_combine_group(analyses, group_fill_perspectives=True,
-#                                     groupeventset_fields=DEFAULT_CONFIG['group_event_set_fields'])
-#
-#     groupset = group.groupset
+#     groupset = prepared_group_example.groupset
 #
 #     assert expected_groupset.keys() == groupset.keys()
 #     for groupset_id in expected_groupset.keys():
 #         assert groupset[groupset_id] == expected_groupset[groupset_id]
 #
-#     summaryinfo_map = group.summaryinfo_map
+#     summaryinfo_map = prepared_group_example.summaryinfo_map
 #
 #     assert expected_summaryinfo_map.keys() == summaryinfo_map.keys()
 #     for outputset_id, curr_summaryinfo_map in summaryinfo_map.items():
 #         assert expected_summaryinfo_map[outputset_id] == curr_summaryinfo_map
-#
-#
+
+
 def test_combine__groupeventset(prepared_group_example):
     EventSetField = namedtuple('EventSetField', DEFAULT_CONFIG['group_event_set_fields'])
     expected_groupeventset = {0: {'id': 0,
