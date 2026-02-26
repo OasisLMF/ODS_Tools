@@ -35,12 +35,13 @@ def test_basic(keep_output):
     assert True
 
 
-def test_combine__outputs_genrated():
+def test_combine__outputs_generated():
 
     input_dir = example_path / "inputs"
+    analysis_dirs = [str(input_dir / i) for i in ['1', '2']]
 
     config = {
-        "analysis_dirs": [str(child) for child in input_dir.iterdir()],
+        "analysis_dirs": analysis_dirs,
         "group_number_of_periods": TEST_GROUP_PERIODS,
         "group_mean": True,
         "group_alt": True,
