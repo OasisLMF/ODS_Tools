@@ -55,17 +55,15 @@ class DownloadSpecODSBase:
     def run(self):
         # Install all releases
         print(f'Install all versions from url: {self.url}')
-        print(f'src_path_attr: {self.src_path_attr}')
         tags = self.get_all_tags()
         data = {}
         for tag in tags:
             try:
                 download_path = os.path.join(getattr(self, self.src_path_attr), 'ods_tools', 'data', self.filename.format(tag))
 
-                if skip_if_present:
-                    if os.path.isfile(download_path):
-                        print(f'Skipping {tag}')
-                        continue
+                if self.skip_if_present and os.path.isfile(download_path):
+                    print(f'Tag: {tag} already present, skipping.')
+                    continue
 
                 url = self.url + f"{tag}/{self.filename.format('')}"
                 req = urllib.request.Request(url)
