@@ -39,6 +39,7 @@ def get_extra_requirements():
     with io.open(os.path.join(SCRIPT_DIR, 'requirements-extra.in'), encoding='utf-8') as extrareqs:
         return extrareqs.readlines()
 
+
 class DownloadSpecODSBase:
     """Base class for supporting downloading OEDSpec
     """
@@ -115,6 +116,7 @@ class DownloadSpecODSEditable(DownloadSpecODSBase, editable_wheel):
     def run(self):
         DownloadSpecODSBase.run(self)
         editable_wheel.run(self)
+
 
 class DownloadSpecODS(DownloadSpecODSBase, install):
     """A custom command to download a JSON ODS spec during installation.
