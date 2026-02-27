@@ -5,6 +5,8 @@ import setuptools
 from urllib.error import HTTPError
 
 import setuptools.command.install as orig
+from setuptools.command.install import install
+from setuptools.command.editable_wheel import editable_wheel
 
 import urllib.request
 import json
@@ -37,6 +39,80 @@ def get_extra_requirements():
     with io.open(os.path.join(SCRIPT_DIR, 'requirements-extra.in'), encoding='utf-8') as extrareqs:
         return extrareqs.readlines()
 
+class DownloadSpecODSBase:
+    """A custom command to download a JSON ODS spec during installation.
+
+        Example Install:
+            pip install -v . --install-option="--local-oed-spec=<path>" .
+
+    """
+    description = 'Download a ODS JSON spec file from a release URL.'
+
+    def __init__(self, *args, **kwargs):
+        self.filename = 'OpenExposureData_{}Spec.json'
+        self.ods_repo = 'OasisLMF/ODS_OpenExposureData'
+        self.url = f'https://github.com/{self.ods_repo}/releases/download/'
+        self.github_token = os.environ.get('GITHUB_TOKEN', None)
+        self.src_path_attr = None
+
+    def run(self):
+        # Install all releases
+        print(f'Install all versions from url: {self.url}')
+        print(f'src_path_attr: {self.src_path_attr}')
+        tags = self.get_all_tags()
+        data = {}
+        for tag in tags:
+            try:
+                url = self.url + f"{tag}/{self.filename.format('')}"
+                req = urllib.request.Request(url)
+                if self.github_token:
+                    req.add_header('Authorization', f'token {self.github_token}')
+
+                response = urllib.request.urlopen(req)
+                data = json.loads(response.read())
+                data['version'] = tag
+
+                download_path = os.path.join(getattr(self, self.src_path_attr), 'ods_tools', 'data', self.filename.format(tag))
+                with open(download_path, 'w+') as f:
+                    json.dump(data, f)
+
+            except HTTPError:
+                print(f'No OED associated with {tag}: {url}')
+
+    def get_all_tags(self):
+        """Fetch all release tags from GitHub API."""
+        tags = []
+        page = 1
+        while True:
+            api_url = f"https://api.github.com/repos/{self.ods_repo}/tags?per_page=100&page={page}"
+            req = urllib.request.Request(api_url)
+            if self.github_token:
+                req.add_header('Authorization', f'token {self.github_token}')
+
+            with urllib.request.urlopen(req) as response:
+                data = json.load(response)
+            if not data:
+                break
+            tags.extend([t['name'] for t in data if 'rc' not in t['name']])
+            page += 1
+        return tags
+
+
+class DownloadSpecODSEditable(DownloadSpecODSBase, editable_wheel):
+    """A custom command to download a JSON ODS spec during installation.
+
+        Example Install:
+            pip install -v . --install-option="--local-oed-spec=<path>" .
+
+    """
+    def __init__(self, *args, **kwargs):
+        DownloadSpecODSBase.__init__(self, *args, **kwargs)
+        editable_wheel.__init__(self, *args, **kwargs)
+        self.src_path_attr = 'project_dir'
+
+    def run(self):
+        DownloadSpecODSBase.run(self)
+        editable_wheel.run(self)
 
 class DownloadSpecODS(orig.install):
     """A custom command to download a JSON ODS spec during installation.
@@ -156,5 +232,6 @@ setuptools.setup(
     url='https://github.com/OasisLMF/OpenDataStandards',
     cmdclass={
         'install': DownloadSpecODS,
+        'editable_wheel': DownloadSpecODSEditable
     },
 )
