@@ -2,7 +2,7 @@ pandas
 pyarrow>=13.0.0
 numba
 scipy
-chardet
+chardet<=5.2.0
 jsonschema>=4.0.1
 jsonref
 oasis-data-manager

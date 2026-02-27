@@ -9,7 +9,7 @@ import tqdm
 from pathlib import Path
 from collections.abc import Iterable
 
-from .common import (OdsException, OED_PERIL_COLUMNS, OED_IDENTIFIER_FIELDS, DEFAULT_VALIDATION_CONFIG, CLASS_OF_BUSINESSES,
+from .common import (OED_DATE_COLUMNS, OdsException, OED_PERIL_COLUMNS, OED_IDENTIFIER_FIELDS, DEFAULT_VALIDATION_CONFIG, CLASS_OF_BUSINESSES,
                      VALIDATOR_ON_ERROR_ACTION, BLANK_VALUES, is_empty)
 from .oed_schema import OedSchema
 
@@ -354,6 +354,43 @@ class Validator:
                                      'msg': f"Conditionally required column missing .\n"
                                      f"{missing_data_df[identifier_field + ['missing value']]}"})
 
+        return invalid_data
+
+    def check_dates(self):
+        """
+        Checks all OED_DATE_COLUMNS for correct YYYY-MM-DD ISO-8601 formatting.
+        This is required for any lexicographical string comparison checks between dates.
+        """
+        invalid_data = []
+        for oed_source in self.exposure.get_oed_sources():
+            identifier_field = self.identifier_field_maps[oed_source]
+            if oed_source.dataframe.empty:
+                continue
+            for column in oed_source.dataframe.columns.intersection(set(OED_DATE_COLUMNS)):
+                col_series = oed_source.dataframe[column]
+                str_series = col_series.astype(str)
+
+                # Empty/NaN/NaT/None columns
+                is_empty = col_series.isna() | str_series.str.lower().isin(['nan', 'nat', ''])
+
+                # String matches regex of YYYY-MM-DD
+                regex_match = str_series.str.match(r'^\d{4}-\d{2}-\d{2}$', na=False)
+
+                # Checks is a valid date
+                parsed = pd.to_datetime(str_series, format='%Y-%m-%d', errors='coerce')
+
+                # Invalid mask: (doesn't match regex OR doesn't parse correctly) AND not empty
+                invalid_mask = (~regex_match | parsed.isna()) & ~is_empty
+
+                if invalid_mask.any():
+                    invalid_rows = oed_source.dataframe[invalid_mask].copy()
+
+                    invalid_data.append({
+                        'name': oed_source.oed_name,
+                        'source': oed_source.current_source,
+                        'msg': f"{column} has invalid date formats (expected YYYY-MM-DD).\n"
+                        f"{invalid_rows[identifier_field + [column]]}"
+                    })
         return invalid_data
 
     def check_oedversion_consistency(self):
