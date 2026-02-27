@@ -40,11 +40,7 @@ def get_extra_requirements():
         return extrareqs.readlines()
 
 class DownloadSpecODSBase:
-    """A custom command to download a JSON ODS spec during installation.
-
-        Example Install:
-            pip install -v . --install-option="--local-oed-spec=<path>" .
-
+    """Base class for supporting downloading OEDSpec
     """
     description = 'Download a ODS JSON spec file from a release URL.'
 
@@ -54,6 +50,7 @@ class DownloadSpecODSBase:
         self.url = f'https://github.com/{self.ods_repo}/releases/download/'
         self.github_token = os.environ.get('GITHUB_TOKEN', None)
         self.src_path_attr = None
+        self.skip_if_present = False
 
     def run(self):
         # Install all releases
@@ -63,6 +60,13 @@ class DownloadSpecODSBase:
         data = {}
         for tag in tags:
             try:
+                download_path = os.path.join(getattr(self, self.src_path_attr), 'ods_tools', 'data', self.filename.format(tag))
+
+                if skip_if_present:
+                    if os.path.isfile(download_path):
+                        print(f'Skipping {tag}')
+                        continue
+
                 url = self.url + f"{tag}/{self.filename.format('')}"
                 req = urllib.request.Request(url)
                 if self.github_token:
@@ -72,7 +76,6 @@ class DownloadSpecODSBase:
                 data = json.loads(response.read())
                 data['version'] = tag
 
-                download_path = os.path.join(getattr(self, self.src_path_attr), 'ods_tools', 'data', self.filename.format(tag))
                 with open(download_path, 'w+') as f:
                     json.dump(data, f)
 
@@ -109,6 +112,7 @@ class DownloadSpecODSEditable(DownloadSpecODSBase, editable_wheel):
         DownloadSpecODSBase.__init__(self, *args, **kwargs)
         editable_wheel.__init__(self, *args, **kwargs)
         self.src_path_attr = 'project_dir'
+        self.skip_if_present = True
 
     def run(self):
         DownloadSpecODSBase.run(self)
