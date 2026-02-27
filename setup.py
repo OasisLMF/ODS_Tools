@@ -107,6 +107,7 @@ class DownloadSpecODSEditable(DownloadSpecODSBase, editable_wheel):
             pip install -v . --install-option="--local-oed-spec=<path>" .
 
     """
+
     def __init__(self, *args, **kwargs):
         DownloadSpecODSBase.__init__(self, *args, **kwargs)
         editable_wheel.__init__(self, *args, **kwargs)
