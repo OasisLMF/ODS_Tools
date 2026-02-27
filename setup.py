@@ -116,27 +116,24 @@ class DownloadSpecODSEditable(DownloadSpecODSBase, editable_wheel):
         DownloadSpecODSBase.run(self)
         editable_wheel.run(self)
 
-class DownloadSpecODS(orig.install):
+class DownloadSpecODS(DownloadSpecODSBase, install):
     """A custom command to download a JSON ODS spec during installation.
 
         Example Install:
             pip install -v . --install-option="--local-oed-spec=<path>" .
 
     """
-    description = 'Download a ODS JSON spec file from a release URL.'
-    user_options = orig.install.user_options + [
+    user_options = install.user_options + [
         ('local-oed-spec=', None, 'Override to build package with extracted spec (filepath)'),
     ]
 
     def __init__(self, *args, **kwargs):
-        self.filename = 'OpenExposureData_{}Spec.json'
-        self.ods_repo = 'OasisLMF/ODS_OpenExposureData'
-        self.url = f'https://github.com/{self.ods_repo}/releases/download/'
-        self.github_token = os.environ.get('GITHUB_TOKEN', None)
-        orig.install.__init__(self, *args, **kwargs)
+        DownloadSpecODSBase.__init__(self, *args, **kwargs)
+        install.__init__(self, *args, **kwargs)
+        self.src_path_attr = 'build_lib'
 
     def initialize_options(self):
-        orig.install.initialize_options(self)
+        install.initialize_options(self)
         self.local_oed_spec = None
 
     def finalize_options(self):
@@ -144,30 +141,10 @@ class DownloadSpecODS(orig.install):
         if self.local_oed_spec is not None:
             if not os.path.isfile(self.local_oed_spec):
                 raise ValueError(f"Local OED Spec '{self.local_oed_spec}' not found")
-        orig.install.finalize_options(self)
+        install.finalize_options(self)
 
     def run(self):
-        # Install all releases
-        print(f'Install all versions from url: {self.url}')
-        tags = self.get_all_tags()
-        data = {}
-        for tag in tags:
-            try:
-                url = self.url + f"{tag}/{self.filename.format('')}"
-                req = urllib.request.Request(url)
-                if self.github_token:
-                    req.add_header('Authorization', f'token {self.github_token}')
-
-                response = urllib.request.urlopen(req)
-                data = json.loads(response.read())
-                data['version'] = tag
-
-                download_path = os.path.join(self.build_lib, 'ods_tools', 'data', self.filename.format(tag))
-                with open(download_path, 'w+') as f:
-                    json.dump(data, f)
-
-            except HTTPError:
-                print(f'No OED associated with {tag}: {url}')
+        DownloadSpecODSBase.run(self)
 
         if self.local_oed_spec:
             # Install with local json spec
@@ -180,25 +157,7 @@ class DownloadSpecODS(orig.install):
                     json.dump(data, f)
                 data['version'] = 'DEV'
 
-        orig.install.run(self)
-
-    def get_all_tags(self):
-        """Fetch all release tags from GitHub API."""
-        tags = []
-        page = 1
-        while True:
-            api_url = f"https://api.github.com/repos/{self.ods_repo}/tags?per_page=100&page={page}"
-            req = urllib.request.Request(api_url)
-            if self.github_token:
-                req.add_header('Authorization', f'token {self.github_token}')
-
-            with urllib.request.urlopen(req) as response:
-                data = json.load(response)
-            if not data:
-                break
-            tags.extend([t['name'] for t in data if 'rc' not in t['name']])
-            page += 1
-        return tags
+        install.run(self)
 
 
 version = get_version()
