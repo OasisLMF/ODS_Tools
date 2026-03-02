@@ -34,16 +34,21 @@ Each analysis directory must contain:
 
 ```
 analysis_dir/
-├── analysis_settings.json    # Analysis configuration with model settings
 ├── input/
 │   └── occurrence.bin        # Binary occurrence file (event-period mapping)
 └── output/
+    ├── analysis_settings.json    # Analysis configuration with model settings
     ├── gul_S1_summary-info.csv    # Summary info per summary level
     ├── gul_S1_melt.csv            # Moment ELT (required for mean-only)
     ├── gul_S1_qelt.csv            # Quantile ELT (optional)
     ├── gul_S1_selt.csv            # Sample ELT (optional)
     └── ...
 ```
+
+Note that the `analysis_settings.json` files will be searched for in the following locations (in order of priority):
+- `analysis_dir/output/analysis_settings.json`
+- `analysis_dir/analysis_settings.json`
+- `analysis_dir/input/analysis_settings.json`
 
 ### Required Files
 
