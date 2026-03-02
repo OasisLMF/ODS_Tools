@@ -77,6 +77,8 @@ jobs:
       run: |
         python setup.py sdist
         python setup.py bdist_wheel
+      env:
+        GITHUB_TOKEN: ${{ secrets.BUILD_GIT_TOKEN }}
 
     - name: Download OED spec
       if: inputs.oed_spec_json != '' || inputs.oed_spec_branch != ''
