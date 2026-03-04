@@ -83,6 +83,7 @@ def combine(analysis_dirs,
             group_ept_oep=True,
             group_ept_aep=True,
             output_dir=None,
+            output_type='csv',
             **kwargs
             ):
     # prepare output dir
@@ -164,10 +165,9 @@ def combine(analysis_dirs,
         logger.debug('EPT generated')
 
     for output_name, output_df in outputs:
-        logger.debug(f'Saving {output_name}.csv')
-        save_output(output_df, output_dir, f'{output_name}.csv')
-        logger.debug(f'Saved {output_name}.csv')
-
+        logger.debug(f'Saving {output_name}.{output_type}')
+        save_output(output_df, output_dir, output_name, output_type=output_type)
+        logger.debug(f'Saved {output_name}.{output_type}')
     logger.info("Stage 5/5: Output Generation complete")
 
 

@@ -40,11 +40,17 @@ def save_summary_info(groupset_summaryinfo, groupset_info, output_dir):
         logger.info(f'Saved {summary_info_fname}: {save_path}')
 
 
-def save_output(full_df, output_dir, output_name, factor_col='groupset_id', float_format='%.6f'):
+def save_output(full_df, output_dir, output_name, factor_col='groupset_id', float_format='%.6f',
+                output_type='csv'):
+    assert output_type in ['csv', 'parquet'], f'Output type {output_type} is not supported.'
+    output_name = f'{output_name}.{output_type}'
     for i in full_df[factor_col].unique():
         save_path = output_dir / f'{i}_{output_name}'
-        full_df.query(f"{factor_col} == {i}").to_csv(save_path, index=False,
-                                                     float_format=float_format)
+        output_df = full_df.query(f"{factor_col} == {i}")
+        if output_type == 'parquet':
+            output_df.to_parquet(save_path, index=False)
+        else:
+            output_df.to_csv(save_path, index=False, float_format=float_format)
         logger.info(f'Saved {output_name}: {save_path}')
 
 # occurrence reading functions from oasislmf -> copied to avoid circular imports
