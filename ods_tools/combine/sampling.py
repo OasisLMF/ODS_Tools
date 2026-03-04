@@ -430,8 +430,11 @@ def mean_loss_sampling(gpqt, melt, sampling_func='beta'):
     _melt = melt.query('SampleType==2')[['SummaryId', 'EventId', 'MeanLoss', 'SDLoss', 'MaxLoss']]
 
     merged = gpqt['EventId'].isin(_melt["EventId"])
-
     remaining_gpqt = gpqt[~merged].reset_index(drop=True)
+
+    if not merged.any():
+        logger.info('Mean Loss Sampling: No additional matching EventIds found.')
+        return None, remaining_gpqt
 
     loss_sampled_df = gpqt[merged].merge(_melt, on='EventId', how='left')
     loss_sampled_df = sampling_func(loss_sampled_df)
@@ -445,11 +448,16 @@ def mean_loss_sampling(gpqt, melt, sampling_func='beta'):
     return loss_sampled_df, remaining_gpqt
 
 
+@profile
 def quantile_loss_sampling(gpqt, qelt):
     original_cols = list(gpqt.columns)
 
     merged = gpqt["EventId"].isin(qelt["EventId"].unique())
     remaining_gpqt = gpqt[~merged].reset_index(drop=True)
+
+    if not merged.any():
+        logger.info('Quantile Loss Sampling: No additional matching EventIds found.')
+        return None, remaining_gpqt
 
     summary_ids = qelt["SummaryId"].unique()
     sample_loss_frags = []
@@ -541,9 +549,13 @@ def sample_loss_sampling__summary_id(gpqt, selt, number_of_samples):
 
 def sample_loss_sampling(gpqt, selt, number_of_samples=10):
     original_cols = list(gpqt.columns)
-    merged = gpqt["EventId"].isin(selt["EventId"].unique())
 
+    merged = gpqt["EventId"].isin(selt["EventId"].unique())
     remaining_gpqt = gpqt[~merged][original_cols].reset_index(drop=True)
+
+    if not merged.any():
+        logger.info('Sample Loss Sampling: No matching EventIds found.')
+        return None, remaining_gpqt
 
     # selt = selt.sort_values(by=['EventId', 'SampleLoss'], ascending=True)
     summary_ids = selt["SummaryId"].unique()
