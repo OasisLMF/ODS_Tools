@@ -91,41 +91,59 @@ def combine(analysis_dirs,
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    logger.info(f'Output directory generated: {output_dir}')
+    logger.info(f'Output directory: {output_dir}')
+    logger.debug(f'Config: num_periods={group_number_of_periods}, mean={group_mean}, '
+                 f'secondary_uncertainty={group_secondary_uncertainty}, '
+                 f'format_priority={group_format_priority}, plt={group_plt}, '
+                 f'alt={group_alt}, ept={group_ept}')
 
     # Group meta data
-    logger.info("Running: Group Step")
+    logger.info("Stage 1/5: Loading analysis directories")
+    logger.debug(f'Analysis dirs ({len(analysis_dirs)}): {analysis_dirs}')
     analyses = load_analysis_dirs(analysis_dirs)
+    logger.debug(f'Stage 1a done: loaded {len(analyses)} analyses')
+
+    logger.info("Stage 1/5: Creating combine group")
     group, groupset_summaryinfo = create_combine_group(analyses,
                                                        groupeventset_fields=group_event_set_fields)
+    logger.debug(f'Stage 1b done: groupset has {len(group.groupset)} entries')
 
+    logger.info("Stage 1/5: Saving summary info")
     save_summary_info(groupset_summaryinfo, group.groupset, output_dir)
+    logger.debug('Stage 1c done: summary info saved')
 
     # Period sampling
-    logger.info("Running: Period Sampling")
+    logger.info("Stage 2/5: Period Sampling")
+    logger.debug(f'max_group_periods={group_number_of_periods}, occ_dtype={occ_dtype}')
     group_period = generate_group_periods(group,
                                           max_group_periods=group_number_of_periods,
                                           occ_dtype=occ_dtype
                                           )
+    logger.debug('Stage 2 done: group periods generated')
 
     # Loss sampling
-    logger.info("Running: Quantile Sampling")
     no_quantile_sampling = group_mean and not group_secondary_uncertainty
+    logger.info("Stage 3/5: Quantile Sampling")
+    logger.debug(f'no_quantile_sampling={no_quantile_sampling}, correlation={group_correlation}')
     gpqt = generate_gpqt(group_period, group,
                          no_quantile_sampling=no_quantile_sampling,
                          correlation=group_correlation
                          )
+    logger.debug('Stage 3 done: quantile periods generated')
 
-    logger.info("Running: Loss Sampling")
+    logger.info("Stage 4/5: Loss Sampling")
+    logger.debug(f'mean_only={group_mean}, secondary_uncertainty={group_secondary_uncertainty}, '
+                 f'parametric_distribution={group_parametric_distribution}')
     gplt = do_loss_sampling(gpqt, group,
                             mean_only=group_mean,
                             secondary_uncertainty=group_secondary_uncertainty,
                             parametric_distribution=group_parametric_distribution,
                             format_priority=group_format_priority
                             )
+    logger.debug('Stage 4 done: loss sampling complete')
 
     # Output generation
-    logger.info("Running: Output Generation")
+    logger.info("Stage 5/5: Output Generation")
 
     outputs = []
 
@@ -133,16 +151,24 @@ def combine(analysis_dirs,
         outputs.append(('plt', gplt))
 
     if group_alt:
+        logger.debug('Generating ALT')
         outputs.append(('alt', generate_alt(gplt, group_number_of_periods)))
+        logger.debug('ALT generated')
 
     if group_ept:
+        logger.debug(f'Generating EPT (oep={group_ept_oep}, aep={group_ept_aep})')
         outputs.append(('ept',
                         generate_ept(gplt, group_number_of_periods,
                                      oep=group_ept_oep,
                                      aep=group_ept_aep)))
+        logger.debug('EPT generated')
 
     for output_name, output_df in outputs:
+        logger.debug(f'Saving {output_name}.csv')
         save_output(output_df, output_dir, f'{output_name}.csv')
+        logger.debug(f'Saved {output_name}.csv')
+
+    logger.info("Stage 5/5: Output Generation complete")
 
 
 if __name__ == "__main__":
