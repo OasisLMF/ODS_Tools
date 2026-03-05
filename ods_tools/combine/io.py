@@ -7,6 +7,8 @@ import numba as nb
 import logging
 from datetime import datetime
 import pandas as pd
+from pyarrow import csv
+import pyarrow as pa
 
 from ods_tools.combine.common import nb_oasis_int, oasis_float
 
@@ -22,6 +24,12 @@ DEFAULT_OCC_DTYPE = [('event_id', 'i4'),
 def get_default_output_dir():
     timestamp = datetime.now().strftime("%d%m%y%H%M%S")
     return f"./combine_runs/{timestamp}"
+
+
+def output_csv_pa(df, save_path, decimals=6):
+    df = df.round(decimals)
+    df_pa = pa.Table.from_pandas(df)
+    csv.write_csv(df_pa, save_path)
 
 
 def save_summary_info(groupset_summaryinfo, groupset_info, output_dir):
@@ -40,7 +48,7 @@ def save_summary_info(groupset_summaryinfo, groupset_info, output_dir):
         logger.info(f'Saved {summary_info_fname}: {save_path}')
 
 
-def save_output(full_df, output_dir, output_name, factor_col='groupset_id', float_format='%.6f',
+def save_output(full_df, output_dir, output_name, factor_col='groupset_id', float_decimals=6,
                 output_type='csv'):
     assert output_type in ['csv', 'parquet'], f'Output type {output_type} is not supported.'
     output_name = f'{output_name}.{output_type}'
@@ -50,7 +58,7 @@ def save_output(full_df, output_dir, output_name, factor_col='groupset_id', floa
         if output_type == 'parquet':
             output_df.to_parquet(save_path, index=False)
         else:
-            output_df.to_csv(save_path, index=False, float_format=float_format)
+            output_csv_pa(output_df, save_path, decimals=float_decimals)
         logger.info(f'Saved {output_name}: {save_path}')
 
 # occurrence reading functions from oasislmf -> copied to avoid circular imports
