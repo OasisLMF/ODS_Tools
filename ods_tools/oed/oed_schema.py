@@ -8,7 +8,7 @@ import numba as nb
 import numpy as np
 from packaging.version import parse
 
-from .common import OdsException, BLANK_VALUES, cached_property, dtype_to_python
+from .common import OdsException, BLANK_VALUES, cached_property, dtype_to_python, pd_default_backend_dtype
 
 OED_VERSION = '4.0.0'
 
@@ -193,7 +193,7 @@ class OedSchema:
                                    self.nb_peril_groups_dict if include_sub_group else self.nb_perils_dict)
 
     def get_default_backend_dtype(self):
-        return 'pd_dtype'
+        return pd_default_backend_dtype
 
     def get_available_backend_dtype(self):
         return self.schema.get('backend_dtype', ['pd_dtype'])
