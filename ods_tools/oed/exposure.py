@@ -97,7 +97,6 @@ class OedExposure:
 
         self.oed_schema = OedSchema.from_oed_schema_info(oed_schema_info)
 
-
         if backend_dtype is None:
             if pd.__version__ >= "3" and "pa_dtype" in self.oed_schema.get_available_backend_dtype():
                 backend_dtype = "pa_dtype"
