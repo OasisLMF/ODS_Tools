@@ -227,7 +227,6 @@ default_string_dtype = {
 }
 
 pd_default_string = object if pd.__version__ < "3" else "str"
-pd_default_backend_dtype = "pd_dtype" if pd.__version__ < "3" else "pa_dtype"
 
 
 def is_empty(df, columns):
