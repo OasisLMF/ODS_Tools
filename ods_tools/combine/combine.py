@@ -8,7 +8,7 @@ from ods_tools.combine.io import get_default_output_dir, save_output, save_summa
 from ods_tools.combine.output_generation import generate_alt, generate_ept
 from ods_tools.combine.result import load_analysis_dirs
 from ods_tools.combine.sampling import do_loss_sampling, generate_group_periods, generate_gpqt
-from ods_tools.combine.common import DEFAULT_CONFIG, GALT_schema, GEPT_schema, GPLT_schema
+from ods_tools.combine.common import DEFAULT_CONFIG, GALT_schema, GEPT_schema, GPLT_headers, GPLT_schema
 from ods_tools.oed.common import OdsException
 
 logger = logging.getLogger(__name__)
@@ -149,16 +149,16 @@ def combine(analysis_dirs,
     outputs = []
 
     if group_plt:
-        outputs.append(('plt', gplt, GPLT_schema))
+        outputs.append(('gplt', gplt[GPLT_headers], GPLT_schema))
 
     if group_alt:
         logger.debug('Generating ALT')
-        outputs.append(('alt', generate_alt(gplt, group_number_of_periods), GALT_schema))
+        outputs.append(('galt', generate_alt(gplt, group_number_of_periods), GALT_schema))
         logger.debug('ALT generated')
 
     if group_ept:
         logger.debug(f'Generating EPT (oep={group_ept_oep}, aep={group_ept_aep})')
-        outputs.append(('ept',
+        outputs.append(('gept',
                         generate_ept(gplt, group_number_of_periods,
                                      oep=group_ept_oep,
                                      aep=group_ept_aep), GEPT_schema))
