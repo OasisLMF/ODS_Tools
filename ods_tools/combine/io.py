@@ -21,15 +21,17 @@ DEFAULT_OCC_DTYPE = [('event_id', 'i4'),
                      ]
 
 
+def pyarrow_write_csv(output_file, data, schema=None):
+    """numpy → pandas → pa.Table (cast to schema) → pyarrow.csv.write_csv."""
+    table = pa.Table.from_pandas(data, preserve_index=False)
+    if schema is not None:
+        table = table.cast(schema)
+    csv.write_csv(table, output_file)
+
+
 def get_default_output_dir():
     timestamp = datetime.now().strftime("%d%m%y%H%M%S")
     return f"./combine_runs/{timestamp}"
-
-
-def output_csv_pa(df, save_path, decimals=6):
-    df = df.round(decimals)
-    df_pa = pa.Table.from_pandas(df)
-    csv.write_csv(df_pa, save_path)
 
 
 def save_summary_info(groupset_summaryinfo, groupset_info, output_dir):
@@ -49,7 +51,7 @@ def save_summary_info(groupset_summaryinfo, groupset_info, output_dir):
 
 
 def save_output(full_df, output_dir, output_name, factor_col='groupset_id', float_decimals=6,
-                output_type='csv'):
+                output_type='csv', schema=None):
     assert output_type in ['csv', 'parquet'], f'Output type {output_type} is not supported.'
     output_name = f'{output_name}.{output_type}'
     for i in full_df[factor_col].unique():
@@ -58,7 +60,7 @@ def save_output(full_df, output_dir, output_name, factor_col='groupset_id', floa
         if output_type == 'parquet':
             output_df.to_parquet(save_path, index=False)
         else:
-            output_csv_pa(output_df, save_path, decimals=float_decimals)
+            pyarrow_write_csv(output_df, save_path, schema)
         logger.info(f'Saved {output_name}: {save_path}')
 
 # occurrence reading functions from oasislmf -> copied to avoid circular imports

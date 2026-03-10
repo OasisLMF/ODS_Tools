@@ -8,7 +8,7 @@ from ods_tools.combine.io import get_default_output_dir, save_output, save_summa
 from ods_tools.combine.output_generation import generate_alt, generate_ept
 from ods_tools.combine.result import load_analysis_dirs
 from ods_tools.combine.sampling import do_loss_sampling, generate_group_periods, generate_gpqt
-from ods_tools.combine.common import DEFAULT_CONFIG
+from ods_tools.combine.common import DEFAULT_CONFIG, GALT_schema, GEPT_schema, GPLT_schema
 from ods_tools.oed.common import OdsException
 
 logger = logging.getLogger(__name__)
@@ -149,11 +149,11 @@ def combine(analysis_dirs,
     outputs = []
 
     if group_plt:
-        outputs.append(('plt', gplt))
+        outputs.append(('plt', gplt, GPLT_schema))
 
     if group_alt:
         logger.debug('Generating ALT')
-        outputs.append(('alt', generate_alt(gplt, group_number_of_periods)))
+        outputs.append(('alt', generate_alt(gplt, group_number_of_periods), GALT_schema))
         logger.debug('ALT generated')
 
     if group_ept:
@@ -161,12 +161,13 @@ def combine(analysis_dirs,
         outputs.append(('ept',
                         generate_ept(gplt, group_number_of_periods,
                                      oep=group_ept_oep,
-                                     aep=group_ept_aep)))
+                                     aep=group_ept_aep), GEPT_schema))
         logger.debug('EPT generated')
 
-    for output_name, output_df in outputs:
+    for output_name, output_df, output_schema in outputs:
         logger.debug(f'Saving {output_name}.{output_type}')
-        save_output(output_df, output_dir, output_name, output_type=output_type)
+        save_output(output_df, output_dir, output_name,
+                    output_type=output_type, schema=output_schema)
         logger.debug(f'Saved {output_name}.{output_type}')
     logger.info("Stage 5/5: Output Generation complete")
 
