@@ -60,6 +60,8 @@ def save_output(full_df, output_dir, output_name, factor_col='groupset_id', floa
         if output_type == 'parquet':
             output_df.to_parquet(save_path, index=False)
         else:
+            if len(output_df) > 10**5:
+                logger.info('Large output {output_name} file in csv. Consider using `output_type=parquet`')
             pyarrow_write_csv(output_df, save_path, schema)
         logger.info(f'Saved {output_name}: {save_path}')
 
