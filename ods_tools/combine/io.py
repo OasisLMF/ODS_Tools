@@ -21,7 +21,7 @@ DEFAULT_OCC_DTYPE = [('event_id', 'i4'),
                      ]
 
 
-def pyarrow_write_csv(output_file, data, schema=None):
+def pyarrow_write_csv(data, output_file, schema=None):
     """numpy → pandas → pa.Table (cast to schema) → pyarrow.csv.write_csv."""
     table = pa.Table.from_pandas(data, preserve_index=False)
     if schema is not None:
