@@ -25,3 +25,27 @@ DEFAULT_CONFIG = {
     "group_mean": False,
     "group_secondary_uncertainty": False
 }
+
+GEPT_OUTPUT = [
+    ('groupset_id', oasis_int, '%d'),
+    ('SummaryId', oasis_int, '%d'),
+    ('EPCalc', oasis_int, '%d'),
+    ('EPType', oasis_int, '%d'),
+    ('ReturnPeriod', oasis_float, '%.6f'),
+    ('Loss', oasis_float, '%.6f'),
+]
+
+GEPT_dtype = {c[0]: c[1] for c in GEPT_OUTPUT}
+GEPT_headers = [c[0] for c in GEPT_OUTPUT]
+
+
+GALT_OUTPUT = [
+    ('groupset_id', oasis_int, '%d'),
+    ('SummaryId', oasis_int, '%d'),
+    ('LossType', oasis_int, '%d'),
+    ('MeanLoss', oasis_float, '%.6f'),
+    ('SDLoss', oasis_float, '%.6f'),
+]
+
+GALT_dtype = {c[0]: c[1] for c in GALT_OUTPUT}
+GALT_headers = [c[0] for c in GALT_OUTPUT]

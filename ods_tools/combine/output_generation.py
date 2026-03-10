@@ -1,25 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from ods_tools.combine.common import oasis_float
-
-alt_dtype = {
-    'groupset_id': 'i4',
-    'SummaryId': 'i4',
-    'LossType': 'i4',
-    'Mean': oasis_float,
-    'Std': oasis_float
-
-}
-
-ept_dtype = {
-    'groupset_id': 'i4',
-    'SummaryId': 'i4',
-    'EPCalc': 'i4',
-    'EPType': 'i4',
-    'RP': oasis_float,
-    'Loss': oasis_float
-}
+from ods_tools.combine.common import GEPT_dtype, GALT_dtype
 
 
 def generate_alt(gplt, max_period):
@@ -35,21 +17,21 @@ def generate_alt(gplt, max_period):
             "groupset_id": name[0],
             "SummaryId": name[1],
             "LossType": name[2],
-            "Mean": mean_loss,
-            "Std": std_loss
+            "MeanLoss": mean_loss,
+            "SDLoss": std_loss
         }
 
         records.append(record)
 
-    return pd.DataFrame(records).astype(alt_dtype)
+    return pd.DataFrame(records).astype(GALT_dtype)
 
 
 def assign_exceedance_probability(df, max_period):
     original_cols = list(df.columns)
     df["rank"] = (df.groupby(by=["groupset_id", "SummaryId", "EPCalc"], as_index=False)["Loss"]
                   .rank(method="first", ascending=False))
-    df["RP"] = max_period / df["rank"]
-    return df[original_cols + ["RP"]]
+    df["ReturnPeriod"] = max_period / df["rank"]
+    return df[original_cols + ["ReturnPeriod"]]
 
 
 def generate_ept(gplt, max_group_period, oep=True, aep=True):
@@ -81,8 +63,8 @@ def generate_ept(gplt, max_group_period, oep=True, aep=True):
         ep_frags.append(aep_df)
 
     return (
-        pd.concat(ep_frags)[["groupset_id", "SummaryId", "EPCalc", "EPType", "RP", "Loss"]]
-        .astype(ept_dtype)
+        pd.concat(ep_frags)[["groupset_id", "SummaryId", "EPCalc", "EPType", "ReturnPeriod", "Loss"]]
+        .astype(GEPT_dtype)
         .sort_values(by=["groupset_id", "SummaryId", "EPType", "EPCalc", "Loss"],
                      ascending=[True, True, True, True, False])
     )
