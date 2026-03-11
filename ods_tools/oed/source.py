@@ -5,10 +5,7 @@ import logging
 import pandas as pd
 from oasis_data_manager.df_reader.config import get_df_reader
 import numpy as np
-try:
-    from chardet import UniversalDetector
-except ImportError:  # chardet < 7
-    from chardet.universaldetector import UniversalDetector
+from chardet import UniversalDetector
 from pandas.api.types import is_numeric_dtype
 
 from .common import (OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, fill_empty,
