@@ -7,36 +7,13 @@ from scipy.stats import norm
 from scipy.special import betaincinv
 import logging
 
-from ods_tools.combine.common import DEFAULT_RANDOM_SEED
+from ods_tools.combine.common import DEFAULT_RANDOM_SEED, GPLT_dtype, GPLT_headers, GPQT_dtype, GPQT_headers
 from ods_tools.combine import io
 from ods_tools.combine.io import DEFAULT_OCC_DTYPE, load_melt, read_occurrence_bin, load_loss_table_paths
 
 logger = logging.getLogger(__name__)
 
 rng = np.random.default_rng(DEFAULT_RANDOM_SEED)  # todo implement configurable random seed
-
-gpqt_dtype = {
-    'GroupPeriod': np.int32,
-    'Period': np.int32,
-    'groupeventset_id': np.int32,
-    'EventId': np.int32,
-    'Quantile': np.float32,
-    'outputset_id': np.int32,
-}
-
-
-gplt_dtype = {
-    'groupset_id': np.int32,
-    'outputset_id': np.int32,
-    'SummaryId': "Int32",
-    'GroupPeriod': np.int32,
-    'Period': np.int32,
-    'groupeventset_id': np.int32,
-    'EventId': np.int32,
-    'Loss': np.float64,
-    'LossType': 'Int8'
-}
-
 
 # PERIOD SAMPLING
 
@@ -165,7 +142,7 @@ def generate_gpqt(group_period, group, no_quantile_sampling=False, correlation=N
     gpqt = pd.concat(gpqt_fragments).reset_index(drop=True)
 
     gpqt = calculate_quantiles(gpqt, no_quantile_sampling, correlation)
-    return gpqt.astype(gpqt_dtype)
+    return gpqt[GPQT_headers].astype(GPQT_dtype)
 
 
 def calculate_quantiles(gpqt, no_quantile_sampling=False, correlation=None):
@@ -241,7 +218,7 @@ def do_loss_sampling(gpqt,
 
         gplt = _gplt if gplt is None else pd.concat([gplt, _gplt], ignore_index=True)
 
-    return gplt.astype(gplt_dtype)[gplt_dtype.keys()]
+    return gplt[GPLT_headers].astype(GPLT_dtype)
 
 
 def do_loss_sampling_mean_only(gpqt, group):
@@ -273,19 +250,21 @@ def do_loss_sampling_mean_only(gpqt, group):
         # do summary id mapping
         gplt_fragment = apply_summaryid_map(gplt_fragment, outputset_id,
                                             group.summaryinfo_map)
+        logger.info('New fragment uses: ')
+        logger.info(gplt_fragment.info(memory_usage='deep'))
 
         gplt_fragments.append(gplt_fragment)
 
     gplt = pd.concat(gplt_fragments, ignore_index=True)
 
-    return gplt.astype(gplt_dtype)[gplt_dtype.keys()]
+    return gplt[GPLT_headers].astype(GPLT_dtype)
 
 
 def _filter_missing_summaryids(df, outputset_id=None):
     missing_summary_ids = df["SummaryId"].isna()
     if not df[missing_summary_ids].empty:
         logger.info(f"Output set {outputset_id} has {missing_summary_ids.sum()} missing group events.")
-    df = df[~missing_summary_ids].reset_index()
+    df = df.dropna(subset='SummaryId', ignore_index=True)
 
     return df
 
@@ -356,6 +335,7 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
         if sampling_args['S']['number_of_samples'] is None:
             logger.warning(f'No `number_of_samples` in analysis {analysis.run_id} settings')
 
+        logger.info('loading loss table')
         elt_paths = load_loss_table_paths(analysis,
                                           summary_level_id=os.exposure_summary_level_id,
                                           perspective=os.perspective_code,
@@ -366,6 +346,7 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
         curr_gpqt = gpqt.query('outputset_id == @outputset_id').reset_index(drop=True)
 
         for p in format_priority:
+            logger.info(f'loss sampling perspective: {p}')
             elt_df = elt_dfs.get(f'{p.lower()}elt', None)
 
             if elt_df is None:
@@ -376,6 +357,7 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
                 raise NotImplementedError(f"loss sampling function for format {p}elt not implemented")
 
             _gplt_fragment, curr_gpqt = loss_sampling_func_map[p.upper()](curr_gpqt, elt_df, **sampling_args[p.upper()])
+            logger.info('finished loss sampling')
 
             if _gplt_fragment is None:  # no fragment
                 continue
@@ -384,8 +366,10 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
 
             _gplt_fragment = _filter_missing_summaryids(_gplt_fragment, outputset_id)
 
+            logger.info('mapping summary ids')
             _gplt_fragment = apply_summaryid_map(_gplt_fragment, outputset_id,
                                                  group.summaryinfo_map)
+            logger.info('mapped summary ids')
 
             gplt_fragments.append(_gplt_fragment)
 
@@ -394,7 +378,7 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
 
     gplt = pd.concat(gplt_fragments, ignore_index=True)
 
-    return gplt.astype(gplt_dtype)[gplt_dtype.keys()]
+    return gplt[GPLT_headers].astype(GPLT_dtype)
 
 
 def beta_sampling_group_loss(df):
@@ -448,7 +432,6 @@ def mean_loss_sampling(gpqt, melt, sampling_func='beta'):
     return loss_sampled_df, remaining_gpqt
 
 
-@profile
 def quantile_loss_sampling(gpqt, qelt):
     original_cols = list(gpqt.columns)
 
@@ -479,7 +462,11 @@ def quantile_loss_sampling(gpqt, qelt):
     return sample_loss_df, remaining_gpqt[original_cols]
 
 
+# @profile
 def quantile_loss_sampling__summary_id(gpqt, qelt):
+    if gpqt.empty:
+        return gpqt.copy()
+
     quantiles = sorted(qelt['LTQuantile'].unique().tolist())
     quantile_map = {q: i for i, q in enumerate(quantiles)}
     quantiles = [-1] + quantiles  # capture zero index

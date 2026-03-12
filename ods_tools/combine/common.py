@@ -85,14 +85,21 @@ GALT_dtype = {c[0]: c[1] for c in GALT_OUTPUT}
 GALT_headers = [c[0] for c in GALT_OUTPUT]
 GALT_schema = schema_from_output_list(GALT_OUTPUT)
 
+GPQT_OUTPUT = [
+    ('GroupPeriod', oasis_int, '%d'),
+    ('groupeventset_id', 'category', '%d'),
+    ('outputset_id', 'category', '%d'),
+    ('EventId', oasis_int, '%d'),
+    ('Quantile', oasis_float, '%.6f'),
+]
+GPQT_dtype = {c[0]: c[1] for c in GPQT_OUTPUT}
+GPQT_headers = [c[0] for c in GPQT_OUTPUT]
 
 GPLT_OUTPUT = [
     ('groupset_id', oasis_int, '%d'),
-    ('outputset_id', oasis_int, '%d'),
     ('groupeventset_id', oasis_int, '%d'),
-    ('SummaryId', oasis_int, '%d'),
     ('GroupPeriod', oasis_int, '%d'),
-    ('Period', oasis_int, '%d'),
+    ('SummaryId', oasis_int, '%d'),
     ('EventId', oasis_int, '%d'),
     ('LossType', oasis_int, '%d'),
     ('Loss', oasis_float, '%.6f'),
