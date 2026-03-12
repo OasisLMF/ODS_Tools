@@ -112,7 +112,7 @@ def generate_gpqt(group_period, group, no_quantile_sampling=False, correlation=N
     gpqt_fragments = []
 
     for groupeventset_id, groupeventset in group.groupeventset.items():
-        filtered_group_period = group_period.query(f'groupeventset_id == {groupeventset_id}')
+        filtered_group_period = group_period[group_period['groupeventset_id'] == groupeventset_id]
         filtered_analyses = [group.analyses[a] for a in groupeventset['analysis_ids']]
 
         analysis_outputsets = []
@@ -240,7 +240,7 @@ def do_loss_sampling_mean_only(gpqt, group):
                                           perspective=os.perspective_code,
                                           output_type='elt')
 
-        filtered_gpqt = gpqt.query(f'outputset_id == {outputset_id}')
+        filtered_gpqt = gpqt[gpqt['outputset_id'] == outputset_id]
         gplt_fragment = loss_sample_mean_only(filtered_gpqt, elt_paths)
         gplt_fragment['groupset_id'] = os.groupset_id
 
@@ -343,7 +343,7 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
 
         elt_dfs = {key: getattr(io, f'load_{key}')(value) for key, value in elt_paths.items()}  # todo handle this better (lazy load)
 
-        curr_gpqt = gpqt.query('outputset_id == @outputset_id').reset_index(drop=True)
+        curr_gpqt = gpqt[gpqt['outputset_id'] == outputset_id].reset_index(drop=True)
 
         for p in format_priority:
             logger.info(f'loss sampling perspective: {p}')

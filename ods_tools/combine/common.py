@@ -34,7 +34,10 @@ def pa_type_from_format(dtype, fmt):
 def schema_from_output_list(output_list):
     fields = []
     for name, dtype, fmt in output_list:
-        pa_dtype = pa_type_from_format(np.dtype(dtype), fmt)
+        if dtype == 'category':
+            pa_dtype = pa.uint32()
+        else:
+            pa_dtype = pa_type_from_format(np.dtype(dtype), fmt)
         fields.append(pa.field(name, pa_dtype))
     return pa.schema(fields)
 
@@ -60,10 +63,10 @@ DEFAULT_CONFIG = {
 }
 
 GEPT_OUTPUT = [
-    ('groupset_id', oasis_int, '%d'),
+    ('groupset_id', 'category', '%d'),
     ('SummaryId', oasis_int, '%d'),
-    ('EPCalc', oasis_int, '%d'),
-    ('EPType', oasis_int, '%d'),
+    ('EPCalc', 'category', '%d'),
+    ('EPType', 'category', '%d'),
     ('ReturnPeriod', oasis_float, '%.6f'),
     ('Loss', oasis_float, '%.6f'),
 ]
@@ -74,7 +77,7 @@ GEPT_schema = schema_from_output_list(GEPT_OUTPUT)
 
 
 GALT_OUTPUT = [
-    ('groupset_id', oasis_int, '%d'),
+    ('groupset_id', 'category', '%d'),
     ('SummaryId', oasis_int, '%d'),
     ('LossType', oasis_int, '%d'),
     ('MeanLoss', oasis_float, '%.6f'),
@@ -96,12 +99,12 @@ GPQT_dtype = {c[0]: c[1] for c in GPQT_OUTPUT}
 GPQT_headers = [c[0] for c in GPQT_OUTPUT]
 
 GPLT_OUTPUT = [
-    ('groupset_id', oasis_int, '%d'),
-    ('groupeventset_id', oasis_int, '%d'),
+    ('groupset_id', 'category', '%d'),
+    ('groupeventset_id', 'category', '%d'),
     ('GroupPeriod', oasis_int, '%d'),
     ('SummaryId', oasis_int, '%d'),
     ('EventId', oasis_int, '%d'),
-    ('LossType', oasis_int, '%d'),
+    ('LossType', 'category', '%d'),
     ('Loss', oasis_float, '%.6f'),
 ]
 

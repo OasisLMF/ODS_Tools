@@ -56,7 +56,7 @@ def save_output(full_df, output_dir, output_name, factor_col='groupset_id', floa
     output_name = f'{output_name}.{output_type}'
     for i in full_df[factor_col].unique():
         save_path = output_dir / f'{i}_{output_name}'
-        output_df = full_df.query(f"{factor_col} == {i}")
+        output_df = full_df[full_df[factor_col] == i]
         if output_type == 'parquet':
             output_df.to_parquet(save_path, index=False)
         else:
