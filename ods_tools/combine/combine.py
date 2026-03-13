@@ -120,6 +120,8 @@ def combine(analysis_dirs,
                                           max_group_periods=group_number_of_periods,
                                           occ_dtype=occ_dtype
                                           )
+    logger.debug('group period memory usage: \n')
+    logger.debug(group_period.info(memory_usage='deep'))
     logger.debug('Stage 2 done: group periods generated')
 
     # Loss sampling
@@ -130,6 +132,9 @@ def combine(analysis_dirs,
                          no_quantile_sampling=no_quantile_sampling,
                          correlation=group_correlation
                          )
+
+    logger.debug('gpqt memory usage: \n')
+    logger.debug(gpqt.info(memory_usage='deep'))
     logger.debug('Stage 3 done: quantile periods generated')
 
     logger.info("Stage 4/5: Loss Sampling")
@@ -141,6 +146,8 @@ def combine(analysis_dirs,
                             parametric_distribution=group_parametric_distribution,
                             format_priority=group_format_priority
                             )
+    logger.debug('gplt memory usage: \n')
+    logger.debug(gplt.info(memory_usage='deep'))
     logger.debug('Stage 4 done: loss sampling complete')
 
     # Output generation
@@ -155,14 +162,17 @@ def combine(analysis_dirs,
         logger.debug('Generating ALT')
         outputs.append(('galt', generate_alt(gplt, group_number_of_periods), GALT_schema))
         logger.debug('ALT generated')
+        logger.debug('alt memory usage: \n')
+        logger.debug(outputs[-1][1].info(memory_usage='deep'))
 
     if group_ept:
         logger.debug(f'Generating EPT (oep={group_ept_oep}, aep={group_ept_aep})')
-        outputs.append(('gept',
-                        generate_ept(gplt, group_number_of_periods,
-                                     oep=group_ept_oep,
-                                     aep=group_ept_aep), GEPT_schema))
+        outputs.append(('gept', generate_ept(gplt, group_number_of_periods,
+                                             oep=group_ept_oep,
+                                             aep=group_ept_aep), GEPT_schema))
         logger.debug('EPT generated')
+        logger.debug('ept memory usage: \n')
+        logger.debug(outputs[-1][1].info(memory_usage='deep'))
 
     for output_name, output_df, output_schema in outputs:
         logger.debug(f'Saving {output_name}.{output_type}')

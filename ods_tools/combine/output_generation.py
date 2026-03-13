@@ -1,7 +1,11 @@
 import pandas as pd
 import numpy as np
+from tqdm import tqdm
+import logging
 
 from ods_tools.combine.common import GEPT_dtype, GALT_dtype, GEPT_headers
+
+logger = logging.getLogger(__name__)
 
 
 def generate_alt(gplt, max_period):
@@ -35,33 +39,38 @@ def assign_exceedance_probability(df, max_period):
 
 
 def generate_ept(gplt, max_group_period, oep=True, aep=True):
-    ep_df = (
-        gplt.rename(columns={"LossType": "EPCalc"})  # check if this is the correct type
-        .groupby(by=["groupset_id", "groupeventset_id",
-                     "EventId", "GroupPeriod", "SummaryId",
-                     "EPCalc"], as_index=False).agg({'Loss': 'sum'})
-    )
-    ep_df = ep_df.groupby(by=["groupset_id", "SummaryId", "GroupPeriod", "EPCalc"], as_index=False)
+    ep_df = gplt.rename(columns={"LossType": "EPCalc"})  # check if this is the correct type
+    chunk_cols = ['groupset_id', 'EPCalc']
 
-    ep_frags = []
-    if oep:
-        oep_df = (
-            ep_df.pipe(lambda gp: gp["Loss"].max())
-            .pipe(assign_exceedance_probability, max_period=max_group_period)
-            .pipe(lambda x: x.assign(EPType=1))  # todo check OEP TVAR EPCalc 2
-        )
+    categories = {c: ep_df[c].cat.categories for c in chunk_cols}
+    categories['EPType'] = [1, 3]
 
-        ep_frags.append((oep_df[GEPT_headers].astype(GEPT_dtype)
-                         .sort_values(by="Loss", ascending=False)))
+    ep_df = ep_df.set_index(chunk_cols).sort_index()
+    ep_chunks = []
 
-    if aep:
-        aep_df = (
-            ep_df.pipe(lambda gp: gp["Loss"].sum())
-            .pipe(assign_exceedance_probability, max_period=max_group_period)
-            .pipe(lambda x: x.assign(EPType=3))  # todo check AEP TVAR EPCalc 4
-        )
-        ep_frags.append((aep_df[GEPT_headers].astype(GEPT_dtype)
-                         .sort_values(by=["groupset_id", "SummaryId", "EPCalc", "Loss"],
-                                      ascending=[True, True, True, False])))
+    logger.info('Running chunked GEPT generation:')
+    for idx_val in tqdm(ep_df.index.unique()):
+        curr_ep = ep_df.loc[idx_val].reset_index(drop=True)
+        curr_ep = curr_ep.groupby(by=['groupeventset_id', "EventId", "GroupPeriod", "SummaryId"], as_index=False, observed=True).agg({'Loss': 'sum'})
 
-    return pd.concat(ep_frags)
+        if oep:
+            curr_oep = curr_ep.groupby(by=["GroupPeriod", "SummaryId"], as_index=False).agg({'Loss': 'sum'})
+            curr_oep['ReturnPeriod'] = max_group_period / curr_oep.groupby(by='SummaryId')['Loss'].rank(method='first', ascending=False)
+            curr_oep['EPType'] = 1
+            curr_oep[chunk_cols] = idx_val
+            curr_oep = curr_oep[GEPT_headers].astype(GEPT_dtype)
+            for col, cats in categories.items():
+                curr_oep[col] = curr_oep[col].cat.set_categories(cats)
+            ep_chunks.append(curr_oep)
+
+        if aep:
+            curr_aep = curr_ep.groupby(by=["GroupPeriod", "SummaryId"], as_index=False).agg({'Loss': 'max'})
+            curr_aep['ReturnPeriod'] = max_group_period / curr_aep.groupby(by='SummaryId')['Loss'].rank(method='first', ascending=False)
+            curr_aep['EPType'] = 3
+            curr_aep[chunk_cols] = idx_val
+            curr_aep = curr_aep[GEPT_headers].astype(GEPT_dtype)
+            for col, cats in categories.items():
+                curr_aep[col] = curr_aep[col].cat.set_categories(cats)
+            ep_chunks.append(curr_aep)
+
+    return pd.concat(ep_chunks).astype(GEPT_dtype)
