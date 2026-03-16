@@ -45,6 +45,17 @@ def generate_ept(gplt, max_group_period, oep=True, aep=True):
     categories = {c: ep_df[c].cat.categories for c in chunk_cols}
     categories['EPType'] = [1, 3]
 
+    def _generate_ep_chunk(df, agg, ep_type):
+        curr_df = df.groupby(by=["GroupPeriod", "SummaryId"], as_index=False).agg({'Loss': agg})
+        curr_df['EPType'] = ep_type
+
+        curr_df['ReturnPeriod'] = max_group_period / curr_df.groupby(by='SummaryId')['Loss'].rank(method='first', ascending=False)
+        curr_df[chunk_cols] = idx_val
+        curr_df = curr_df[GEPT_headers].astype(GEPT_dtype)
+        for col, cats in categories.items():
+            curr_df[col] = curr_df[col].cat.set_categories(cats)
+        return curr_df
+
     ep_df = ep_df.set_index(chunk_cols).sort_index()
     ep_chunks = []
 
@@ -54,23 +65,9 @@ def generate_ept(gplt, max_group_period, oep=True, aep=True):
         curr_ep = curr_ep.groupby(by=['groupeventset_id', "EventId", "GroupPeriod", "SummaryId"], as_index=False, observed=True).agg({'Loss': 'sum'})
 
         if oep:
-            curr_oep = curr_ep.groupby(by=["GroupPeriod", "SummaryId"], as_index=False).agg({'Loss': 'sum'})
-            curr_oep['ReturnPeriod'] = max_group_period / curr_oep.groupby(by='SummaryId')['Loss'].rank(method='first', ascending=False)
-            curr_oep['EPType'] = 1
-            curr_oep[chunk_cols] = idx_val
-            curr_oep = curr_oep[GEPT_headers].astype(GEPT_dtype)
-            for col, cats in categories.items():
-                curr_oep[col] = curr_oep[col].cat.set_categories(cats)
-            ep_chunks.append(curr_oep)
+            ep_chunks.append(_generate_ep_chunk(curr_ep, 'sum', 1))
 
         if aep:
-            curr_aep = curr_ep.groupby(by=["GroupPeriod", "SummaryId"], as_index=False).agg({'Loss': 'max'})
-            curr_aep['ReturnPeriod'] = max_group_period / curr_aep.groupby(by='SummaryId')['Loss'].rank(method='first', ascending=False)
-            curr_aep['EPType'] = 3
-            curr_aep[chunk_cols] = idx_val
-            curr_aep = curr_aep[GEPT_headers].astype(GEPT_dtype)
-            for col, cats in categories.items():
-                curr_aep[col] = curr_aep[col].cat.set_categories(cats)
-            ep_chunks.append(curr_aep)
+            ep_chunks.append(_generate_ep_chunk(curr_ep, 'max', 3))
 
     return pd.concat(ep_chunks).astype(GEPT_dtype)
