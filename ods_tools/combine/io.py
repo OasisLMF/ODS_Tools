@@ -197,7 +197,7 @@ def load_loss_table_paths(analysis, summary_level_id, perspective, output_type):
 # Loading ELT files
 MELT_DTYPE = {
     "SummaryId": "i4",
-    "SampleType": "i4",
+    "SampleType": "Int32",
     "EventId": "i4",
     "MeanLoss": oasis_float,
     "SDLoss": oasis_float,

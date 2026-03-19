@@ -54,7 +54,10 @@ def generate_ept(gplt, max_group_period, oep=True, aep=True):
         curr_df = curr_df[GEPT_headers].astype(GEPT_dtype)
         for col, cats in categories.items():
             curr_df[col] = curr_df[col].cat.set_categories(cats)
-        return curr_df
+        return curr_df.sort_values(by=['groupset_id', 'SummaryId', 'EPCalc',
+                                       'EPType', 'ReturnPeriod'],
+                                   ascending=[True, True, True, True, False],
+                                   ignore_index=True)
 
     ep_df = ep_df.set_index(chunk_cols).sort_index()
     ep_chunks = []
@@ -65,9 +68,9 @@ def generate_ept(gplt, max_group_period, oep=True, aep=True):
         curr_ep = curr_ep.groupby(by=['groupeventset_id', "EventId", "GroupPeriod", "SummaryId"], as_index=False, observed=True).agg({'Loss': 'sum'})
 
         if oep:
-            ep_chunks.append(_generate_ep_chunk(curr_ep, 'sum', 1))
+            ep_chunks.append(_generate_ep_chunk(curr_ep, 'max', 1))
 
         if aep:
-            ep_chunks.append(_generate_ep_chunk(curr_ep, 'max', 3))
+            ep_chunks.append(_generate_ep_chunk(curr_ep, 'sum', 3))
 
     return pd.concat(ep_chunks).astype(GEPT_dtype)
