@@ -363,16 +363,9 @@ class OdsPackageTests(TestCase):
         }
         exposure = OedExposure(**config)
         with tempfile.TemporaryDirectory() as tmp_run_dir:
-            exposure.location.save('copy', os.path.join(tmp_run_dir, 'location.csv'))
-            exposure.account.save('copy', os.path.join(tmp_run_dir, 'account.csv'))
-            exposure.ri_info.save('copy', os.path.join(tmp_run_dir, 'ri_info.csv'))
-            exposure.ri_scope.save('copy', os.path.join(tmp_run_dir, 'ri_scope.csv'))
 
+            exposure.save(tmp_run_dir, save_config=True)
             config_copy = {
-                'location': os.path.join(tmp_run_dir, 'location.csv'),
-                'account': os.path.join(tmp_run_dir, 'account.csv'),
-                'ri_info': os.path.join(tmp_run_dir, 'ri_info.csv'),
-                'ri_scope': os.path.join(tmp_run_dir, 'ri_scope.csv'),
                 'currency_conversion': {
                     "currency_conversion_type": "DictBasedCurrencyRates",
                     "source_type": "dict",
@@ -382,7 +375,7 @@ class OdsPackageTests(TestCase):
                 },
                 'reporting_currency': 'USD',
             }
-            exposure2 = OedExposure(**config_copy)
+            exposure2 = OedExposure.from_dir(tmp_run_dir, **config_copy)
             exposure.reporting_currency = 'GBP'
             exposure.reporting_currency = 'USD'
             pd.testing.assert_frame_equal(exposure.location.dataframe,
