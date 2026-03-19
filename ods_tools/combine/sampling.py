@@ -250,8 +250,6 @@ def do_loss_sampling_mean_only(gpqt, group):
         # do summary id mapping
         gplt_fragment = apply_summaryid_map(gplt_fragment, outputset_id,
                                             group.summaryinfo_map)
-        logger.info('New fragment uses: ')
-        logger.info(gplt_fragment.info(memory_usage='deep'))
 
         gplt_fragments.append(gplt_fragment)
 
@@ -335,7 +333,6 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
         if sampling_args['S']['number_of_samples'] is None:
             logger.warning(f'No `number_of_samples` in analysis {analysis.run_id} settings')
 
-        logger.info('loading loss table')
         elt_paths = load_loss_table_paths(analysis,
                                           summary_level_id=os.exposure_summary_level_id,
                                           perspective=os.perspective_code,
@@ -346,7 +343,6 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
         curr_gpqt = gpqt[gpqt['outputset_id'] == outputset_id].reset_index(drop=True)
 
         for p in format_priority:
-            logger.info(f'loss sampling perspective: {p}')
             elt_df = elt_dfs.get(f'{p.lower()}elt', None)
 
             if elt_df is None:
@@ -357,7 +353,6 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
                 raise NotImplementedError(f"loss sampling function for format {p}elt not implemented")
 
             _gplt_fragment, curr_gpqt = loss_sampling_func_map[p.upper()](curr_gpqt, elt_df, **sampling_args[p.upper()])
-            logger.info('finished loss sampling')
 
             if _gplt_fragment is None:  # no fragment
                 continue
@@ -366,10 +361,8 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
 
             _gplt_fragment = _filter_missing_summaryids(_gplt_fragment, outputset_id)
 
-            logger.info('mapping summary ids')
             _gplt_fragment = apply_summaryid_map(_gplt_fragment, outputset_id,
                                                  group.summaryinfo_map)
-            logger.info('mapped summary ids')
 
             gplt_fragments.append(_gplt_fragment)
 

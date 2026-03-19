@@ -99,19 +99,12 @@ def combine(analysis_dirs,
                  f'alt={group_alt}, ept={group_ept}')
 
     # Group meta data
-    logger.info("Stage 1/5: Loading analysis directories")
-    logger.debug(f'Analysis dirs ({len(analysis_dirs)}): {analysis_dirs}')
+    logger.info("Stage 1/5: Loading analysis directories and preparing summary info")
     analyses = load_analysis_dirs(analysis_dirs)
-    logger.debug(f'Stage 1a done: loaded {len(analyses)} analyses')
-
-    logger.info("Stage 1/5: Creating combine group")
     group, groupset_summaryinfo = create_combine_group(analyses,
                                                        groupeventset_fields=group_event_set_fields)
-    logger.debug(f'Stage 1b done: groupset has {len(group.groupset)} entries')
 
-    logger.info("Stage 1/5: Saving summary info")
     save_summary_info(groupset_summaryinfo, group.groupset, output_dir)
-    logger.debug('Stage 1c done: summary info saved')
 
     # Period sampling
     logger.info("Stage 2/5: Period Sampling")
@@ -120,9 +113,6 @@ def combine(analysis_dirs,
                                           max_group_periods=group_number_of_periods,
                                           occ_dtype=occ_dtype
                                           )
-    logger.debug('group period memory usage: \n')
-    logger.debug(group_period.info(memory_usage='deep'))
-    logger.debug('Stage 2 done: group periods generated')
 
     # Loss sampling
     no_quantile_sampling = group_mean and not group_secondary_uncertainty
@@ -133,22 +123,16 @@ def combine(analysis_dirs,
                          correlation=group_correlation
                          )
 
-    logger.debug('gpqt memory usage: \n')
-    logger.debug(gpqt.info(memory_usage='deep'))
-    logger.debug('Stage 3 done: quantile periods generated')
-
     logger.info("Stage 4/5: Loss Sampling")
     logger.debug(f'mean_only={group_mean}, secondary_uncertainty={group_secondary_uncertainty}, '
-                 f'parametric_distribution={group_parametric_distribution}')
+                 f'parametric_distribution={group_parametric_distribution}'
+                 f'format_priority={group_format_priority}')
     gplt = do_loss_sampling(gpqt, group,
                             mean_only=group_mean,
                             secondary_uncertainty=group_secondary_uncertainty,
                             parametric_distribution=group_parametric_distribution,
                             format_priority=group_format_priority
                             )
-    logger.debug('gplt memory usage: \n')
-    logger.debug(gplt.info(memory_usage='deep'))
-    logger.debug('Stage 4 done: loss sampling complete')
 
     # Output generation
     logger.info("Stage 5/5: Output Generation")
@@ -161,18 +145,12 @@ def combine(analysis_dirs,
     if group_alt:
         logger.debug('Generating ALT')
         outputs.append(('galt', generate_alt(gplt, group_number_of_periods), GALT_schema))
-        logger.debug('ALT generated')
-        logger.debug('alt memory usage: \n')
-        logger.debug(outputs[-1][1].info(memory_usage='deep'))
 
     if group_ept:
         logger.debug(f'Generating EPT (oep={group_ept_oep}, aep={group_ept_aep})')
         outputs.append(('gept', generate_ept(gplt, group_number_of_periods,
                                              oep=group_ept_oep,
                                              aep=group_ept_aep), GEPT_schema))
-        logger.debug('EPT generated')
-        logger.debug('ept memory usage: \n')
-        logger.debug(outputs[-1][1].info(memory_usage='deep'))
 
     for output_name, output_df, output_schema in outputs:
         logger.debug(f'Saving {output_name}.{output_type}')
