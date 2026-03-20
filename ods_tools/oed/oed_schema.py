@@ -206,7 +206,7 @@ class OedSchema:
             else:
                 return ''
         else:
-            if field_info['Default'] != 'n/a':
+            if field_info['Default'] not in ('n/a', ''):
                 return dtype_to_python[field_info['pd_dtype']](field_info['Default'])
             else:
                 return np.nan
