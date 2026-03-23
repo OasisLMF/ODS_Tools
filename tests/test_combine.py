@@ -30,6 +30,7 @@ ORIGINAL_PERIODS = 1000
 PERIOD_REPEATS = 2
 TEST_GROUP_PERIODS = PERIOD_REPEATS * ORIGINAL_PERIODS
 
+
 def assert_columns_equal(cols1, cols2):
     assert set(cols1) == set(cols2), f'Some columns are not shared: {set(cols1) ^ set(cols2)}'
 
