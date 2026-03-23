@@ -242,8 +242,9 @@ class OdsPackageTests(TestCase):
                                   'additional_fields': additional_fields_config
                                   })
 
-        assert exposure.location.dataframe['BIPOIType'].dtype == 'Int64'
-        assert exposure.location.dataframe['loc_id'].dtype == 'Int64'
+        expected_dtype = additional_fields_config['Loc']['BIPOIType'][exposure.backend_dtype]
+        assert str(exposure.location.dataframe['BIPOIType'].dtype) == expected_dtype
+        assert str(exposure.location.dataframe['loc_id'].dtype) == additional_fields_config['Loc']['loc_id'][exposure.backend_dtype]
 
         # check reading from file
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -252,8 +253,9 @@ class OdsPackageTests(TestCase):
 
             exposure = OedExposure(**{'location': loc_path, 'use_field': True,
                                       'additional_fields': additional_fields_config})
-            assert exposure.location.dataframe['BIPOIType'].dtype == 'Int64'
-            assert exposure.location.dataframe['loc_id'].dtype == 'Int64'
+            expected_dtype = additional_fields_config['Loc']['BIPOIType'][exposure.backend_dtype]
+            assert str(exposure.location.dataframe['BIPOIType'].dtype) == expected_dtype
+            assert str(exposure.location.dataframe['loc_id'].dtype) == additional_fields_config['Loc']['loc_id'][exposure.backend_dtype]
 
     def test_load_oed_from_stream(self):
         with tempfile.TemporaryDirectory() as tmp_run_dir:
