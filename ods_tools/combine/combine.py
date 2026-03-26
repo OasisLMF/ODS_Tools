@@ -71,6 +71,7 @@ def prepare_config(config, raise_error=True):
 def combine(analysis_dirs,
             group_event_set_fields,
             group_number_of_periods,
+            group_fill_perspectives=False,
             group_mean=False,
             group_secondary_uncertainty=False,
             group_parametric_distribution='beta',
@@ -97,6 +98,7 @@ def combine(analysis_dirs,
     logger.info("Running: Group Step")
     analyses = load_analysis_dirs(analysis_dirs)
     group, groupset_summaryinfo = create_combine_group(analyses,
+                                                       group_fill_perspectives=group_fill_perspectives,
                                                        groupeventset_fields=group_event_set_fields)
 
     save_summary_info(groupset_summaryinfo, group.groupset, output_dir)
