@@ -34,16 +34,21 @@ Each analysis directory must contain:
 
 ```
 analysis_dir/
-├── analysis_settings.json    # Analysis configuration with model settings
 ├── input/
 │   └── occurrence.bin        # Binary occurrence file (event-period mapping)
 └── output/
+    ├── analysis_settings.json    # Analysis configuration with model settings
     ├── gul_S1_summary-info.csv    # Summary info per summary level
     ├── gul_S1_melt.csv            # Moment ELT (required for mean-only)
     ├── gul_S1_qelt.csv            # Quantile ELT (optional)
     ├── gul_S1_selt.csv            # Sample ELT (optional)
     └── ...
 ```
+
+Note that the `analysis_settings.json` files will be searched for in the following locations (in order of priority):
+- `analysis_dir/output/analysis_settings.json`
+- `analysis_dir/analysis_settings.json`
+- `analysis_dir/input/analysis_settings.json`
 
 ### Required Files
 
@@ -116,7 +121,7 @@ Create a JSON configuration file with the following options:
 | `group_parametric_distribution` | str | "beta" | Distribution for MELT sampling (`"beta"`) |
 | `group_format_priority` | list | ["M","Q","S"] | Priority order for ELT formats: M=Moment, Q=Quantile, S=Sample |
 | `group_correlation` | float | null | Correlation factor (0.0=uncorrelated, 1.0=fully correlated) |
-| `group_fill_perspectives` | bool | false | Fill missing perspectives (e.g., use gross for missing net) |
+| `group_fill_perspectives` | bool | false | Fill missing perspectives (use 'gul' for missing 'il' or 'il' for missing 'ri') |
 | `group_event_set_fields` | list | see default | Fields used to identify common event sets across analyses |
 | `group_plt` | bool | false | Output Group Period Loss Table |
 | `group_alt` | bool | false | Output Group Average Loss Table (AAL) |
