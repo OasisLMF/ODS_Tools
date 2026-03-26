@@ -456,8 +456,8 @@ def quantile_loss_sampling(gpqt, qelt, skip_records=[]):
     summary_ids = qelt["SummaryId"].unique()
     loss_sample_frags = []
     for summary_id in summary_ids:
-        qelt_summary_id = qelt.query(f"SummaryId == {summary_id}")
-        curr_gpqt = gpqt[gpqt['EventId'].isin(qelt_summary_id['EventId'])]
+        qelt_summary_id = qelt.query(f"SummaryId == {summary_id}").reset_index(drop=True)
+        curr_gpqt = gpqt[gpqt['EventId'].isin(qelt_summary_id['EventId'])].reset_index(drop=True)
         curr_loss_frag = quantile_loss_sampling__summary_id(curr_gpqt, qelt_summary_id)
         curr_loss_frag["SummaryId"] = summary_id
         loss_sample_frags.append(curr_loss_frag)
@@ -479,49 +479,29 @@ def quantile_loss_sampling(gpqt, qelt, skip_records=[]):
     return loss_sampled_df, skip_records
 
 
-# @profile
 def quantile_loss_sampling__summary_id(gpqt, qelt):
-    if gpqt.empty:
-        return gpqt.copy()
+    q_arr = qelt[['EventId', 'LTQuantile', 'QuantileLoss']].to_records(index=False)
+    quantiles = np.sort(np.unique(q_arr['LTQuantile']))
+    no_quantiles = len(quantiles)
+    no_eventids = len(np.unique(q_arr['EventId']))
 
-    quantiles = sorted(qelt['LTQuantile'].unique().tolist())
-    quantile_map = {q: i for i, q in enumerate(quantiles)}
-    quantiles = [-1] + quantiles  # capture zero index
-    quantile_labels = range(len(quantiles) - 1)
+    assert len(q_arr) == no_quantiles * no_eventids, 'QELT file does not match expected size, is it complete?'
+    first_eventid_map = np.zeros((no_eventids, 2), dtype=int)
+    first_eventid_map[:, 1] = np.arange(no_eventids) * no_quantiles
+    first_eventid_map[:, 0] = q_arr[first_eventid_map[:, 1]]['EventId']
+    first_eventid_map = pd.Series(data=first_eventid_map[:, 1], index=first_eventid_map[:, 0])
 
+    gpqt_quantile = gpqt['Quantile'].to_numpy()
+    q_ind = np.digitize(gpqt_quantile, quantiles, right=True) - 1
+    q_ind = q_ind + gpqt['EventId'].map(first_eventid_map).to_numpy()
+
+    q_l_arr = q_arr[q_ind]
+    q_r_arr = q_arr[q_ind + 1]
     loss_df = gpqt.copy().reset_index(drop=True)
-    _qelt = qelt.copy()
-
-    _qelt['quantile_idx'] = _qelt['LTQuantile'].replace(quantile_map).astype(int)
-    loss_df['quantile_idx_right'] = pd.cut(loss_df['Quantile'], quantiles, labels=quantile_labels).astype(int)
-    loss_df['quantile_idx_left'] = loss_df['quantile_idx_right'] - 1
-
-    loss_df[['QuantileLossLeft', 'QuantileLeft']] = loss_df.merge(_qelt, left_on=['EventId', 'quantile_idx_left'], right_on=[
-                                                                  'EventId', 'quantile_idx'], how='left')[['QuantileLoss', 'LTQuantile']]
-
-    loss_df[['QuantileLossRight', 'QuantileRight']] = loss_df.merge(_qelt, left_on=['EventId', 'quantile_idx_right'], right_on=[
-                                                                    'EventId', 'quantile_idx'], how='left')[['QuantileLoss', 'LTQuantile']]
-
-    loss_df['Loss'] = (loss_df['Quantile'] - loss_df['QuantileLeft']) / (loss_df['QuantileRight'] - loss_df['QuantileLeft'])
-    loss_df['Loss'] = loss_df['QuantileLossLeft'] + loss_df['Loss'] * (loss_df['QuantileLossRight'] - loss_df['QuantileLossLeft'])
-
+    loss_df['Loss'] = q_l_arr['QuantileLoss'] + ((gpqt_quantile - q_l_arr['LTQuantile']) *
+                                                 (q_r_arr['QuantileLoss'] - q_l_arr['QuantileLoss']) /
+                                                 (q_r_arr['LTQuantile'] - q_l_arr['LTQuantile']))
     return loss_df
-
-
-def quantile_single_row(row, qelt):  # todo speedup
-    filtered_qelt = qelt.query(f"EventId == {row['EventId']}")
-    previous_quantile = filtered_qelt[filtered_qelt["LTQuantile"] <= row["Quantile"]].iloc[-1]
-    next_quantile = filtered_qelt[filtered_qelt["LTQuantile"] > row["Quantile"]].iloc[0]
-
-    if row["Quantile"] == previous_quantile["LTQuantile"]:
-        row["Loss"] = previous_quantile["QuantileLoss"]
-        return row
-
-    quantile_range = next_quantile["LTQuantile"] - previous_quantile["LTQuantile"]
-    quantile_loss_range = next_quantile["QuantileLoss"] - previous_quantile["QuantileLoss"]
-    row["Loss"] = previous_quantile["QuantileLoss"] + (row["Quantile"] - previous_quantile["LTQuantile"]) * quantile_loss_range / quantile_range
-
-    return row
 
 
 def sample_loss_sampling__summary_id(gpqt, selt, number_of_samples):
