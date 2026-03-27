@@ -466,7 +466,7 @@ def mean_loss_sampling(gpqt, melt, skip_records=None, sampling_func='beta'):
     return loss_sampled_df, skip_records
 
 
-def quantile_loss_sampling(gpqt, qelt, skip_records=[]):
+def quantile_loss_sampling(gpqt, qelt, skip_records=None):
     qelt = filter_elt__skipped(qelt, skip_records, prefix='q')
     if qelt is None:
         return None, skip_records
