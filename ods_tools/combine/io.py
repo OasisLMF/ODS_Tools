@@ -195,28 +195,27 @@ def load_loss_table_paths(analysis, summary_level_id, perspective, output_type):
 
 
 # Loading ELT files
-MELT_DTYPE = {
+ELT_DTYPE = {
     "SummaryId": "i4",
     "SampleType": "Int32",
+    "SampleId": "i4",
     "EventId": "i4",
     "MeanLoss": oasis_float,
     "SDLoss": oasis_float,
-    "MaxLoss": oasis_float
-}
-
-QELT_DTYPE = {
-    "SummaryId": "i4",
-    "EventId": "i4",
+    "MaxLoss": oasis_float,
     "Quantile": "f4",
-    "Loss": "f4"
+    "Loss": oasis_float,
+    "LossType": "i4"
 }
 
-SELT_DTYPE = {
-    "SummaryId": "i4",
-    "EventId": "i4",
-    "SampleId": "i4",
-    "Loss": oasis_float
-}
+MELT_DTYPE = {k: ELT_DTYPE[k] for k in ["SummaryId", "SampleType", "EventId",
+                                        "MeanLoss", "SDLoss", "MaxLoss"]}
+
+QELT_DTYPE = {k: ELT_DTYPE[k] for k in ["SummaryId", "EventId", "Quantile",
+                                        "Loss"]}
+
+SELT_DTYPE = {k: ELT_DTYPE[k] for k in ["SummaryId", "EventId", "SampleId",
+                                        "Loss"]}
 
 
 def load_elt(path, dtype):
