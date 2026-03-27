@@ -7,36 +7,13 @@ from scipy.stats import norm
 from scipy.special import betaincinv
 import logging
 
-from ods_tools.combine.common import DEFAULT_RANDOM_SEED
+from ods_tools.combine.common import DEFAULT_RANDOM_SEED, GPLT_dtype, GPLT_headers, GPQT_dtype, GPQT_headers
 from ods_tools.combine import io
 from ods_tools.combine.io import DEFAULT_OCC_DTYPE, load_melt, read_occurrence_bin, load_loss_table_paths
 
 logger = logging.getLogger(__name__)
 
 rng = np.random.default_rng(DEFAULT_RANDOM_SEED)  # todo implement configurable random seed
-
-gpqt_dtype = {
-    'GroupPeriod': np.int32,
-    'Period': np.int32,
-    'groupeventset_id': np.int32,
-    'EventId': np.int32,
-    'Quantile': np.float32,
-    'outputset_id': np.int32,
-}
-
-
-gplt_dtype = {
-    'groupset_id': np.int32,
-    'outputset_id': np.int32,
-    'SummaryId': "Int32",
-    'GroupPeriod': np.int32,
-    'Period': np.int32,
-    'groupeventset_id': np.int32,
-    'EventId': np.int32,
-    'Loss': np.float64,
-    'LossType': 'Int8'
-}
-
 
 # PERIOD SAMPLING
 
@@ -135,7 +112,7 @@ def generate_gpqt(group_period, group, no_quantile_sampling=False, correlation=N
     gpqt_fragments = []
 
     for groupeventset_id, groupeventset in group.groupeventset.items():
-        filtered_group_period = group_period.query(f'groupeventset_id == {groupeventset_id}')
+        filtered_group_period = group_period[group_period['groupeventset_id'] == groupeventset_id]
         filtered_analyses = [group.analyses[a] for a in groupeventset['analysis_ids']]
 
         analysis_outputsets = []
@@ -165,7 +142,7 @@ def generate_gpqt(group_period, group, no_quantile_sampling=False, correlation=N
     gpqt = pd.concat(gpqt_fragments).reset_index(drop=True)
 
     gpqt = calculate_quantiles(gpqt, no_quantile_sampling, correlation)
-    return gpqt.astype(gpqt_dtype)
+    return gpqt[GPQT_headers].astype(GPQT_dtype)
 
 
 def calculate_quantiles(gpqt, no_quantile_sampling=False, correlation=None):
@@ -241,7 +218,7 @@ def do_loss_sampling(gpqt,
 
     gplt = pd.concat(gplts, ignore_index=True)
 
-    return gplt.astype(gplt_dtype)[gplt_dtype.keys()]
+    return gplt[GPLT_headers].astype(GPLT_dtype)
 
 
 def do_loss_sampling_mean_only(gpqt, group):
@@ -263,7 +240,7 @@ def do_loss_sampling_mean_only(gpqt, group):
                                           perspective=os.perspective_code,
                                           output_type='elt')
 
-        filtered_gpqt = gpqt.query(f'outputset_id == {outputset_id}')
+        filtered_gpqt = gpqt[gpqt['outputset_id'] == outputset_id]
         gplt_fragment = loss_sample_mean_only(filtered_gpqt, elt_paths)
 
         # filter na summaryids (no eventid in elt file)
@@ -280,14 +257,14 @@ def do_loss_sampling_mean_only(gpqt, group):
 
     gplt = pd.concat(gplt_fragments, ignore_index=True)
 
-    return gplt.astype(gplt_dtype)[gplt_dtype.keys()]
+    return gplt[GPLT_headers].astype(GPLT_dtype)
 
 
 def _filter_missing_summaryids(df, outputset_id=None):
     missing_summary_ids = df["SummaryId"].isna()
     if not df[missing_summary_ids].empty:
         logger.info(f"Output set {outputset_id} has {missing_summary_ids.sum()} missing group events.")
-    df = df[~missing_summary_ids].reset_index(drop=True)
+    df = df.dropna(subset='SummaryId', ignore_index=True)
 
     return df
 
@@ -382,7 +359,7 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
 
         elt_dfs = {key: getattr(io, f'load_{key}')(value) for key, value in elt_paths.items()}  # todo handle this better (lazy load)
 
-        curr_gpqt = gpqt.query('outputset_id == @outputset_id').reset_index(drop=True)
+        curr_gpqt = gpqt[gpqt['outputset_id'] == outputset_id].reset_index(drop=True)
 
         for p in format_priority:
             elt_df = elt_dfs.get(f'{p.lower()}elt', None)
@@ -414,7 +391,7 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
 
     gplt = pd.concat(gplt_fragments, ignore_index=True)
 
-    return gplt.astype(gplt_dtype)[gplt_dtype.keys()]
+    return gplt[GPLT_headers].astype(GPLT_dtype)
 
 
 def beta_sampling_group_loss(df):
@@ -450,8 +427,11 @@ def mean_loss_sampling(gpqt, melt, sampling_func='beta'):
     _melt = melt.query('SampleType==2')[['SummaryId', 'EventId', 'MeanLoss', 'SDLoss', 'MaxLoss']]
 
     merged = gpqt['EventId'].isin(_melt["EventId"])
-
     remaining_gpqt = gpqt[~merged].reset_index(drop=True)
+
+    if not merged.any():
+        logger.info('Mean Loss Sampling: No additional matching EventIds found.')
+        return None, remaining_gpqt
 
     loss_sampled_df = gpqt[merged].merge(_melt, on='EventId', how='left')
     loss_sampled_df = sampling_func(loss_sampled_df)
@@ -470,6 +450,10 @@ def quantile_loss_sampling(gpqt, qelt):
 
     merged = gpqt["EventId"].isin(qelt["EventId"].unique())
     remaining_gpqt = gpqt[~merged].reset_index(drop=True)
+
+    if not merged.any():
+        logger.info('Quantile Loss Sampling: No additional matching EventIds found.')
+        return None, remaining_gpqt
 
     summary_ids = qelt["SummaryId"].unique()
     sample_loss_frags = []
@@ -491,7 +475,11 @@ def quantile_loss_sampling(gpqt, qelt):
     return sample_loss_df, remaining_gpqt[original_cols]
 
 
+# @profile
 def quantile_loss_sampling__summary_id(gpqt, qelt):
+    if gpqt.empty:
+        return gpqt.copy()
+
     quantiles = sorted(qelt['LTQuantile'].unique().tolist())
     quantile_map = {q: i for i, q in enumerate(quantiles)}
     quantiles = [-1] + quantiles  # capture zero index
@@ -561,9 +549,13 @@ def sample_loss_sampling__summary_id(gpqt, selt, number_of_samples):
 
 def sample_loss_sampling(gpqt, selt, number_of_samples=10):
     original_cols = list(gpqt.columns)
-    merged = gpqt["EventId"].isin(selt["EventId"].unique())
 
+    merged = gpqt["EventId"].isin(selt["EventId"].unique())
     remaining_gpqt = gpqt[~merged][original_cols].reset_index(drop=True)
+
+    if not merged.any():
+        logger.info('Sample Loss Sampling: No matching EventIds found.')
+        return None, remaining_gpqt
 
     # selt = selt.sort_values(by=['EventId', 'SampleLoss'], ascending=True)
     summary_ids = selt["SummaryId"].unique()

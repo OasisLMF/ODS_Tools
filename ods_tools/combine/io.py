@@ -7,6 +7,8 @@ import numba as nb
 import logging
 from datetime import datetime
 import pandas as pd
+from pyarrow import csv
+import pyarrow as pa
 
 from ods_tools.combine.common import nb_oasis_int, oasis_float
 
@@ -17,6 +19,14 @@ DEFAULT_OCC_DTYPE = [('event_id', 'i4'),
                      ('period_no', 'i4'),
                      ('occ_date_id', 'i4')  # granular dtype 'i8'
                      ]
+
+
+def pyarrow_write_csv(data, output_file, schema=None):
+    """numpy → pandas → pa.Table (cast to schema) → pyarrow.csv.write_csv."""
+    table = pa.Table.from_pandas(data, preserve_index=False)
+    if schema is not None:
+        table = table.cast(schema)
+    csv.write_csv(table, output_file)
 
 
 def get_default_output_dir():
@@ -40,11 +50,19 @@ def save_summary_info(groupset_summaryinfo, groupset_info, output_dir):
         logger.info(f'Saved {summary_info_fname}: {save_path}')
 
 
-def save_output(full_df, output_dir, output_name, factor_col='groupset_id', float_format='%.6f'):
+def save_output(full_df, output_dir, output_name, factor_col='groupset_id', float_decimals=6,
+                output_type='csv', schema=None):
+    assert output_type in ['csv', 'parquet'], f'Output type {output_type} is not supported.'
+    output_name = f'{output_name}.{output_type}'
     for i in full_df[factor_col].unique():
         save_path = output_dir / f'{i}_{output_name}'
-        full_df.query(f"{factor_col} == {i}").to_csv(save_path, index=False,
-                                                     float_format=float_format)
+        output_df = full_df[full_df[factor_col] == i]
+        if output_type == 'parquet':
+            output_df.to_parquet(save_path, index=False)
+        else:
+            if len(output_df) > 10**5:
+                logger.info('Large output {output_name} file in csv. Consider using `output_type=parquet`')
+            pyarrow_write_csv(output_df, save_path, schema)
         logger.info(f'Saved {output_name}: {save_path}')
 
 # occurrence reading functions from oasislmf -> copied to avoid circular imports
@@ -179,8 +197,8 @@ def load_loss_table_paths(analysis, summary_level_id, perspective, output_type):
 # Loading ELT files
 ELT_DTYPE = {
     "SummaryId": "i4",
+    "SampleType": "Int32",
     "SampleId": "i4",
-    "SampleType": "i4",
     "EventId": "i4",
     "MeanLoss": oasis_float,
     "SDLoss": oasis_float,
