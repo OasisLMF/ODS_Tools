@@ -1,5 +1,6 @@
 import pandas as pd
 from dataclasses import asdict
+from collections import namedtuple
 
 
 def dataclass_list_to_dataframe(dataclass_list):
@@ -12,3 +13,6 @@ def hash_summary_level_fields(summary_level_fields):
     """
     summary_level_fields = sorted(summary_level_fields)
     return str(summary_level_fields)
+
+
+SummaryInfoMapKey = namedtuple("SummaryInfoMapKey", "groupset_id outputset_id")
