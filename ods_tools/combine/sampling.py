@@ -361,7 +361,7 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
 
         curr_gpqt = gpqt[gpqt['outputset_id'] == outputset_id].reset_index(drop=True)
 
-        skip_df = None
+        skip_records = None
         for p in format_priority:
             elt_df = elt_dfs.get(f'{p.lower()}elt', None)
 
@@ -372,8 +372,8 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
             if p not in loss_sampling_func_map:
                 raise NotImplementedError(f"loss sampling function for format {p}elt not implemented")
 
-            _gplt_fragment, skip_df = loss_sampling_func_map[p.upper()](curr_gpqt, elt_df,
-                                                                        skip_df,
+            _gplt_fragment, skip_records = loss_sampling_func_map[p.upper()](curr_gpqt, elt_df,
+                                                                        skip_records,
                                                                         **sampling_args[p.upper()])
 
             if _gplt_fragment is None:  # no fragment
