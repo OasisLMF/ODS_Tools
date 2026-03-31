@@ -10,7 +10,7 @@ import pandas as pd
 from pyarrow import csv
 import pyarrow as pa
 
-from ods_tools.combine.common import nb_oasis_int, oasis_float
+from ods_tools.combine.common import nb_oasis_int, oasis_float, oasis_int
 
 logger = logging.getLogger(__name__)
 
@@ -196,10 +196,10 @@ def load_loss_table_paths(analysis, summary_level_id, perspective, output_type):
 
 # Loading ELT files
 ELT_DTYPE = {
-    "SummaryId": "i4",
+    "SummaryId": oasis_int,
     "SampleId": "i4",
     "SampleType": "Int32",
-    "EventId": "i4",
+    "EventId": oasis_int,
     "MeanLoss": oasis_float,
     "SDLoss": oasis_float,
     "MaxLoss": oasis_float,
