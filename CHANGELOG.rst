@@ -1,6 +1,19 @@
 ODS_Tools Changelog
 ===================
 
+`5.0.3`_
+ ---------
+* [#240](https://github.com/OasisLMF/ODS_Tools/pull/240) - enhancement/group_fill_perspective option for ods_tools combine
+* [#246](https://github.com/OasisLMF/ODS_Tools/pull/246) - enhacement/download OEDSpec during editable setup
+* [#247](https://github.com/OasisLMF/ODS_Tools/pull/247) - fix chardetv6 - dummy special chars
+* [#249](https://github.com/OasisLMF/ODS_Tools/pull/249) - Added missing token ENV to workflow script
+* [#251](https://github.com/OasisLMF/ODS_Tools/pull/251) - set default dtype to pyarrow when pandas>=3
+* [#252](https://github.com/OasisLMF/ODS_Tools/pull/252) - enhancement/combine tool performance
+* [#255](https://github.com/OasisLMF/ODS_Tools/pull/255) - fix/schema-validation
+* [#256](https://github.com/OasisLMF/ODS_Tools/pull/256) - fix/combine summaryid eventid
+* [#260](https://github.com/OasisLMF/ODS_Tools/pull/260) - auto release pr
+.. _`5.0.3`:  https://github.com/OasisLMF/ODS_Tools/compare/5.0.2...5.0.3
+
 `5.0.2`_
  ---------
 * [#158](https://github.com/OasisLMF/ODS_Tools/pull/218) - Add date validity checks
