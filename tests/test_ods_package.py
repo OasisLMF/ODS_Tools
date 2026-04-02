@@ -234,7 +234,7 @@ class OdsPackageTests(TestCase):
         additional_fields_config = {
             'Loc': {
                 'loc_id': {'pd_dtype': 'Int64', 'pa_dtype': 'int64[pyarrow]'},
-                'BIPOIType': {'pd_dtype': 'Int64', 'pa_dtype': 'int64[pyarrow'}
+                'BIPOIType': {'pd_dtype': 'Int64', 'pa_dtype': 'int64[pyarrow]'}
             }
         }
 
@@ -242,8 +242,9 @@ class OdsPackageTests(TestCase):
                                   'additional_fields': additional_fields_config
                                   })
 
-        assert exposure.location.dataframe['BIPOIType'].dtype == 'Int64'
-        assert exposure.location.dataframe['loc_id'].dtype == 'Int64'
+        expected_dtype = additional_fields_config['Loc']['BIPOIType'][exposure.backend_dtype]
+        assert str(exposure.location.dataframe['BIPOIType'].dtype) == expected_dtype
+        assert str(exposure.location.dataframe['loc_id'].dtype) == additional_fields_config['Loc']['loc_id'][exposure.backend_dtype]
 
         # check reading from file
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -252,8 +253,9 @@ class OdsPackageTests(TestCase):
 
             exposure = OedExposure(**{'location': loc_path, 'use_field': True,
                                       'additional_fields': additional_fields_config})
-            assert exposure.location.dataframe['BIPOIType'].dtype == 'Int64'
-            assert exposure.location.dataframe['loc_id'].dtype == 'Int64'
+            expected_dtype = additional_fields_config['Loc']['BIPOIType'][exposure.backend_dtype]
+            assert str(exposure.location.dataframe['BIPOIType'].dtype) == expected_dtype
+            assert str(exposure.location.dataframe['loc_id'].dtype) == additional_fields_config['Loc']['loc_id'][exposure.backend_dtype]
 
     def test_load_oed_from_stream(self):
         with tempfile.TemporaryDirectory() as tmp_run_dir:
@@ -363,16 +365,9 @@ class OdsPackageTests(TestCase):
         }
         exposure = OedExposure(**config)
         with tempfile.TemporaryDirectory() as tmp_run_dir:
-            exposure.location.save('copy', os.path.join(tmp_run_dir, 'location.csv'))
-            exposure.account.save('copy', os.path.join(tmp_run_dir, 'account.csv'))
-            exposure.ri_info.save('copy', os.path.join(tmp_run_dir, 'ri_info.csv'))
-            exposure.ri_scope.save('copy', os.path.join(tmp_run_dir, 'ri_scope.csv'))
 
+            exposure.save(tmp_run_dir, save_config=True)
             config_copy = {
-                'location': os.path.join(tmp_run_dir, 'location.csv'),
-                'account': os.path.join(tmp_run_dir, 'account.csv'),
-                'ri_info': os.path.join(tmp_run_dir, 'ri_info.csv'),
-                'ri_scope': os.path.join(tmp_run_dir, 'ri_scope.csv'),
                 'currency_conversion': {
                     "currency_conversion_type": "DictBasedCurrencyRates",
                     "source_type": "dict",
@@ -382,7 +377,7 @@ class OdsPackageTests(TestCase):
                 },
                 'reporting_currency': 'USD',
             }
-            exposure2 = OedExposure(**config_copy)
+            exposure2 = OedExposure.from_dir(tmp_run_dir, **config_copy)
             exposure.reporting_currency = 'GBP'
             exposure.reporting_currency = 'USD'
             pd.testing.assert_frame_equal(exposure.location.dataframe,

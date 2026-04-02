@@ -98,13 +98,12 @@ class OedSchema:
                 dev_schema_path = cls.DEFAULT_ODS_SCHEMA_PATH.format('DEV')
                 logger.debug(f"attempting to load DEV schema {dev_schema_path}")
                 return cls.from_json(dev_schema_path)
-            except (FileNotFoundError, Exception) as e:
+            except FileNotFoundError as e:
                 logger.debug(f"loading default schema {cls.DEFAULT_ODS_SCHEMA_PATH}")
                 return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(OED_VERSION))
         if isinstance(oed_schema_info, str):
             if oed_schema_info == "latest version":
-                ods_tools_root = Path(__file__).resolve().parent.parent
-                oed_spec_files = glob(str(Path(ods_tools_root, "data/OpenExposureData_*Spec.json")))
+                oed_spec_files = glob(cls.DEFAULT_ODS_SCHEMA_PATH.format('*'))
 
                 version_pattern = re.compile("OpenExposureData_(\\d+\\.\\d+\\.\\d+)Spec\.json")
                 versions = [version_pattern.search(path).group(1) for path in oed_spec_files if version_pattern.search(path)]
@@ -192,9 +191,6 @@ class OedSchema:
         return jit_peril_filtering(peril_ids.to_numpy().astype('str'), peril_filters.to_numpy().astype('str'),
                                    self.nb_peril_groups_dict if include_sub_group else self.nb_perils_dict)
 
-    def get_default_backend_dtype(self):
-        return 'pd_dtype'
-
     def get_available_backend_dtype(self):
         return self.schema.get('backend_dtype', ['pd_dtype'])
 
@@ -209,7 +205,7 @@ class OedSchema:
             else:
                 return ''
         else:
-            if field_info['Default'] != 'n/a':
+            if field_info['Default'] not in ('n/a', ''):
                 return dtype_to_python[field_info['pd_dtype']](field_info['Default'])
             else:
                 return np.nan

@@ -1,6 +1,12 @@
 ODS_Tools Changelog
 ===================
 
+`5.0.2`_
+ ---------
+* [#158](https://github.com/OasisLMF/ODS_Tools/pull/218) - Add date validity checks
+* [#242](https://github.com/OasisLMF/ODS_Tools/pull/243) - ods_tools CI issues
+.. _`5.0.2`:  https://github.com/OasisLMF/ODS_Tools/compare/5.0.1...5.0.2
+
 * [#233](https://github.com/OasisLMF/ODS_Tools/pull/234) - ods_tools package 5.0.0 does not include pyarrow despite needing it
 .. _`5.0.1`:  https://github.com/OasisLMF/ODS_Tools/compare/5.0.0...5.0.1
 

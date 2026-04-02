@@ -194,7 +194,7 @@ class Validator:
                     is_valid_value = functools.partial(OedSchema.is_valid_value,
                                                        valid_ranges=valid_ranges,
                                                        allow_blanks=blanks_allowed)
-                    invalid_range_data = oed_source.dataframe[~oed_source.dataframe[column].apply(is_valid_value)]
+                    invalid_range_data = oed_source.dataframe[~oed_source.dataframe[column].apply(is_valid_value).astype(bool)]
                     if not invalid_range_data.empty:
                         invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                              'msg': f"column '{column}' has values outside range.\n"

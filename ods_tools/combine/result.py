@@ -5,6 +5,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from ods_tools.oed import AnalysisSettingHandler
+from ods_tools.oed.common import OdsException
+
+ANALYSIS_PATHS = [
+    Path('output') / 'analysis_settings.json',
+    Path('analysis_settings.json'),
+    Path('input') / 'analysis_settings.json'
+]
 
 
 @dataclass
@@ -28,6 +35,14 @@ class Analysis():
         return cls(**init_params)
 
 
+def get_analysis_path(dir):
+    for analysis_path in ANALYSIS_PATHS:
+        analysis_path = Path(dir) / analysis_path
+        if analysis_path.is_file():
+            return analysis_path
+    return None
+
+
 def load_analysis_dirs(analysis_dirs):
     '''
     Load the Analyses dict from a list of analysis directories.
@@ -40,7 +55,11 @@ def load_analysis_dirs(analysis_dirs):
     ods_analysis_settings_schema = AnalysisSettingHandler.make()
     curr_id = 1
     for dir in analysis_dirs:
-        curr_settings = ods_analysis_settings_schema.load(Path(dir) / 'analysis_settings.json')
+        analysis_path = get_analysis_path(dir)
+        if analysis_path is None:
+            raise OdsException(f'Combine error: could not find analysis settings file for {dir}')
+
+        curr_settings = ods_analysis_settings_schema.load(analysis_path)
         curr_analysis = Analysis.from_analysis_settings(curr_settings, path=Path(dir), id=curr_id)
 
         analyses[curr_id] = curr_analysis

@@ -1,4 +1,4 @@
-groupset_id,SummaryId,LossType,Mean,Std
+groupset_id,SummaryId,LossType,MeanLoss,SDLoss
 1,1,1,15258.891602,32841.976562
 1,1,3,14940.773438,32148.416016
 1,2,1,54793.292969,117932.546875

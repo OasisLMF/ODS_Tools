@@ -7,36 +7,13 @@ from scipy.stats import norm
 from scipy.special import betaincinv
 import logging
 
-from ods_tools.combine.common import DEFAULT_RANDOM_SEED
+from ods_tools.combine.common import DEFAULT_RANDOM_SEED, GPLT_dtype, GPLT_headers, GPQT_dtype, GPQT_headers
 from ods_tools.combine import io
 from ods_tools.combine.io import DEFAULT_OCC_DTYPE, load_melt, read_occurrence_bin, load_loss_table_paths
 
 logger = logging.getLogger(__name__)
 
 rng = np.random.default_rng(DEFAULT_RANDOM_SEED)  # todo implement configurable random seed
-
-gpqt_dtype = {
-    'GroupPeriod': np.int32,
-    'Period': np.int32,
-    'groupeventset_id': np.int32,
-    'EventId': np.int32,
-    'Quantile': np.float32,
-    'outputset_id': np.int32,
-}
-
-
-gplt_dtype = {
-    'groupset_id': np.int32,
-    'outputset_id': np.int32,
-    'SummaryId': "Int32",
-    'GroupPeriod': np.int32,
-    'Period': np.int32,
-    'groupeventset_id': np.int32,
-    'EventId': np.int32,
-    'Loss': np.float64,
-    'LossType': 'Int8'
-}
-
 
 # PERIOD SAMPLING
 
@@ -135,7 +112,7 @@ def generate_gpqt(group_period, group, no_quantile_sampling=False, correlation=N
     gpqt_fragments = []
 
     for groupeventset_id, groupeventset in group.groupeventset.items():
-        filtered_group_period = group_period.query(f'groupeventset_id == {groupeventset_id}')
+        filtered_group_period = group_period[group_period['groupeventset_id'] == groupeventset_id]
         filtered_analyses = [group.analyses[a] for a in groupeventset['analysis_ids']]
 
         analysis_outputsets = []
@@ -165,7 +142,7 @@ def generate_gpqt(group_period, group, no_quantile_sampling=False, correlation=N
     gpqt = pd.concat(gpqt_fragments).reset_index(drop=True)
 
     gpqt = calculate_quantiles(gpqt, no_quantile_sampling, correlation)
-    return gpqt.astype(gpqt_dtype)
+    return gpqt[GPQT_headers].astype(GPQT_dtype)
 
 
 def calculate_quantiles(gpqt, no_quantile_sampling=False, correlation=None):
@@ -229,19 +206,19 @@ def do_loss_sampling(gpqt,
         logger.error("No loss sampling. Please set `group_mean` or `secondary_uncertainty`.")
         raise OdsException('No loss sampling specified.')
 
-    gplt = None
+    gplts = []
     if mean_only:
         logger.info("Loss sampling: mean only")
-        gplt = do_loss_sampling_mean_only(gpqt, group)
+        gplts.append(do_loss_sampling_mean_only(gpqt, group))
 
     if secondary_uncertainty:
-        _gplt = do_loss_sampling_secondary_uncertainty(gpqt, group,
-                                                       format_priority=format_priority,
-                                                       parametric_distribution=parametric_distribution)
+        gplts.append(do_loss_sampling_secondary_uncertainty(gpqt, group,
+                                                            format_priority=format_priority,
+                                                            parametric_distribution=parametric_distribution))
 
-        gplt = _gplt if gplt is None else pd.concat([gplt, _gplt], ignore_index=True)
+    gplt = pd.concat(gplts, ignore_index=True)
 
-    return gplt.astype(gplt_dtype)[gplt_dtype.keys()]
+    return gplt[GPLT_headers].astype(GPLT_dtype)
 
 
 def do_loss_sampling_mean_only(gpqt, group):
@@ -263,44 +240,63 @@ def do_loss_sampling_mean_only(gpqt, group):
                                           perspective=os.perspective_code,
                                           output_type='elt')
 
-        filtered_gpqt = gpqt.query(f'outputset_id == {outputset_id}')
+        filtered_gpqt = gpqt[gpqt['outputset_id'] == outputset_id]
         gplt_fragment = loss_sample_mean_only(filtered_gpqt, elt_paths)
-        gplt_fragment['groupset_id'] = os.groupset_id
 
         # filter na summaryids (no eventid in elt file)
         gplt_fragment = _filter_missing_summaryids(gplt_fragment, outputset_id)
+        gplt_fragment = _fix_col_types(gplt_fragment)
+        gplt_fragment = _duplicate_gplt_per_groupset(gplt_fragment, os)
 
-        # do summary id mapping
-        gplt_fragment = apply_summaryid_map(gplt_fragment, outputset_id,
-                                            group.summaryinfo_map)
+        # Apply summaryid map
+        groups = gplt_fragment.groupby(["groupset_id", "outputset_id"], group_keys=False)
+        gplt_fragment['SummaryId'] = groups.apply(apply_summaryid_replace,
+                                                  group_summaryinfo_map=group.summaryinfo_map)['SummaryId']
 
         gplt_fragments.append(gplt_fragment)
 
     gplt = pd.concat(gplt_fragments, ignore_index=True)
 
-    return gplt.astype(gplt_dtype)[gplt_dtype.keys()]
+    return gplt[GPLT_headers].astype(GPLT_dtype)
 
 
 def _filter_missing_summaryids(df, outputset_id=None):
     missing_summary_ids = df["SummaryId"].isna()
     if not df[missing_summary_ids].empty:
         logger.info(f"Output set {outputset_id} has {missing_summary_ids.sum()} missing group events.")
-    df = df[~missing_summary_ids].reset_index()
+    df = df.dropna(subset='SummaryId', ignore_index=True)
 
     return df
 
 
-def apply_summaryid_map(df, outputset_id, summaryinfo_map):
-    if summaryinfo_map is not None:
-        summaryid_map = summaryinfo_map.get(outputset_id, None)
-    else:
-        summaryid_map = None
-
-    if summaryid_map is not None:
-        df["SummaryId"] = (df["SummaryId"].map(summaryid_map)
-                           .fillna(df["SummaryId"]))
-
+def _fix_col_types(df):
+    cols_to_fix = ["SummaryId", "EventId", "LossType"]
+    df[cols_to_fix] = df[cols_to_fix].astype(int)
     return df
+
+
+def _duplicate_gplt_per_groupset(gplt, outputset):
+    '''
+    Duplicates the gplt fragment based on the number of groupsets in the outputset.
+    '''
+    original_len = len(gplt)
+    index_repeats = np.repeat(np.arange(original_len), len(outputset.groupset_id))
+    gplt = gplt.iloc[index_repeats].reset_index(drop=True)
+    gplt['groupset_id'] = np.tile(outputset.groupset_id, original_len)
+
+    return gplt
+
+
+def apply_summaryid_replace(chunk, group_summaryinfo_map):
+    '''
+    Used in `group.apply` to map summaryid.
+    '''
+    _map = group_summaryinfo_map.get(chunk.name, None)
+    if _map is None:
+        return chunk
+
+    chunk['SummaryId'] = chunk['SummaryId'].map(lambda x: _map.get(x, x))
+    return chunk
 
 
 def loss_sample_mean_only(gpqt, elt_paths):
@@ -363,8 +359,9 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
 
         elt_dfs = {key: getattr(io, f'load_{key}')(value) for key, value in elt_paths.items()}  # todo handle this better (lazy load)
 
-        curr_gpqt = gpqt.query('outputset_id == @outputset_id').reset_index(drop=True)
+        curr_gpqt = gpqt[gpqt['outputset_id'] == outputset_id].reset_index(drop=True)
 
+        skip_records = None
         for p in format_priority:
             elt_df = elt_dfs.get(f'{p.lower()}elt', None)
 
@@ -375,26 +372,26 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
             if p not in loss_sampling_func_map:
                 raise NotImplementedError(f"loss sampling function for format {p}elt not implemented")
 
-            _gplt_fragment, curr_gpqt = loss_sampling_func_map[p.upper()](curr_gpqt, elt_df, **sampling_args[p.upper()])
+            _gplt_fragment, skip_records = loss_sampling_func_map[p.upper()](curr_gpqt, elt_df,
+                                                                             skip_records,
+                                                                             **sampling_args[p.upper()])
 
             if _gplt_fragment is None:  # no fragment
                 continue
 
-            _gplt_fragment["groupset_id"] = os.groupset_id
-
             _gplt_fragment = _filter_missing_summaryids(_gplt_fragment, outputset_id)
+            _gplt_fragment = _fix_col_types(_gplt_fragment)
+            _gplt_fragment = _duplicate_gplt_per_groupset(_gplt_fragment, os)
 
-            _gplt_fragment = apply_summaryid_map(_gplt_fragment, outputset_id,
-                                                 group.summaryinfo_map)
-
+            # Apply summaryid map
+            groups = _gplt_fragment.groupby(["groupset_id", "outputset_id"], group_keys=False)
+            _gplt_fragment['SummaryId'] = groups.apply(apply_summaryid_replace,
+                                                       group_summaryinfo_map=group.summaryinfo_map)['SummaryId']
             gplt_fragments.append(_gplt_fragment)
-
-            if curr_gpqt.empty:  # finished processing
-                break
 
     gplt = pd.concat(gplt_fragments, ignore_index=True)
 
-    return gplt.astype(gplt_dtype)[gplt_dtype.keys()]
+    return gplt[GPLT_headers].astype(GPLT_dtype)
 
 
 def beta_sampling_group_loss(df):
@@ -419,7 +416,18 @@ def beta_sampling_group_loss(df):
     return df
 
 
-def mean_loss_sampling(gpqt, melt, sampling_func='beta'):
+def _filter_elt_skipped(elt, skip_records, prefix=''):
+    if skip_records is not None:
+        elt_records = elt[['SummaryId', 'EventId']].to_records(index=False)
+        elt_mask = np.isin(elt_records, skip_records)
+        if elt_mask.all():
+            logger.info(f'No additional events found in {prefix}elt file.')
+            return None
+        elt = elt[~elt_mask]
+    return elt
+
+
+def mean_loss_sampling(gpqt, melt, skip_records=None, sampling_func='beta'):
     if sampling_func == 'beta':
         sampling_func = beta_sampling_group_loss
     else:
@@ -429,49 +437,72 @@ def mean_loss_sampling(gpqt, melt, sampling_func='beta'):
     # sampling only works on SampleType 2
     _melt = melt.query('SampleType==2')[['SummaryId', 'EventId', 'MeanLoss', 'SDLoss', 'MaxLoss']]
 
+    _melt = _filter_elt_skipped(_melt, skip_records, prefix='m')
+    if _melt is None:
+        return None, skip_records
+
     merged = gpqt['EventId'].isin(_melt["EventId"])
 
-    remaining_gpqt = gpqt[~merged].reset_index(drop=True)
+    if not merged.any():
+        logger.info('Mean Loss Sampling: No additional matching EventIds found.')
+        return None, skip_records
 
     loss_sampled_df = gpqt[merged].merge(_melt, on='EventId', how='left')
     loss_sampled_df = sampling_func(loss_sampled_df)
 
     if loss_sampled_df.empty:
-        return None, remaining_gpqt
+        return None, skip_records
 
     loss_sampled_df["LossType"] = 2
     loss_sampled_df = loss_sampled_df[original_cols + ['SummaryId', 'LossType', 'Loss']]
 
-    return loss_sampled_df, remaining_gpqt
+    additional_skip = loss_sampled_df[['SummaryId', 'EventId']].drop_duplicates().to_records(index=False)
+    if skip_records is not None:
+        skip_records = np.concatenate((skip_records, additional_skip))
+    else:
+        skip_records = additional_skip
+
+    return loss_sampled_df, skip_records
 
 
-def quantile_loss_sampling(gpqt, qelt):
+def quantile_loss_sampling(gpqt, qelt, skip_records=None):
+    qelt = _filter_elt_skipped(qelt, skip_records, prefix='q')
+    if qelt is None:
+        return None, skip_records
+
     original_cols = list(gpqt.columns)
 
-    merged = gpqt["EventId"].isin(qelt["EventId"].unique())
-    remaining_gpqt = gpqt[~merged].reset_index(drop=True)
-
     summary_ids = qelt["SummaryId"].unique()
-    sample_loss_frags = []
-    curr_gpqt = gpqt[merged]
+    loss_sample_frags = []
     for summary_id in summary_ids:
         qelt_summary_id = qelt.query(f"SummaryId == {summary_id}")
+        curr_gpqt = gpqt[gpqt['EventId'].isin(qelt_summary_id['EventId'])]
         curr_loss_frag = quantile_loss_sampling__summary_id(curr_gpqt, qelt_summary_id)
         curr_loss_frag["SummaryId"] = summary_id
-        sample_loss_frags.append(curr_loss_frag)
+        loss_sample_frags.append(curr_loss_frag)
 
-    sample_loss_df = pd.concat(sample_loss_frags)
+    loss_sampled_df = pd.concat(loss_sample_frags)
 
-    if sample_loss_df.empty:
-        return None, remaining_gpqt
+    if loss_sampled_df.empty:
+        return None, skip_records
 
-    sample_loss_df["LossType"] = 2
-    sample_loss_df = sample_loss_df[original_cols + ["SummaryId", "LossType", "Loss"]]
+    loss_sampled_df["LossType"] = 2
+    loss_sampled_df = loss_sampled_df[original_cols + ["SummaryId", "LossType", "Loss"]]
 
-    return sample_loss_df, remaining_gpqt[original_cols]
+    additional_skip = loss_sampled_df[['SummaryId', 'EventId']].drop_duplicates().to_records(index=False)
+    if skip_records is not None:
+        skip_records = np.concatenate((skip_records, additional_skip))
+    else:
+        skip_records = additional_skip
+
+    return loss_sampled_df, skip_records
 
 
+# @profile
 def quantile_loss_sampling__summary_id(gpqt, qelt):
+    if gpqt.empty:
+        return gpqt.copy()
+
     quantiles = sorted(qelt['LTQuantile'].unique().tolist())
     quantile_map = {q: i for i, q in enumerate(quantiles)}
     quantiles = [-1] + quantiles  # capture zero index
@@ -539,29 +570,38 @@ def sample_loss_sampling__summary_id(gpqt, selt, number_of_samples):
     return loss_df
 
 
-def sample_loss_sampling(gpqt, selt, number_of_samples=10):
+def sample_loss_sampling(gpqt, selt, skip_records=None, number_of_samples=10):
     original_cols = list(gpqt.columns)
-    merged = gpqt["EventId"].isin(selt["EventId"].unique())
 
-    remaining_gpqt = gpqt[~merged][original_cols].reset_index(drop=True)
+    selt = _filter_elt_skipped(selt, skip_records, prefix='s')
+    if selt is None:
+        return None, skip_records
 
     # selt = selt.sort_values(by=['EventId', 'SampleLoss'], ascending=True)
     summary_ids = selt["SummaryId"].unique()
 
-    curr_gpqt = gpqt[merged]
-    sample_loss_frags = []
+    loss_sample_frags = []
     for summary_id in summary_ids:
         selt_summary_id = selt.query(f"SummaryId == {summary_id}").reset_index(drop=True)
-        curr_loss_frag = sample_loss_sampling__summary_id(curr_gpqt, selt_summary_id, number_of_samples)
+        curr_gpqt = gpqt[gpqt['EventId'].isin(selt_summary_id['EventId'])]
+        curr_loss_frag = sample_loss_sampling__summary_id(curr_gpqt,
+                                                          selt_summary_id,
+                                                          number_of_samples)
         curr_loss_frag["SummaryId"] = summary_id
-        sample_loss_frags.append(curr_loss_frag)
+        loss_sample_frags.append(curr_loss_frag)
 
-    sample_loss_df = pd.concat(sample_loss_frags)
+    loss_sampled_df = pd.concat(loss_sample_frags)
 
-    if sample_loss_df.empty:
-        return None, remaining_gpqt
+    if loss_sampled_df.empty:
+        return None, skip_records
 
-    sample_loss_df["LossType"] = 2
-    sample_loss_df = sample_loss_df[original_cols + ["SummaryId", "LossType", "Loss"]]
+    loss_sampled_df["LossType"] = 2
+    loss_sampled_df = loss_sampled_df[original_cols + ["SummaryId", "LossType", "Loss"]]
 
-    return sample_loss_df, remaining_gpqt
+    additional_skip = loss_sampled_df[['SummaryId', 'EventId']].drop_duplicates().to_records(index=False)
+    if skip_records is not None:
+        skip_records = np.concatenate((skip_records, additional_skip))
+    else:
+        skip_records = additional_skip
+
+    return loss_sampled_df, skip_records
