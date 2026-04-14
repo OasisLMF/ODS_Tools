@@ -4,7 +4,8 @@ import re
 import setuptools
 from urllib.error import HTTPError
 
-import setuptools.command.install as orig
+from setuptools.command.install import install
+from setuptools.command.editable_wheel import editable_wheel
 
 import urllib.request
 import json
@@ -38,35 +39,18 @@ def get_extra_requirements():
         return extrareqs.readlines()
 
 
-class DownloadSpecODS(orig.install):
-    """A custom command to download a JSON ODS spec during installation.
-
-        Example Install:
-            pip install -v . --install-option="--local-oed-spec=<path>" .
-
+class DownloadSpecODSBase:
+    """Base class for supporting downloading OEDSpec
     """
     description = 'Download a ODS JSON spec file from a release URL.'
-    user_options = orig.install.user_options + [
-        ('local-oed-spec=', None, 'Override to build package with extracted spec (filepath)'),
-    ]
 
     def __init__(self, *args, **kwargs):
         self.filename = 'OpenExposureData_{}Spec.json'
         self.ods_repo = 'OasisLMF/ODS_OpenExposureData'
         self.url = f'https://github.com/{self.ods_repo}/releases/download/'
         self.github_token = os.environ.get('GITHUB_TOKEN', None)
-        orig.install.__init__(self, *args, **kwargs)
-
-    def initialize_options(self):
-        orig.install.initialize_options(self)
-        self.local_oed_spec = None
-
-    def finalize_options(self):
-        print("Local OED Spec:", str(self.local_oed_spec))
-        if self.local_oed_spec is not None:
-            if not os.path.isfile(self.local_oed_spec):
-                raise ValueError(f"Local OED Spec '{self.local_oed_spec}' not found")
-        orig.install.finalize_options(self)
+        self.src_path_attr = None
+        self.skip_if_present = False
 
     def run(self):
         # Install all releases
@@ -75,6 +59,12 @@ class DownloadSpecODS(orig.install):
         data = {}
         for tag in tags:
             try:
+                download_path = os.path.join(getattr(self, self.src_path_attr), 'ods_tools', 'data', self.filename.format(tag))
+
+                if self.skip_if_present and os.path.isfile(download_path):
+                    print(f'Tag: {tag} already present, skipping.')
+                    continue
+
                 url = self.url + f"{tag}/{self.filename.format('')}"
                 req = urllib.request.Request(url)
                 if self.github_token:
@@ -84,25 +74,11 @@ class DownloadSpecODS(orig.install):
                 data = json.loads(response.read())
                 data['version'] = tag
 
-                download_path = os.path.join(self.build_lib, 'ods_tools', 'data', self.filename.format(tag))
                 with open(download_path, 'w+') as f:
                     json.dump(data, f)
 
             except HTTPError:
                 print(f'No OED associated with {tag}: {url}')
-
-        if self.local_oed_spec:
-            # Install with local json spec
-            print('OED Version: Local File')
-            print(f'Install from path: {self.local_oed_spec}')
-            with open(self.local_oed_spec, 'r') as f:
-                data = json.load(f)
-                download_path = os.path.join(self.build_lib, 'ods_tools', 'data', self.filename.format('DEV'))
-                with open(download_path, 'w+') as f:
-                    json.dump(data, f)
-                data['version'] = 'DEV'
-
-        orig.install.run(self)
 
     def get_all_tags(self):
         """Fetch all release tags from GitHub API."""
@@ -121,6 +97,69 @@ class DownloadSpecODS(orig.install):
             tags.extend([t['name'] for t in data if 'rc' not in t['name']])
             page += 1
         return tags
+
+
+class DownloadSpecODSEditable(DownloadSpecODSBase, editable_wheel):
+    """A custom command to download a JSON ODS spec during installation.
+
+        Example Install:
+            pip install -v . --install-option="--local-oed-spec=<path>" .
+
+    """
+
+    def __init__(self, *args, **kwargs):
+        DownloadSpecODSBase.__init__(self, *args, **kwargs)
+        editable_wheel.__init__(self, *args, **kwargs)
+        self.src_path_attr = 'project_dir'
+        self.skip_if_present = True
+
+    def run(self):
+        DownloadSpecODSBase.run(self)
+        editable_wheel.run(self)
+
+
+class DownloadSpecODS(DownloadSpecODSBase, install):
+    """A custom command to download a JSON ODS spec during installation.
+
+        Example Install:
+            pip install -v . --install-option="--local-oed-spec=<path>" .
+
+    """
+    user_options = install.user_options + [
+        ('local-oed-spec=', None, 'Override to build package with extracted spec (filepath)'),
+    ]
+
+    def __init__(self, *args, **kwargs):
+        DownloadSpecODSBase.__init__(self, *args, **kwargs)
+        install.__init__(self, *args, **kwargs)
+        self.src_path_attr = 'build_lib'
+
+    def initialize_options(self):
+        install.initialize_options(self)
+        self.local_oed_spec = None
+
+    def finalize_options(self):
+        print("Local OED Spec:", str(self.local_oed_spec))
+        if self.local_oed_spec is not None:
+            if not os.path.isfile(self.local_oed_spec):
+                raise ValueError(f"Local OED Spec '{self.local_oed_spec}' not found")
+        install.finalize_options(self)
+
+    def run(self):
+        DownloadSpecODSBase.run(self)
+
+        if self.local_oed_spec:
+            # Install with local json spec
+            print('OED Version: Local File')
+            print(f'Install from path: {self.local_oed_spec}')
+            with open(self.local_oed_spec, 'r') as f:
+                data = json.load(f)
+                download_path = os.path.join(self.build_lib, 'ods_tools', 'data', self.filename.format('DEV'))
+                with open(download_path, 'w+') as f:
+                    json.dump(data, f)
+                data['version'] = 'DEV'
+
+        install.run(self)
 
 
 version = get_version()
@@ -156,5 +195,6 @@ setuptools.setup(
     url='https://github.com/OasisLMF/OpenDataStandards',
     cmdclass={
         'install': DownloadSpecODS,
+        'editable_wheel': DownloadSpecODSEditable
     },
 )
