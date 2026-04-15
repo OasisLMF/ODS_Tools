@@ -8,7 +8,7 @@ from ods_tools.combine.io import get_default_output_dir, save_output, save_summa
 from ods_tools.combine.output_generation import generate_alt, generate_ept
 from ods_tools.combine.result import load_analysis_dirs
 from ods_tools.combine.sampling import do_loss_sampling, generate_group_periods, generate_gpqt
-from ods_tools.combine.common import DEFAULT_CONFIG
+from ods_tools.combine.common import DEFAULT_CONFIG, GALT_schema, GEPT_schema, GPLT_headers, GPLT_schema
 from ods_tools.oed.common import OdsException
 
 logger = logging.getLogger(__name__)
@@ -71,6 +71,7 @@ def prepare_config(config, raise_error=True):
 def combine(analysis_dirs,
             group_event_set_fields,
             group_number_of_periods,
+            group_fill_perspectives=False,
             group_mean=False,
             group_secondary_uncertainty=False,
             group_parametric_distribution='beta',
@@ -83,6 +84,7 @@ def combine(analysis_dirs,
             group_ept_oep=True,
             group_ept_aep=True,
             output_dir=None,
+            output_type='csv',
             **kwargs
             ):
     # prepare output dir
@@ -91,32 +93,42 @@ def combine(analysis_dirs,
 
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
-    logger.info(f'Output directory generated: {output_dir}')
+    logger.info(f'Output directory: {output_dir}')
+    logger.debug(f'Config: num_periods={group_number_of_periods}, mean={group_mean}, '
+                 f'secondary_uncertainty={group_secondary_uncertainty}, '
+                 f'format_priority={group_format_priority}, plt={group_plt}, '
+                 f'alt={group_alt}, ept={group_ept}')
 
     # Group meta data
-    logger.info("Running: Group Step")
+    logger.info("Stage 1/5: Loading analysis directories and preparing summary info")
     analyses = load_analysis_dirs(analysis_dirs)
     group, groupset_summaryinfo = create_combine_group(analyses,
+                                                       group_fill_perspectives=group_fill_perspectives,
                                                        groupeventset_fields=group_event_set_fields)
 
     save_summary_info(groupset_summaryinfo, group.groupset, output_dir)
 
     # Period sampling
-    logger.info("Running: Period Sampling")
+    logger.info("Stage 2/5: Period Sampling")
+    logger.debug(f'max_group_periods={group_number_of_periods}, occ_dtype={occ_dtype}')
     group_period = generate_group_periods(group,
                                           max_group_periods=group_number_of_periods,
                                           occ_dtype=occ_dtype
                                           )
 
     # Loss sampling
-    logger.info("Running: Quantile Sampling")
     no_quantile_sampling = group_mean and not group_secondary_uncertainty
+    logger.info("Stage 3/5: Quantile Sampling")
+    logger.debug(f'no_quantile_sampling={no_quantile_sampling}, correlation={group_correlation}')
     gpqt = generate_gpqt(group_period, group,
                          no_quantile_sampling=no_quantile_sampling,
                          correlation=group_correlation
                          )
 
-    logger.info("Running: Loss Sampling")
+    logger.info("Stage 4/5: Loss Sampling")
+    logger.debug(f'mean_only={group_mean}, secondary_uncertainty={group_secondary_uncertainty}, '
+                 f'parametric_distribution={group_parametric_distribution}'
+                 f'format_priority={group_format_priority}')
     gplt = do_loss_sampling(gpqt, group,
                             mean_only=group_mean,
                             secondary_uncertainty=group_secondary_uncertainty,
@@ -125,24 +137,29 @@ def combine(analysis_dirs,
                             )
 
     # Output generation
-    logger.info("Running: Output Generation")
+    logger.info("Stage 5/5: Output Generation")
 
     outputs = []
 
     if group_plt:
-        outputs.append(('plt', gplt))
+        outputs.append(('gplt', gplt[GPLT_headers], GPLT_schema))
 
     if group_alt:
-        outputs.append(('alt', generate_alt(gplt, group_number_of_periods)))
+        logger.debug('Generating ALT')
+        outputs.append(('galt', generate_alt(gplt, group_number_of_periods), GALT_schema))
 
     if group_ept:
-        outputs.append(('ept',
-                        generate_ept(gplt, group_number_of_periods,
-                                     oep=group_ept_oep,
-                                     aep=group_ept_aep)))
+        logger.debug(f'Generating EPT (oep={group_ept_oep}, aep={group_ept_aep})')
+        outputs.append(('gept', generate_ept(gplt, group_number_of_periods,
+                                             oep=group_ept_oep,
+                                             aep=group_ept_aep), GEPT_schema))
 
-    for output_name, output_df in outputs:
-        save_output(output_df, output_dir, f'{output_name}.csv')
+    for output_name, output_df, output_schema in outputs:
+        logger.debug(f'Saving {output_name}.{output_type}')
+        save_output(output_df, output_dir, output_name,
+                    output_type=output_type, schema=output_schema)
+        logger.debug(f'Saved {output_name}.{output_type}')
+    logger.info("Stage 5/5: Output Generation complete")
 
 
 if __name__ == "__main__":

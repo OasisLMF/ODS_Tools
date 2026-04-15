@@ -17,9 +17,10 @@ sys.path.append(sys.path.pop(0))
 from ods_tools.combine.combine import DEFAULT_CONFIG, combine
 from ods_tools.combine.grouping import create_combine_group
 from ods_tools.combine.io import save_output
-from ods_tools.combine.output_generation import generate_alt, generate_ept, alt_dtype, ept_dtype
+from ods_tools.combine.output_generation import generate_alt, generate_ept
+from ods_tools.combine.common import GALT_dtype, GALT_schema, GEPT_dtype, GEPT_schema, GPLT_headers, GPQT_dtype, GPLT_dtype
 from ods_tools.combine.result import load_analysis_dirs
-from ods_tools.combine.sampling import generate_gpqt, generate_group_periods, do_loss_sampling, gpqt_dtype, gplt_dtype
+from ods_tools.combine.sampling import generate_gpqt, generate_group_periods, do_loss_sampling
 
 example_path = Path(Path(__file__).parent.parent, "ods_tools", "combine", "examples")
 expected_output_path = Path(Path(__file__).parent.parent, 'expected_output')
@@ -30,16 +31,17 @@ PERIOD_REPEATS = 2
 TEST_GROUP_PERIODS = PERIOD_REPEATS * ORIGINAL_PERIODS
 
 
-def test_basic(keep_output):
-    assert True
+def assert_columns_equal(cols1, cols2):
+    assert set(cols1) == set(cols2), f'Some columns are not shared: {set(cols1) ^ set(cols2)}'
 
 
-def test_combine__outputs_genrated():
+def test_combine__outputs_generated():
 
     input_dir = example_path / "inputs"
+    analysis_dirs = [str(input_dir / i) for i in ['1', '2']]
 
     config = {
-        "analysis_dirs": [str(child) for child in input_dir.iterdir()],
+        "analysis_dirs": analysis_dirs,
         "group_number_of_periods": TEST_GROUP_PERIODS,
         "group_mean": True,
         "group_alt": True,
@@ -52,14 +54,14 @@ def test_combine__outputs_genrated():
     groupset_ids = [0, 1]
     expected_summaryinfo_paths = [f'gul_GS{gs_id}_summary-info.csv' for gs_id in groupset_ids]
 
-    expected_output_paths = [f'{gs_id}_alt.csv' for gs_id in groupset_ids]
-    expected_output_paths += [f'{gs_id}_ept.csv' for gs_id in groupset_ids]
-    expected_output_paths += [f'{gs_id}_plt.csv' for gs_id in groupset_ids]
+    expected_output_paths = [f'{gs_id}_galt.csv' for gs_id in groupset_ids]
+    expected_output_paths += [f'{gs_id}_gept.csv' for gs_id in groupset_ids]
+    expected_output_paths += [f'{gs_id}_gplt.csv' for gs_id in groupset_ids]
 
     with tempfile.TemporaryDirectory() as tmp_output_dir:
         config['output_dir'] = tmp_output_dir
 
-        combine_result = combine(**config)
+        _ = combine(**config)
 
         # make sure summary info output
         for suminfo_path in expected_summaryinfo_paths:
@@ -108,7 +110,7 @@ def prepared_group_example():
     analysis_dirs = [example_path / 'inputs/1', example_path / 'inputs/2']
     analyses = load_analysis_dirs(analysis_dirs)
 
-    group, _ = create_combine_group(analyses,
+    group, _ = create_combine_group(analyses, group_fill_perspectives=False,
                                     groupeventset_fields=DEFAULT_CONFIG['group_event_set_fields'])
 
     return group
@@ -123,8 +125,8 @@ def test_combine__groupset_and_summaryinfo(prepared_group_example):
                              'perspective_code': 'gul'}}
 
     expected_summaryinfo_map = {
-        1: {2: 3, 3: 6, 4: 9, 5: 10},
-        3: {1: 2, 2: 4, 3: 5, 4: 7, 5: 8}
+        (1, 1): {2: 3, 3: 6, 4: 9, 5: 10},
+        (1, 3): {1: 2, 2: 4, 3: 5, 4: 7, 5: 8}
     }
 
     groupset = prepared_group_example.groupset
@@ -134,6 +136,45 @@ def test_combine__groupset_and_summaryinfo(prepared_group_example):
         assert groupset[groupset_id] == expected_groupset[groupset_id]
 
     summaryinfo_map = prepared_group_example.summaryinfo_map
+
+    assert expected_summaryinfo_map.keys() == summaryinfo_map.keys()
+    for outputset_id, curr_summaryinfo_map in summaryinfo_map.items():
+        assert expected_summaryinfo_map[outputset_id] == curr_summaryinfo_map
+
+
+def test_combine__groupset_and_summaryinfo__group_fill_perspective():
+    analysis_dirs = [example_path / 'inputs/1', example_path / 'inputs/2',
+                     example_path / 'inputs/3']
+    analyses = load_analysis_dirs(analysis_dirs)
+
+    expected_groupset = {0: {'exposure_summary_level_fields': [], 'id': 0,
+                             'outputsets': [0, 2, 4], 'perspective_code':
+                             'gul'},
+                         1: {'exposure_summary_level_fields': ['LocNumber'],
+                             'id': 1, 'outputsets': [1, 3, 5],
+                             'perspective_code': 'gul'},
+                         2: {'exposure_summary_level_fields': [], 'id': 2,
+                             'outputsets': [6, 0, 2], 'perspective_code':
+                             'il'},
+                         3: {'exposure_summary_level_fields': ['LocNumber'],
+                             'id': 3, 'outputsets': [7, 1, 3],
+                             'perspective_code': 'il'}}
+
+    expected_summaryinfo_map = {(1, 1): {2: 3, 3: 6, 4: 9, 5: 10},
+                                (1, 3): {1: 2, 2: 4, 3: 5, 4: 7, 5: 8},
+                                (3, 1): {2: 3, 3: 6, 4: 9, 5: 10},
+                                (3, 3): {1: 2, 2: 4, 3: 5, 4: 7, 5: 8}}
+
+    group, _ = create_combine_group(analyses, group_fill_perspectives=True,
+                                    groupeventset_fields=DEFAULT_CONFIG['group_event_set_fields'])
+
+    groupset = group.groupset
+
+    assert expected_groupset.keys() == groupset.keys()
+    for groupset_id in expected_groupset.keys():
+        assert groupset[groupset_id] == expected_groupset[groupset_id]
+
+    summaryinfo_map = group.summaryinfo_map
 
     assert expected_summaryinfo_map.keys() == summaryinfo_map.keys()
     for outputset_id, curr_summaryinfo_map in summaryinfo_map.items():
@@ -176,14 +217,14 @@ def test_combine__generate_group_periods(prepared_group_example,
         group_periods.to_csv(save_path, index=False)
 
     assert expected_group_periods.shape == group_periods.shape
-    assert (group_periods.columns == group_periods.columns).all()
+    assert_columns_equal(group_periods.columns, expected_group_periods.columns)
     assert (group_periods['Period'].value_counts() == PERIOD_REPEATS).all()
 
 
 def test_combine__generate_gpqt(prepared_group_example,
                                 keep_output):
     group_period = pd.read_csv(validation_path / 'group_periods.csv')
-    expected_gpqt = pd.read_csv(validation_path / 'gpqt.csv', dtype=gpqt_dtype)
+    expected_gpqt = pd.read_csv(validation_path / 'gpqt.csv', dtype=GPQT_dtype)
 
     gpqt = generate_gpqt(group_period, prepared_group_example)
 
@@ -193,13 +234,13 @@ def test_combine__generate_gpqt(prepared_group_example,
         gpqt.to_csv(save_path, index=False)
 
     assert expected_gpqt.shape == gpqt.shape
-    assert (expected_gpqt.columns == gpqt.columns).all()
+    assert_columns_equal(expected_gpqt.columns, gpqt.columns)
 
 
 def test_combine__loss_sampling(prepared_group_example,
                                 keep_output):
-    gpqt = pd.read_csv(validation_path / 'gpqt.csv', dtype=gpqt_dtype)
-    expected_gplt = pd.read_csv(validation_path / 'gplt.csv', dtype=gplt_dtype)
+    gpqt = pd.read_csv(validation_path / 'gpqt.csv').astype(dtype=GPQT_dtype)
+    expected_gplt = pd.read_csv(validation_path / 'gplt.csv').astype(GPLT_dtype)
     config = {
         'mean_only': True,
     }
@@ -211,12 +252,11 @@ def test_combine__loss_sampling(prepared_group_example,
         save_path.parent.mkdir(parents=True, exist_ok=True)
         gplt.to_csv(save_path, index=False)
 
-    assert_frame_equal(expected_gplt, gplt)
+    assert_frame_equal(expected_gplt[GPLT_headers], gplt[GPLT_headers], check_categorical=False)
 
 
 def test_combine__output_generation(keep_output):
-
-    gplt = pd.read_csv(validation_path / 'gplt.csv', dtype=gplt_dtype)
+    gplt = pd.read_csv(validation_path / 'gplt.csv').astype(dtype=GPLT_dtype)
     groupset_ids = [0, 1]
 
     generated_alt = generate_alt(gplt, TEST_GROUP_PERIODS)
@@ -224,15 +264,17 @@ def test_combine__output_generation(keep_output):
 
     if keep_output:
         expected_output_path.mkdir(parents=True, exist_ok=True)
-        save_output(generated_alt, expected_output_path, 'alt.csv')
-        save_output(generated_ept, expected_output_path, 'ept.csv')
+        save_output(generated_alt, expected_output_path, 'galt',
+                    output_type='csv', schema=GALT_schema)
+        save_output(generated_ept, expected_output_path, 'gept', output_type='csv',
+                    schema=GEPT_schema)
 
     for groupset_id in groupset_ids:
-        expected_alt = pd.read_csv(validation_path / f"{groupset_id}_alt.csv", dtype=alt_dtype)
-        expected_ept = pd.read_csv(validation_path / f"{groupset_id}_ept.csv", dtype=ept_dtype)
+        expected_alt = pd.read_csv(validation_path / f"{groupset_id}_galt.csv").astype(GALT_dtype)
+        expected_ept = pd.read_csv(validation_path / f"{groupset_id}_gept.csv").astype(GEPT_dtype)
         _generated_alt = generated_alt.query(f"groupset_id == {groupset_id}").reset_index(drop=True)
 
         _generated_ept = generated_ept.query(f"groupset_id == {groupset_id}").reset_index(drop=True)
 
-        assert_frame_equal(expected_alt, _generated_alt)
-        assert_frame_equal(expected_ept, _generated_ept)
+        assert_frame_equal(expected_alt, _generated_alt, check_categorical=False)
+        assert_frame_equal(expected_ept, _generated_ept, check_categorical=False)

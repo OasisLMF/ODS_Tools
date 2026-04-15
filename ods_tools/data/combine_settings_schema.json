@@ -118,6 +118,12 @@
       "description": "Output grouped PLT report",
       "type": "boolean",
       "default": false
+      },
+    "output_type": {
+      "title": "output_type",
+      "description": "Output type for all outputs. Options are 'csv' or 'parquet'",
+      "type": "string",
+      "default": "csv"
       }
   }
 }
