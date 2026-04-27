@@ -366,7 +366,7 @@ def do_loss_sampling_secondary_uncertainty(gpqt, group,
             elt_df = elt_dfs.get(f'{p.lower()}elt', None)
 
             if elt_df is None:
-                logger.warn(f"{p.lower()}elt not found for outputset_id {outputset_id}.")
+                logger.warning(f"{p.lower()}elt not found for outputset_id {outputset_id}.")
                 continue
 
             if p not in loss_sampling_func_map:
