@@ -1,6 +1,8 @@
+import copy
 import unittest
 from pathlib import Path
 from ods_tools.oed import Settings, ModelSettingHandler, AnalysisSettingHandler
+from ods_tools.oed.common import OdsException
 
 
 test_data_dir = Path(Path(__file__).parent, "data")
@@ -160,3 +162,89 @@ class OEDSettingsChecks(unittest.TestCase):
         self.assertTrue("'bad_float' was unexpected" in str(context.exception))
         self.assertTrue("'bad_param' was unexpected" in str(context.exception))
         self.assertTrue("id 1 is duplicated" in str(context.exception))
+
+
+class ReinsuranceLossPerspectiveSchemaChecks(unittest.TestCase):
+    """Schema regression tests for the ``rl`` (reinsurance loss) perspective.
+
+    ``analysis_settings_schema.json`` already exposes ``rl_output`` /
+    ``rl_summaries``; ``model_settings_schema.json`` advertises supported
+    perspectives via two enums (top-level ``valid_output_perspectives`` and
+    per event-set ``valid_perspectives``). Both must accept ``rl``. See
+    OasisLMF#1495.
+    """
+
+    def setUp(self):
+        # Tests deep-copy this fixture before mutation so an in-place change
+        # by ``validate`` cannot leak across assertions within a single test.
+        self.model_settings = {
+            "model_settings": {
+                "event_set": {
+                    "name": "Event Set",
+                    "desc": "Event set selector",
+                    "default": "p1",
+                    "options": [
+                        {
+                            "id": "p1",
+                            "desc": "Primary event set",
+                            "valid_perspectives": ["gul", "il", "ri", "rl"],
+                        }
+                    ],
+                },
+                "valid_output_perspectives": ["gul", "il", "ri", "rl"],
+            },
+            "lookup_settings": {},
+        }
+
+    def test_rl_accepted_in_valid_output_perspectives(self):
+        handler = ModelSettingHandler.make()
+        ok, errors = handler.validate(copy.deepcopy(self.model_settings), raise_error=False)
+        self.assertTrue(ok, f"expected valid model_settings, got errors: {errors}")
+        self.assertEqual(errors, {})
+
+    def test_rl_accepted_in_event_set_valid_perspectives(self):
+        # Drop the top-level enum so a pass here can only be explained by the
+        # nested ``valid_perspectives`` enum accepting ``rl``.
+        data = copy.deepcopy(self.model_settings)
+        del data["model_settings"]["valid_output_perspectives"]
+        handler = ModelSettingHandler.make()
+        ok, errors = handler.validate(data, raise_error=False)
+        self.assertTrue(ok, f"expected valid model_settings, got errors: {errors}")
+
+    def test_unknown_perspective_rejected_in_valid_output_perspectives(self):
+        data = copy.deepcopy(self.model_settings)
+        data["model_settings"]["valid_output_perspectives"] = ["gul", "xyz"]
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        message = str(ctx.exception)
+        self.assertIn("'xyz' is not one of", message)
+        # Anchor to the failing field path so a future regression that removed
+        # the nested enum can't be masked by the top-level enum's identical
+        # error wording.
+        self.assertIn("valid_output_perspectives", message)
+
+    def test_unknown_perspective_rejected_in_event_set_valid_perspectives(self):
+        data = copy.deepcopy(self.model_settings)
+        data["model_settings"]["event_set"]["options"][0]["valid_perspectives"] = [
+            "gul",
+            "xyz",
+        ]
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        message = str(ctx.exception)
+        self.assertIn("'xyz' is not one of", message)
+        self.assertIn("event_set-options", message)
+
+    def test_existing_perspectives_still_accepted(self):
+        data = copy.deepcopy(self.model_settings)
+        data["model_settings"]["valid_output_perspectives"] = ["gul", "il", "ri"]
+        data["model_settings"]["event_set"]["options"][0]["valid_perspectives"] = [
+            "gul",
+            "il",
+            "ri",
+        ]
+        handler = ModelSettingHandler.make()
+        ok, errors = handler.validate(data, raise_error=False)
+        self.assertTrue(ok, f"expected valid pre-#1495 doc, got errors: {errors}")
