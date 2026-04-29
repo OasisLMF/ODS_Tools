@@ -847,13 +847,14 @@
                            "valid_perspectives":{
                               "type":"array",
                               "title":"Supported loss perspectives ",
-                              "description":"If set, this event set only supports the given output perspectives. 'gul': ground up losses, 'il': insured losses, 'ri': reinsurance losses.",
+                              "description":"If set, this event set only supports the given output perspectives. 'gul': ground up losses, 'il': insured losses, 'ri': reinsurance net losses, 'rl': reinsurance losses at all inuring priorities.",
                               "items":{
                                  "type":"string",
                                  "enum":[
                                     "gul",
                                     "il",
-                                    "ri"
+                                    "ri",
+                                    "rl"
                                  ]
                               }
                            },
@@ -1252,13 +1253,14 @@
             "valid_output_perspectives":{
                "type":"array",
                "title":"Globally supported loss perspectives",
-               "description":"If set, the model only supports the given output perspectives. This can be overridden per event set using the 'valid_perspectives' field. 'gul': ground up losses, 'il': insured losses, 'ri': reinsurance losses.",
+               "description":"If set, the model only supports the given output perspectives. This can be overridden per event set using the 'valid_perspectives' field. 'gul': ground up losses, 'il': insured losses, 'ri': reinsurance net losses, 'rl': reinsurance losses at all inuring priorities.",
                "items":{
                   "type":"string",
                   "enum":[
                      "gul",
                      "il",
-                     "ri"
+                     "ri",
+                     "rl"
                   ]
                }
             },
