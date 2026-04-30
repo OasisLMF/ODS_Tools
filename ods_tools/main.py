@@ -4,10 +4,12 @@ suite of tools to read and write ODS file in csv of parquet
 __all__ = [
     'main',
     'convert',
-    'check'
+    'check',
+    'generate'
 ]
 
 import argparse
+import json
 import logging
 import os
 
@@ -142,11 +144,78 @@ def combine(**kwargs):
         logger.error(e)
 
 
+def generate(**kwargs):
+    """Generate synthetic OED test data files from a JSON configuration."""
+    from ods_tools.oed.oed_generator import (
+        OEDFileGenerator,
+        validate_config,
+        create_example_config,
+        get_available_oed_versions,
+        load_oed_schema,
+    )
+
+    if kwargs.get('example_config'):
+        print(json.dumps(create_example_config(), indent=2))
+        return
+
+    if kwargs.get('list_versions'):
+        versions = get_available_oed_versions()
+        print("Available OED versions:")
+        for v in versions:
+            print(f"  {v}")
+        return
+
+    if kwargs.get('list_fields'):
+        oed_version = kwargs.get('oed_version', '5.0.0')
+        schema = load_oed_schema(oed_version)
+        file_type = kwargs['list_fields']
+        fields = schema["input_fields"].get(file_type, {})
+        if not fields:
+            print(f"No fields found for '{file_type}'. Available: {list(schema['input_fields'].keys())}")
+            return
+        print(f"Fields for {file_type} (OED {oed_version}): {len(fields)} fields")
+        print(f"{'Field Name':<40} {'Status':<8} {'Data Type':<20} {'Default':<10}")
+        print("-" * 80)
+        for fname_lower, fspec in sorted(fields.items()):
+            name = fspec.get("Input Field Name", fname_lower)
+            status = fspec.get("Property field status", "?")
+            dtype = fspec.get("Data Type", "?")
+            default = fspec.get("Default", "")
+            print(f"{name:<40} {status:<8} {dtype:<20} {default:<10}")
+        return
+
+    config_path = kwargs.get('config')
+    if not config_path:
+        raise OdsException("--config is required (or use --example-config to generate one)")
+
+    with open(config_path) as f:
+        config = json.load(f)
+
+    warnings = validate_config(config)
+    for w in warnings:
+        logger.warning(w)
+
+    if kwargs.get('format'):
+        config["output_format"] = kwargs['format']
+
+    file_format = config.get("output_format", "csv")
+    output_dir = kwargs.get('output_dir', './oed_output')
+
+    gen = OEDFileGenerator(config)
+    logger.info(f"Generating OED {gen.oed_version} test data...")
+    output_files = gen.generate(output_dir, file_format)
+
+    logger.info(f"Generated {len(output_files)} files:")
+    for ft, fp in output_files.items():
+        logger.info(f"  {ft}: {fp}")
+
+
 command_action = {
     'check': check,
     'convert': convert,
     'transform': transform,
-    'combine': combine
+    'combine': combine,
+    'generate': generate
 }
 
 
@@ -229,6 +298,35 @@ combine_command.add_argument('--output-dir', help='Path to output directory', de
 combine_command.add_argument('--config-file', required=True, help='Path to the config file')
 combine_command.add_argument('-v', '--logging-level', help='logging level (debug:10, info:20, warning:30, error:40, critical:50)',
                              default=30, type=int)
+
+
+generate_description = """
+Generate synthetic OED test data files from a JSON configuration.
+
+The configuration file controls which OED file types to generate (Loc, Acc, ReinsInfo, ReinsScope),
+the number of rows, which fields to include, financial terms, and portfolio structure.
+
+Use --example-config to print a sample configuration file.
+Use --list-versions to see available OED schema versions.
+Use --list-fields to inspect fields available for a given file type.
+"""
+generate_command = command_parser.add_parser('generate', description=generate_description,
+                                             formatter_class=argparse.RawTextHelpFormatter)
+generate_command.add_argument('--config', help='Path to JSON configuration file', default=None)
+generate_command.add_argument('--output-dir', help='Output directory for generated files (default: ./oed_output)',
+                              default='./oed_output')
+generate_command.add_argument('-f', '--format', help='Output file format (overrides config)',
+                              choices=['csv', 'parquet'], default=None)
+generate_command.add_argument('--example-config', help='Print an example configuration JSON and exit',
+                              action='store_true', default=False)
+generate_command.add_argument('--list-versions', help='List available OED versions and exit',
+                              action='store_true', default=False)
+generate_command.add_argument('--list-fields', help='List all fields for a given file type '
+                              '(e.g. Loc, Acc, ReinsInfo, ReinsScope)', metavar='FILE_TYPE', default=None)
+generate_command.add_argument('--oed-version', help='OED version for --list-fields (default: 5.0.0)',
+                              default='5.0.0')
+generate_command.add_argument('-v', '--logging-level', help='logging level (debug:10, info:20, warning:30, error:40, critical:50)',
+                              default=30, type=int)
 
 
 def main():

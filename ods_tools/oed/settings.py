@@ -546,7 +546,7 @@ class AnalysisSettingHandler(SettingHandler):
                             )
                             warning_msgs.append(msg)
 
-                            settings_logger.warn(
+                            settings_logger.warning(
                                 f" Deprecated option set in {summary_type} (summary ID: {summary_id}) - "
                                 f"'{field}' has no effect in (oasis 2.5.x and newer)."
                             )

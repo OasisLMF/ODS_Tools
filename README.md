@@ -27,21 +27,146 @@ pip install ods-tools[extra]
 
 which will install some optional packages needed for it.
 
-## command line interface
+## Command Line Interface
 
-ODS tools provide command line interface to quickly convert oed files:
-
-example :
+ODS Tools provides a command line interface with several subcommands:
 
 ```
-ods_tools convert --location path_to_location_file --path output folder
+ods_tools {convert,check,transform,combine,generate} ...
 ```
 
-see `ods_tools convert --help` for more option
+Each command supports `-v LOGGING_LEVEL` to control verbosity (debug:10, info:20, warning:30, error:40, critical:50).
+
+---
+
+### convert
+
+Convert OED files to another format (e.g. csv to parquet) or OED version (e.g. 3.0 to 4.0).
+
+Exposure data can be specified in several ways:
+- By providing individual file paths: `--location`, `--account`, `--ri-info`, `--ri-scope`
+- By providing an OED config JSON file: `--config-json`
+- By providing a directory containing standard-named OED files: `--oed-dir`
+
+Either `--compression` or `--version` must be provided.
+
+```
+# Convert to parquet format
+ods_tools convert --location SourceLocOEDPiWind.csv --compression parquet --output-dir ./output
+
+# Convert an entire directory
+ods_tools convert --oed-dir ./exposure_data --compression parquet
+
+# Convert to a specific OED version
+ods_tools convert --config-json config.json --version 3.0.0
+
+# Convert with OED validation before conversion
+ods_tools convert --location SourceLocOEDPiWind.csv --compression parquet --check-oed True --output-dir ./output
+```
+
+See `ods_tools convert --help` for all options.
+
+---
+
+### check
+
+Validate OED exposure data, analysis settings, and model settings files.
+
+```
+# Check a single location file
+ods_tools check --location SourceLocOEDPiWind.csv
+
+# Check all OED files in a directory
+ods_tools check --oed-dir ./exposure_data
+
+# Check using a config JSON
+ods_tools check --config-json config.json
+
+# Check with a custom validation config
+ods_tools check --location SourceLocOEDPiWind.csv --validation-config validation.json
+
+# Check analysis and model settings files
+ods_tools check --analysis-settings-json analysis_settings.json
+ods_tools check --model-settings-json model_settings.json
+```
+
+See `ods_tools check --help` for all options.
+
+---
+
+### transform
+
+Transform data between OED and other formats (e.g. AIR to OED). Requires extra dependencies:
+
+```
+pip install ods-tools[extra]
+```
+
+See the [Format Conversions](#format-conversions) section below for detailed usage.
+
+---
+
+### combine
+
+Combine multiple ORD (Oasis Results Data) analysis outputs into a single result set. Requires a configuration file specifying how to combine the analyses.
+
+```
+ods_tools combine --analysis-dirs ./analysis_1 ./analysis_2 --config-file combine_config.json --output-dir ./combined_output
+```
+
+See `ods_tools combine --help` for all options.
+
+---
+
+### generate
+
+Generate synthetic OED test data files from a JSON configuration. This is useful for creating test datasets with realistic structure across Loc, Acc, ReinsInfo, and ReinsScope files with referential integrity.
+
+```
+# Generate OED files from a configuration
+ods_tools generate --config config.json --output-dir ./output
+
+# Print an example configuration to stdout
+ods_tools generate --example-config
+
+# Save an example configuration to a file
+ods_tools generate --example-config > my_config.json
+
+# Generate in parquet format (overrides the config file setting)
+ods_tools generate --config config.json --output-dir ./output -f parquet
+
+# List available OED schema versions
+ods_tools generate --list-versions
+
+# List all fields available for a file type
+ods_tools generate --list-fields Loc --oed-version 4.0.0
+```
+
+**Configuration file**
+
+The configuration file is a JSON file that controls what gets generated. Use `ods_tools generate --example-config` to get a starting template. Key sections:
+
+- `oed_version` - the OED schema version to use (e.g. `"4.0.0"`)
+- `seed` - random seed for reproducible output
+- `output_format` - `"csv"` or `"parquet"`
+- `global_defaults` - shared settings such as number of portfolios/accounts, peril code, currency, TIV ranges, and financial term ranges
+- `files` - per-file-type configuration (`loc`, `acc`, `ri_info`, `ri_scope`), each specifying:
+  - `num_rows` - number of rows to generate
+  - `include_required` - whether to include all required OED fields
+  - `fields` - additional optional fields to include
+  - `include_financial_terms` / `financial_field_patterns` - which financial fields to generate
+  - `fixed_values` - fields with fixed or constrained values
+  - `filename_prefix` - prefix for output filenames
+
+An example configuration file is provided at `tests/data/oed_generator_config.json`.
+
+See `ods_tools generate --help` for all options.
+
+---
 
 ## Usage
 
-### loading exposure data
+### Loading Exposure Data
 
 in order to load oed file we use the concept of source.
 A source will define how to retrieve the oed data. For the moment we only support files but other type of

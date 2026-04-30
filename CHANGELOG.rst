@@ -1,6 +1,14 @@
 ODS_Tools Changelog
 ===================
 
+`5.0.4`_
+ ---------
+* [#238](https://github.com/OasisLMF/ODS_Tools/pull/238) - added oed test file generator
+* [#257](https://github.com/OasisLMF/ODS_Tools/pull/257) - enhancement/perf quantile loss sampling
+* [#262](https://github.com/OasisLMF/ODS_Tools/pull/262) - Deprecation from logger.warn -> logger.warning
+* [#265](https://github.com/OasisLMF/ODS_Tools/pull/265) - Add 'rl' perspective to model_settings_schema enums (#1495)
+.. _`5.0.4`:  https://github.com/OasisLMF/ODS_Tools/compare/5.0.3...5.0.4
+
 `5.0.3`_
  ---------
 * [#240](https://github.com/OasisLMF/ODS_Tools/pull/240) - enhancement/group_fill_perspective option for ods_tools combine
