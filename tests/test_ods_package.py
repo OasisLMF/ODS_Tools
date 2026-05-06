@@ -431,11 +431,13 @@ class OdsPackageTests(TestCase):
 
         with pytest.raises(OdsException) as e:
             exposure.check()
-            self.assertTrue("column 'BuildingTIV' has values outside range." in e.msg)
-            self.assertTrue("column 'LayerParticipation' has values outside range." in e.msg)
-            self.assertTrue("ReinsPeril has invalid perils." in e.msg)
-            self.assertTrue("Conditionally required column missing" in e.msg and 'LocPeril' in e.msg)
-            self.assertfalse('CondPriority' in e.msg)
+            msg = str(e.value)
+            self.assertIn("column 'BuildingTIV' has values outside range.", msg)
+            self.assertIn("column 'LayerParticipation' has values outside range.", msg)
+            self.assertIn("ReinsPeril has invalid perils.", msg)
+            self.assertIn("Conditionally required column missing", msg)
+            self.assertIn("LocPeril", msg)
+            self.assertNotIn("CondPriority", msg)
 
     def test_check_date_invalid_cases(self):
         invalid_values = [
