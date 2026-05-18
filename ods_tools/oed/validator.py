@@ -342,10 +342,9 @@ class Validator:
                 else:
                     non_default = pd.Series(True, index=df.index)
                 if pd.api.types.is_numeric_dtype(series):
-                    truthy = series.fillna(0) != 0
+                    trigger_mask = (~blank) & non_default & (series.fillna(0) != 0)
                 else:
-                    truthy = ~blank
-                trigger_mask = (~blank) & non_default & truthy
+                    trigger_mask = (~blank) & non_default
 
                 for req_field in cr_field[input_name]:
                     prev = triggers_by_required.get(req_field)
@@ -368,14 +367,12 @@ class Validator:
 
             labels_df = pd.DataFrame(label_columns, index=df.index)
             any_missing = (labels_df != '').any(axis=1)
-            if not any_missing.any():
-                continue
             cr_msg = labels_df.loc[any_missing].apply(lambda r: ', '.join(x for x in r if x), axis=1)
 
             missing_data_df = df.loc[any_missing].copy()
             missing_data_df['missing value'] = cr_msg
             invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
-                                 'msg': f"Conditionally required column missing .\n"
+                                 'msg': f"Conditionally required column missing.\n"
                                  f"{missing_data_df[identifier_field + ['missing value']]}"})
 
         return invalid_data

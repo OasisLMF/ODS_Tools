@@ -431,13 +431,13 @@ class OdsPackageTests(TestCase):
 
         with pytest.raises(OdsException) as e:
             exposure.check()
-            msg = str(e.value)
-            self.assertIn("column 'BuildingTIV' has values outside range.", msg)
-            self.assertIn("column 'LayerParticipation' has values outside range.", msg)
-            self.assertIn("ReinsPeril has invalid perils.", msg)
-            self.assertIn("Conditionally required column missing", msg)
-            self.assertIn("LocPeril", msg)
-            self.assertNotIn("CondPriority", msg)
+        msg = str(e.value)
+        self.assertIn("column 'BuildingTIV' has values outside range.", msg)
+        self.assertIn("column 'LayerParticipation' has values outside range.", msg)
+        self.assertIn("ReinsPeril has invalid perils.", msg)
+        self.assertIn("Conditionally required column missing", msg)
+        self.assertIn("LocPeril", msg)
+        self.assertNotIn("CondPriority", msg)
 
     def test_check_date_invalid_cases(self):
         invalid_values = [
@@ -466,8 +466,9 @@ class OdsPackageTests(TestCase):
 
             with self.assertRaises(OdsException) as e:
                 exposure.check()
-                self.assertTrue("PolInceptionDate has invalid date formats" in e.msg)
-                self.assertFalse("PolExpiryDate has invalid date formats" in e.msg)
+            msg = str(e.exception)
+            self.assertTrue("PolInceptionDate has invalid date formats" in msg)
+            self.assertFalse("PolExpiryDate has invalid date formats" in msg)
 
     def test_check_date_valid_cases(self):
         valid_values = [
@@ -1246,8 +1247,9 @@ class OdsPackageTests(TestCase):
 
             with self.assertRaises(OdsException) as e:
                 exposure.check()
-                self.assertTrue("Mismatched \"OEDVersion\" value found in exposure file" in e.msg)
-                self.assertTrue(f"{val} at row {pos}" in e.msg)
+            msg = str(e.exception)
+            self.assertTrue("Mismatched \"OEDVersion\" value found in exposure file" in msg)
+            self.assertTrue(f"{val} at row {pos}" in msg)
 
     def test_check_oedversion_consistency_regex_valid(self):
         exposure = OedExposure(
@@ -1283,5 +1285,6 @@ class OdsPackageTests(TestCase):
 
         with self.assertRaises(OdsException) as e:
             exposure.check()
-            self.assertTrue("Mismatched \"OEDVersion\" value found in exposure file" in e.msg)
-            self.assertTrue("v4 at row 0" in e.msg)
+        msg = str(e.exception)
+        self.assertTrue("Mismatched \"OEDVersion\" value found in exposure file" in msg)
+        self.assertTrue("v4 at row 0" in msg)
