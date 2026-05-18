@@ -1236,10 +1236,11 @@ class OdsPackageTests(TestCase):
                 ri_info=base_url + '/SourceReinsInfoOEDPiWind.csv',
                 ri_scope=base_url + '/SourceReinsScopeOEDPiWind.csv',
             )
-            exposure.location.dataframe["OEDVersion"] = "4.0.0"
-            exposure.account.dataframe["OEDVersion"] = "4.0.0"
-            exposure.ri_info.dataframe["OEDVersion"] = "4.0.0"
-            exposure.ri_scope.dataframe["OEDVersion"] = "4.0.0"
+            OEDVersion = "4.0.0"
+            exposure.location.dataframe["OEDVersion"] = OEDVersion
+            exposure.account.dataframe["OEDVersion"] = OEDVersion
+            exposure.ri_info.dataframe["OEDVersion"] = OEDVersion
+            exposure.ri_scope.dataframe["OEDVersion"] = OEDVersion
 
             exposure_data = getattr(exposure, exposure_type)
             exposure_data.dataframe['OEDVersion'] = exposure_data.dataframe['OEDVersion'].astype(str)
@@ -1249,7 +1250,10 @@ class OdsPackageTests(TestCase):
                 exposure.check()
             msg = str(e.exception)
             self.assertTrue("Mismatched \"OEDVersion\" value found in exposure file" in msg)
-            self.assertTrue(f"{val} at row {pos}" in msg)
+            if pos==0:
+                self.assertTrue(f"{val} != {OEDVersion} at row {pos}" in msg)
+            else:
+                self.assertTrue(f"{OEDVersion} != {val} at row {pos}" in msg)
 
     def test_check_oedversion_consistency_regex_valid(self):
         exposure = OedExposure(
