@@ -1222,11 +1222,11 @@ class OdsPackageTests(TestCase):
 
     def test_check_oedversion_consistency_invalid(self):
         invalid_vals = [
-            ("location", 0, None),  # First value is None
-            ("location", 1, None),  # Other value is None
+            ("location", 0, np.nan),  # First value is missing
+            ("location", 1, np.nan),  # Other value is missing
             ("location", 0, "2.0.1"),  # First value is different version string
             ("location", 1, "2.0.1"),  # Other value is different version string
-            ("account", 1, None),  # Different file has None
+            ("account", 1, np.nan),  # Different file has missing value
             ("account", 1, "2.0.1"),  # Different file has different version string
         ]
         for exposure_type, pos, val in invalid_vals:
@@ -1250,7 +1250,7 @@ class OdsPackageTests(TestCase):
                 exposure.check()
             msg = str(e.exception)
             self.assertTrue("Mismatched \"OEDVersion\" value found in exposure file" in msg)
-            if pos==0:
+            if pos == 0:
                 self.assertTrue(f"{val} != {OEDVersion} at row {pos}" in msg)
             else:
                 self.assertTrue(f"{OEDVersion} != {val} at row {pos}" in msg)
