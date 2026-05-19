@@ -10,7 +10,7 @@ from pathlib import Path
 from collections.abc import Iterable
 
 from .common import (OED_DATE_COLUMNS, OdsException, OED_PERIL_COLUMNS, OED_IDENTIFIER_FIELDS, DEFAULT_VALIDATION_CONFIG, CLASS_OF_BUSINESSES,
-                     VALIDATOR_ON_ERROR_ACTION, BLANK_VALUES, is_empty)
+                     VALIDATOR_ON_ERROR_ACTION, is_empty)
 from .oed_schema import OedSchema
 
 logger = logging.getLogger(__name__)
@@ -319,40 +319,61 @@ class Validator:
             if not cr_field:
                 continue
             column_to_field = self.column_to_field_maps[oed_source]
+            field_to_column = self.field_to_column_maps[oed_source]
             identifier_field = self.identifier_field_maps[oed_source]
+            df = oed_source.dataframe
+            if df.empty:
+                continue
 
-            def check_cr(rec):
-                cr_fields = set()
-                for col in column_to_field:
-                    field_info = column_to_field[col]
-                    if field_info['Input Field Name'] not in cr_field:
-                        continue
-
-                    if field_info['Default'] != 'n/a':
-                        if oed_source.dataframe[col].dtype.name == 'category':
-                            default_set = {field_info['Default']}
-                        else:
-                            default_set = {oed_source.dataframe[col].dtype.type(field_info['Default'])}
+            # For each required field, accumulate the OR-mask of rows where some trigger demands it
+            triggers_by_required = {}
+            for col, field_info in column_to_field.items():
+                input_name = field_info['Input Field Name']
+                if input_name not in cr_field:
+                    continue
+                series = df[col]
+                blank = is_empty(df, col)
+                if field_info['Default'] != 'n/a':
+                    if series.dtype.name == 'category':
+                        default_val = field_info['Default']
                     else:
-                        default_set = set()
+                        default_val = series.dtype.type(field_info['Default'])
+                    non_default = series != default_val
+                else:
+                    non_default = pd.Series(True, index=df.index)
+                if pd.api.types.is_numeric_dtype(series):
+                    trigger_mask = (~blank) & non_default & (series.fillna(0) != 0)
+                else:
+                    trigger_mask = (~blank) & non_default
 
-                    if rec[col] not in BLANK_VALUES | default_set and rec[col]:
-                        cr_fields |= set(cr_field[field_info['Input Field Name']])
-                msg = []
-                for field in cr_fields:
-                    col = self.field_to_column_maps[oed_source].get(field)
-                    if col is None or rec[col] in BLANK_VALUES:
-                        msg.append(f'{self.field_to_column_maps[oed_source].get(field) or field}')
+                for req_field in cr_field[input_name]:
+                    prev = triggers_by_required.get(req_field)
+                    triggers_by_required[req_field] = trigger_mask if prev is None else (prev | trigger_mask)
 
-                return ', '.join(msg)
+            label_columns = {}
+            for req_field, trig_mask in triggers_by_required.items():
+                req_col = field_to_column.get(req_field)
+                if req_col is None:
+                    missing_mask = trig_mask
+                    label = req_field
+                else:
+                    missing_mask = trig_mask & is_empty(df, req_col)
+                    label = req_col
+                if missing_mask.any():
+                    label_columns[label] = np.where(missing_mask, label, '')
 
-            cr_msg = oed_source.dataframe.apply(check_cr, axis=1)
-            missing_data_df = oed_source.dataframe[cr_msg != ''].copy()
-            if not missing_data_df.empty:
-                missing_data_df['missing value'] = cr_msg
-                invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
-                                     'msg': f"Conditionally required column missing .\n"
-                                     f"{missing_data_df[identifier_field + ['missing value']]}"})
+            if not label_columns:
+                continue
+
+            labels_df = pd.DataFrame(label_columns, index=df.index)
+            any_missing = (labels_df != '').any(axis=1)
+            cr_msg = labels_df.loc[any_missing].apply(lambda r: ', '.join(x for x in r if x), axis=1)
+
+            missing_data_df = df.loc[any_missing].copy()
+            missing_data_df['missing value'] = cr_msg
+            invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
+                                 'msg': f"Conditionally required column missing.\n"
+                                 f"{missing_data_df[identifier_field + ['missing value']]}"})
 
         return invalid_data
 
