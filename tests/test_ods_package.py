@@ -431,11 +431,13 @@ class OdsPackageTests(TestCase):
 
         with pytest.raises(OdsException) as e:
             exposure.check()
-            self.assertTrue("column 'BuildingTIV' has values outside range." in e.msg)
-            self.assertTrue("column 'LayerParticipation' has values outside range." in e.msg)
-            self.assertTrue("ReinsPeril has invalid perils." in e.msg)
-            self.assertTrue("Conditionally required column missing" in e.msg and 'LocPeril' in e.msg)
-            self.assertfalse('CondPriority' in e.msg)
+        msg = str(e.value)
+        self.assertIn("column 'BuildingTIV' has values outside range.", msg)
+        self.assertIn("column 'LayerParticipation' has values outside range.", msg)
+        self.assertIn("ReinsPeril has invalid perils.", msg)
+        self.assertIn("Conditionally required column missing", msg)
+        self.assertIn("LocPeril", msg)
+        self.assertNotIn("CondPriority", msg)
 
     def test_check_date_invalid_cases(self):
         invalid_values = [
@@ -464,8 +466,9 @@ class OdsPackageTests(TestCase):
 
             with self.assertRaises(OdsException) as e:
                 exposure.check()
-                self.assertTrue("PolInceptionDate has invalid date formats" in e.msg)
-                self.assertFalse("PolExpiryDate has invalid date formats" in e.msg)
+            msg = str(e.exception)
+            self.assertTrue("PolInceptionDate has invalid date formats" in msg)
+            self.assertFalse("PolExpiryDate has invalid date formats" in msg)
 
     def test_check_date_valid_cases(self):
         valid_values = [
@@ -1219,11 +1222,11 @@ class OdsPackageTests(TestCase):
 
     def test_check_oedversion_consistency_invalid(self):
         invalid_vals = [
-            ("location", 0, None),  # First value is None
-            ("location", 1, None),  # Other value is None
+            ("location", 0, np.nan),  # First value is missing
+            ("location", 1, np.nan),  # Other value is missing
             ("location", 0, "2.0.1"),  # First value is different version string
             ("location", 1, "2.0.1"),  # Other value is different version string
-            ("account", 1, None),  # Different file has None
+            ("account", 1, np.nan),  # Different file has missing value
             ("account", 1, "2.0.1"),  # Different file has different version string
         ]
         for exposure_type, pos, val in invalid_vals:
@@ -1233,10 +1236,11 @@ class OdsPackageTests(TestCase):
                 ri_info=base_url + '/SourceReinsInfoOEDPiWind.csv',
                 ri_scope=base_url + '/SourceReinsScopeOEDPiWind.csv',
             )
-            exposure.location.dataframe["OEDVersion"] = "4.0.0"
-            exposure.account.dataframe["OEDVersion"] = "4.0.0"
-            exposure.ri_info.dataframe["OEDVersion"] = "4.0.0"
-            exposure.ri_scope.dataframe["OEDVersion"] = "4.0.0"
+            OEDVersion = "4.0.0"
+            exposure.location.dataframe["OEDVersion"] = OEDVersion
+            exposure.account.dataframe["OEDVersion"] = OEDVersion
+            exposure.ri_info.dataframe["OEDVersion"] = OEDVersion
+            exposure.ri_scope.dataframe["OEDVersion"] = OEDVersion
 
             exposure_data = getattr(exposure, exposure_type)
             exposure_data.dataframe['OEDVersion'] = exposure_data.dataframe['OEDVersion'].astype(str)
@@ -1244,8 +1248,12 @@ class OdsPackageTests(TestCase):
 
             with self.assertRaises(OdsException) as e:
                 exposure.check()
-                self.assertTrue("Mismatched \"OEDVersion\" value found in exposure file" in e.msg)
-                self.assertTrue(f"{val} at row {pos}" in e.msg)
+            msg = str(e.exception)
+            self.assertTrue("Mismatched \"OEDVersion\" value found in exposure file" in msg)
+            if pos == 0:
+                self.assertTrue(f"{val} != {OEDVersion} at row {pos}" in msg)
+            else:
+                self.assertTrue(f"{OEDVersion} != {val} at row {pos}" in msg)
 
     def test_check_oedversion_consistency_regex_valid(self):
         exposure = OedExposure(
@@ -1281,5 +1289,6 @@ class OdsPackageTests(TestCase):
 
         with self.assertRaises(OdsException) as e:
             exposure.check()
-            self.assertTrue("Mismatched \"OEDVersion\" value found in exposure file" in e.msg)
-            self.assertTrue("v4 at row 0" in e.msg)
+        msg = str(e.exception)
+        self.assertTrue("Mismatched \"OEDVersion\" value found in exposure file" in msg)
+        self.assertTrue("v4 at row 0" in msg)
