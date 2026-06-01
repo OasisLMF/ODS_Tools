@@ -1,6 +1,12 @@
 ODS_Tools Changelog
 ===================
 
+`5.0.5`_
+ ---------
+* [#266](https://github.com/OasisLMF/ODS_Tools/pull/266) - Vectorize check_conditional_requirement (~127x speedup)
+* [#268](https://github.com/OasisLMF/ODS_Tools/pull/268) - use prefixItems inplace of items
+.. _`5.0.5`:  https://github.com/OasisLMF/ODS_Tools/compare/5.0.4...5.0.5
+
 `5.0.4`_
  ---------
 * [#238](https://github.com/OasisLMF/ODS_Tools/pull/238) - added oed test file generator
