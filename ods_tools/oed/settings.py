@@ -443,7 +443,7 @@ class SettingHandler:
 
 class AnalysisSettingHandler(SettingHandler):
     default_analysis_setting_schema_json = 'analysis_settings_schema.json'
-    extra_checks = ['unique_summary_ids', 'deprecated_ktools_outputs']
+    extra_checks = ['unique_summary_ids', 'deprecated_ktools_outputs', 'output_summaries']
     default_analysis_compatibility_profile = {
         "module_supplier_id": {
             "from_ver": "1.23.0",
@@ -579,6 +579,29 @@ class AnalysisSettingHandler(SettingHandler):
             if duplicate_ids:
                 error_msgs = [f'id {summary_id} is duplicated' for summary_id in duplicate_ids]
                 exception_msgs[runtype_summary] = error_msgs
+
+        return exception_msgs
+
+    def check_output_summaries(self, setting_data):
+        """
+        Ensure that at least one output is enabled and that all selected outputs have a summary.
+
+        Args:
+            setting_data (dict): The loaded JSON data.
+
+        Returns:
+            dict: Exception messages.
+        """
+        exception_msgs = {}
+        perspectives = ['gul', 'il', 'ri']
+
+        output_present = [p for p in perspectives if setting_data.get(f'{p}_output', False)]
+        if not output_present:
+            exception_msgs['output_error'] = ['no output selected, please enable at least one output']
+
+        for p in output_present:
+            if setting_data.get(f'{p}_summaries', None) is None:
+                exception_msgs[f'{p}_summaries_missing'] = [f'{p}_output requested but {p}_summaries missing']
 
         return exception_msgs
 

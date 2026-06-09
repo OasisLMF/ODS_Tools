@@ -623,8 +623,6 @@
     "required": [
         "model_supplier_id",
         "model_name_id",
-        "model_settings",
-        "gul_output",
-        "gul_summaries"
+        "model_settings"
     ]
 }
