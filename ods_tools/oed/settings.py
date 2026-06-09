@@ -597,11 +597,11 @@ class AnalysisSettingHandler(SettingHandler):
 
         output_present = [p for p in perspectives if setting_data.get(f'{p}_output', False)]
         if not output_present:
-            exception_msgs['output_error'] = ['no output selected, please enable at least one output']
+            exception_msgs['no output'] = ['no output selected, please enable at least one {runtype}_output']
 
         for p in output_present:
             if setting_data.get(f'{p}_summaries', None) is None:
-                exception_msgs[f'{p}_summaries_missing'] = [f'{p}_output requested but {p}_summaries missing']
+                exception_msgs[f'{p}_summaries missing'] = [f'{p}_output requested but {p}_summaries missing']
 
         return exception_msgs
 

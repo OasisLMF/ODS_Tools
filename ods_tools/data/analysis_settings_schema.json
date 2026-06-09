@@ -7,6 +7,7 @@
         "output_summaries": {
             "type": "array",
             "uniqueItems": false,
+            "minItems": 1,
             "title": "Insured loss summary outputs",
             "description": "Specified which outputs should be generated for which summary sets, for insured losses.",
             "items": {
