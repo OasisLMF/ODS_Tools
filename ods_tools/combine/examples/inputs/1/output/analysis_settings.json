@@ -107,8 +107,6 @@
         ]
     },
     "model_default_samples": 10,
-    "ri_summaries": [],
     "rl_output": false,
-    "rl_summaries": [],
     "number_of_samples": 10
 }
