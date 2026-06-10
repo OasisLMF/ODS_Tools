@@ -1165,9 +1165,10 @@ class OdsSettingsTests(TestCase):
     def logging_fixtures(self, caplog):
         self._caplog = caplog
 
-    def setUp(self):
+    @classmethod
+    def setUpClass(self):
         self.tmp_dir = tempfile.TemporaryDirectory()
-        self.addCleanup(self.tmp_dir.cleanup)
+        self.addClassCleanup(self.tmp_dir.cleanup)
 
         # setup settings files
         parent_dir = pathlib.Path(self.tmp_dir.name) / 'piwind'
@@ -1178,9 +1179,10 @@ class OdsSettingsTests(TestCase):
         self.analysis_settings_path = self.setup_settings_path(parent_dir, base_file_url, 'analysis_settings.json')
         self.model_settings_path = self.setup_settings_path(parent_dir, base_file_url, 'meta-data/model_settings.json')
 
-        super().setUp()
+        super().setUpClass()
 
-    def setup_settings_path(self, parent_dir, base_file_url, file_name):
+    @staticmethod
+    def setup_settings_path(parent_dir, base_file_url, file_name):
         fpath = parent_dir / pathlib.Path(file_name).name
         file_url = f'{base_file_url}/{file_name}'
 
