@@ -13,6 +13,8 @@ settings_logger = logging.getLogger(__name__)
 ROOT_USER_ROLE = {'admin'}
 DATA_PATH = Path(Path(__file__).parent.parent, 'data')
 
+PERSPECTIVES = ['gul', 'il', 'ri', 'rl']
+
 
 def json_dict_walk(json_dict, key_path):
     """
@@ -529,7 +531,7 @@ class AnalysisSettingHandler(SettingHandler):
             'lec_output'
         ]
 
-        for summary_type in ['gul_summaries', 'il_summaries', 'ri_summaries']:
+        for summary_type in [f'{p}_summaries' for p in PERSPECTIVES]:
             if summary_type in setting_data:
                 summaries = setting_data[summary_type]
                 if not isinstance(summaries, list):
@@ -572,7 +574,7 @@ class AnalysisSettingHandler(SettingHandler):
 
         """
         exception_msgs = {}
-        runtype_summaries = [f'{runtype}_summaries' for runtype in ['gul', 'il', 'ri']]
+        runtype_summaries = [f'{runtype}_summaries' for runtype in PERSPECTIVES]
         for runtype_summary in runtype_summaries:
             summary_ids = [summary.get('id', []) for summary in setting_data.get(runtype_summary, [])]
             duplicate_ids = set(summary_id for summary_id in summary_ids if summary_ids.count(summary_id) > 1)
@@ -593,14 +595,13 @@ class AnalysisSettingHandler(SettingHandler):
             dict: Exception messages.
         """
         exception_msgs = {}
-        perspectives = ['gul', 'il', 'ri']
 
-        output_present = [p for p in perspectives if setting_data.get(f'{p}_output', False)]
+        output_present = [p for p in PERSPECTIVES if setting_data.get(f'{p}_output', False)]
         if not output_present:
             exception_msgs['no output'] = ['no output selected, please enable at least one output']
 
         for p in output_present:
-            if setting_data.get(f'{p}_summaries', None) is None:
+            if not setting_data.get(f'{p}_summaries', None):
                 exception_msgs[f'{p}_summaries missing'] = [f'{p}_output requested but {p}_summaries missing']
 
         return exception_msgs

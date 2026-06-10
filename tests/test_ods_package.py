@@ -1230,6 +1230,7 @@ class OdsSettingsTests(TestCase):
         settings_dict['gul_output'] = False
         settings_dict['il_output'] = False
         settings_dict['ri_output'] = False
+        settings_dict['rl_output'] = False
 
         valid, errors = ods_analysis_setting.validate(settings_dict, raise_error=False)
         self.assertFalse(valid)
