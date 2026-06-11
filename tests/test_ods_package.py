@@ -708,115 +708,6 @@ class OdsPackageTests(TestCase):
             assert 'ToDelete' not in oed_saved.location.dataframe.columns
             assert 'FlexiLocdefault_rename' in oed_saved.location.dataframe.columns
 
-    def test_setting_schema_analysis__is_valid(self):
-        file_name = 'analysis_settings.json'
-        file_url = f'https://raw.githubusercontent.com/OasisLMF/OasisPiWind/{piwind_branch}/{file_name}'
-        ods_analysis_setting = AnalysisSettingHandler.make()
-        assert (ods_analysis_setting.get_schema('analysis_settings_schema') is not None)
-
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            abs_dir = pathlib.Path(tmp_dir, "abs")
-            abs_dir.mkdir()
-
-            with urllib.request.urlopen(file_url) as response, \
-                    open(pathlib.Path(tmp_dir, 'analysis_settings.json'), 'wb') as out_file:
-                shutil.copyfileobj(response, out_file)
-
-            settings_fp = pathlib.Path(tmp_dir, 'analysis_settings.json')
-            settings_dict = ods_analysis_setting.load(settings_fp)
-            valid, errors = ods_analysis_setting.validate(settings_dict)
-
-            self.assertTrue(valid)
-            self.assertEqual({}, errors)
-
-    def test_setting_schema_analysis__is_invalid(self):
-        file_name = 'analysis_settings.json'
-        file_url = f'https://raw.githubusercontent.com/OasisLMF/OasisPiWind/{piwind_branch}/{file_name}'
-        ods_analysis_setting = AnalysisSettingHandler.make()
-        assert (ods_analysis_setting.get_schema('analysis_settings_schema') is not None)
-
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            abs_dir = pathlib.Path(tmp_dir, "abs")
-            abs_dir.mkdir()
-
-            with urllib.request.urlopen(file_url) as response, \
-                    open(pathlib.Path(tmp_dir, 'analysis_settings.json'), 'wb') as out_file:
-                shutil.copyfileobj(response, out_file)
-
-            settings_fp = pathlib.Path(tmp_dir, 'analysis_settings.json')
-            settings_dict = ods_analysis_setting.load(settings_fp)
-
-            # Insert errors
-            settings_dict['gul_summarie'] = settings_dict['gul_summaries']
-            del settings_dict['gul_summaries']
-            settings_dict['gul_output'] = "True"  # should be a bool
-            settings_dict['ri_summaries'].append(settings_dict['ri_summaries'][0])   # Duplicate summary ID
-
-            valid, errors = ods_analysis_setting.validate(settings_dict, raise_error=False)
-            self.assertFalse(valid)
-            expected_err = {
-                'ri_summaries': ['id 1 is duplicated'],
-                'analysis_settings_schema gul_output': ["'True' is not of type 'boolean'"],
-                'analysis_settings_schema required': ["'gul_summaries' is a required property"]
-            }
-            self.assertEqual(expected_err, errors)
-            with self.assertRaises(OdsException):
-                ods_analysis_setting.validate(settings_dict)
-
-    def test_setting_schema_model__is_valid(self):
-        file_name = 'meta-data/model_settings.json'
-        file_url = f'https://raw.githubusercontent.com/OasisLMF/OasisPiWind/{piwind_branch}/{file_name}'
-        ods_model_setting = ModelSettingHandler.make()
-        assert (ods_model_setting.get_schema('model_settings_schema') is not None)
-
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            abs_dir = pathlib.Path(tmp_dir, "abs")
-            abs_dir.mkdir()
-
-            with urllib.request.urlopen(file_url) as response, \
-                    open(pathlib.Path(tmp_dir, 'model_settings.json'), 'wb') as out_file:
-                shutil.copyfileobj(response, out_file)
-
-            settings_fp = pathlib.Path(tmp_dir, 'model_settings.json')
-            settings_dict = ods_model_setting.load(settings_fp)
-            valid, errors = ods_model_setting.validate(settings_dict)
-
-            self.assertTrue(valid)
-            self.assertEqual({}, errors)
-
-    def test_setting_schema_model__is_invalid(self):
-        file_name = 'meta-data/model_settings.json'
-        file_url = f'https://raw.githubusercontent.com/OasisLMF/OasisPiWind/{piwind_branch}/{file_name}'
-        ods_model_setting = ModelSettingHandler.make()
-        assert (ods_model_setting.get_schema('model_settings_schema') is not None)
-
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            abs_dir = pathlib.Path(tmp_dir, "abs")
-            abs_dir.mkdir()
-
-            with urllib.request.urlopen(file_url) as response, \
-                    open(pathlib.Path(tmp_dir, 'model_settings.json'), 'wb') as out_file:
-                shutil.copyfileobj(response, out_file)
-
-            settings_fp = pathlib.Path(tmp_dir, 'model_settings.json')
-            settings_dict = ods_model_setting.load(settings_fp)
-
-            # Insert errors
-            settings_dict['unknown_key'] = 'foobar'
-            settings_dict['model_setting'] = settings_dict['model_settings']
-            del settings_dict['model_settings']
-
-            valid, errors = ods_model_setting.validate(settings_dict, raise_error=False)
-            self.assertFalse(valid)
-            expected_err = {
-                'model_settings_schema additionalProperties': ["Additional properties are not allowed ('model_setting', 'unknown_key' were unexpected)"],
-                'model_settings_schema required': ["'model_settings' is a required property"]
-            }
-            self.assertEqual(expected_err, errors)
-
-            with self.assertRaises(OdsException):
-                ods_model_setting.validate(settings_dict)
-
     def test_empty_dataframe_logged(self):
         loc_df = pd.DataFrame({
             'PortNumber': [],
@@ -1071,31 +962,6 @@ class OdsPackageTests(TestCase):
         # # Assert the OccupancyCode is as expected
         assert oed_exposure.location.dataframe.loc[0, "OccupancyCode"] == 9995
 
-    def test_all_analysis_options__in_valid_metrics(self):
-        model_schema = ModelSettingHandler.make().get_schema('model_settings_schema')
-        analysis_schema = AnalysisSettingHandler.make().get_schema('analysis_settings_schema')
-
-        # extract model settings 'valid_metrics' options, and check both match
-        global__valid_output_metrics = set(model_schema['properties']['model_settings']['properties']['valid_output_metrics']['items']['enum'])
-        event_set__valid_metrics = set(model_schema['properties']['model_settings']['properties']['event_set']
-                                       ['properties']['options']['items']['properties']['valid_metrics']['items']['enum'])
-        self.assertEqual(global__valid_output_metrics, event_set__valid_metrics)
-
-        # Build expected list from analysis settings schema.
-        excluded_keys_list = ['id', 'ord_output', 'oed_fields', 'lec_output',
-                              'return_period_file', 'parquet_format', 'eltcalc', 'pltcalc', 'leccalc', 'aalcalc']
-        extra_keys_list = ['aal', 'elt', 'plt', 'lec', 'aep', 'oep', 'ept', 'psept']
-
-        settings_output_options = {
-            **analysis_schema['definitions']['output_summaries']['items']['properties'],
-            **analysis_schema['definitions']['output_summaries']['items']['properties']['leccalc']['properties'],
-            **analysis_schema['definitions']['output_summaries']['items']['properties']['ord_output']['properties']
-        }
-        expected_list = set(extra_keys_list + [k for k in settings_output_options if k not in excluded_keys_list])
-
-        self.assertEqual(expected_list, global__valid_output_metrics)
-        self.assertEqual(expected_list, event_set__valid_metrics)
-
     def test_probe_oedversion_from_oedsource(self):
         exposure = OedExposure(
             location=base_url + "/SourceLocOEDPiWind.csv",
@@ -1292,3 +1158,180 @@ class OdsPackageTests(TestCase):
         msg = str(e.exception)
         self.assertTrue("Mismatched \"OEDVersion\" value found in exposure file" in msg)
         self.assertTrue("v4 at row 0" in msg)
+
+
+class OdsSettingsTests(TestCase):
+    @pytest.fixture(autouse=True)
+    def logging_fixtures(self, caplog):
+        self._caplog = caplog
+
+    @classmethod
+    def setUpClass(self):
+        self.tmp_dir = tempfile.TemporaryDirectory()
+        self.addClassCleanup(self.tmp_dir.cleanup)
+
+        # setup settings files
+        parent_dir = pathlib.Path(self.tmp_dir.name) / 'piwind'
+        parent_dir.mkdir(exist_ok=True)
+
+        base_file_url = f'https://raw.githubusercontent.com/OasisLMF/OasisPiWind/{piwind_branch}'
+
+        self.analysis_settings_path = self.setup_settings_path(parent_dir, base_file_url, 'analysis_settings.json')
+        self.model_settings_path = self.setup_settings_path(parent_dir, base_file_url, 'meta-data/model_settings.json')
+
+        super().setUpClass()
+
+    @staticmethod
+    def setup_settings_path(parent_dir, base_file_url, file_name):
+        fpath = parent_dir / pathlib.Path(file_name).name
+        file_url = f'{base_file_url}/{file_name}'
+
+        with urllib.request.urlopen(file_url) as response, \
+                open(fpath, 'wb') as out_file:
+            shutil.copyfileobj(response, out_file)
+
+        return fpath
+
+    def test_make_analysis_settings(self):
+        ods_analysis_setting = AnalysisSettingHandler.make()
+        assert (ods_analysis_setting.get_schema('analysis_settings_schema') is not None)
+
+    def test_setting_schema_analysis__is_valid(self):
+        ods_analysis_setting = AnalysisSettingHandler.make()
+        settings_dict = ods_analysis_setting.load(self.analysis_settings_path)
+        valid, errors = ods_analysis_setting.validate(settings_dict)
+
+        self.assertTrue(valid)
+        self.assertEqual({}, errors)
+
+    def test_setting_schema_analysis__is_invalid(self):
+        ods_analysis_setting = AnalysisSettingHandler.make()
+        settings_dict = ods_analysis_setting.load(self.analysis_settings_path)
+
+        # Insert errors
+        settings_dict['gul_summarie'] = settings_dict['gul_summaries']
+        del settings_dict['gul_summaries']
+        settings_dict['gul_output'] = "True"  # should be a bool
+        settings_dict['ri_summaries'].append(settings_dict['ri_summaries'][0])   # Duplicate summary ID
+
+        valid, errors = ods_analysis_setting.validate(settings_dict, raise_error=False)
+        self.assertFalse(valid)
+        expected_err = {
+            'ri_summaries': ['id 1 is duplicated'],
+            'analysis_settings_schema gul_output': ["'True' is not of type 'boolean'"],
+            'gul_summaries missing': ['gul_output requested but gul_summaries missing']
+        }
+        self.assertEqual(expected_err, errors)
+        with self.assertRaises(OdsException):
+            ods_analysis_setting.validate(settings_dict)
+
+    def test_setting_schema_analysis__output_missing(self):
+        ods_analysis_setting = AnalysisSettingHandler.make()
+        settings_dict = ods_analysis_setting.load(self.analysis_settings_path)
+
+        settings_dict['gul_output'] = False
+        settings_dict['il_output'] = False
+        settings_dict['ri_output'] = False
+        settings_dict['rl_output'] = False
+
+        valid, errors = ods_analysis_setting.validate(settings_dict, raise_error=False)
+        self.assertFalse(valid)
+
+        expected_err = {
+            'no output': ['no output selected, please enable at least one output']
+        }
+
+        self.assertEqual(expected_err, errors)
+        with self.assertRaises(OdsException):
+            ods_analysis_setting.validate(settings_dict)
+
+    def test_setting_schema_analysis__check_output_summaries(self):
+        ods_analysis_setting = AnalysisSettingHandler.make()
+        settings_dict = ods_analysis_setting.load(self.analysis_settings_path)
+
+        settings_dict['gul_output'] = False
+        settings_dict['il_output'] = True
+        settings_dict['ri_output'] = False
+
+        # check missing
+        if 'il_summaries' in settings_dict:
+            del settings_dict['il_summaries']
+
+        valid, errors = ods_analysis_setting.validate(settings_dict, raise_error=False)
+        self.assertFalse(valid)
+
+        expected_err = {
+            'il_summaries missing': ['il_output requested but il_summaries missing']
+        }
+
+        self.assertEqual(expected_err, errors)
+        with self.assertRaises(OdsException):
+            ods_analysis_setting.validate(settings_dict)
+
+        # check valid
+        settings_dict['il_summaries'] = [
+            {'id': 1}
+        ]
+        valid, errors = ods_analysis_setting.validate(settings_dict)
+
+        self.assertTrue(valid)
+        self.assertEqual({}, errors)
+
+    def test_make_model_settings(self):
+        ods_analysis_setting = ModelSettingHandler.make()
+        assert (ods_analysis_setting.get_schema('model_settings_schema') is not None)
+
+    def test_setting_schema_model__is_valid(self):
+        ods_model_setting = ModelSettingHandler.make()
+
+        settings_dict = ods_model_setting.load(self.model_settings_path)
+        valid, errors = ods_model_setting.validate(settings_dict)
+
+        self.assertTrue(valid)
+        self.assertEqual({}, errors)
+
+    def test_setting_schema_model__is_invalid(self):
+        ods_model_setting = ModelSettingHandler.make()
+
+        settings_dict = ods_model_setting.load(self.model_settings_path)
+
+        # Insert errors
+        settings_dict['unknown_key'] = 'foobar'
+        settings_dict['model_setting'] = settings_dict['model_settings']
+        del settings_dict['model_settings']
+
+        valid, errors = ods_model_setting.validate(settings_dict, raise_error=False)
+        self.assertFalse(valid)
+        expected_err = {
+            'model_settings_schema additionalProperties': ["Additional properties are not allowed ('model_setting', 'unknown_key' were unexpected)"],
+            'model_settings_schema required': ["'model_settings' is a required property"]
+        }
+        self.assertEqual(expected_err, errors)
+
+        with self.assertRaises(OdsException):
+            ods_model_setting.validate(settings_dict)
+
+    def test_all_analysis_options__in_valid_metrics(self):
+        model_schema = ModelSettingHandler.make().get_schema('model_settings_schema')
+        analysis_schema = AnalysisSettingHandler.make().get_schema('analysis_settings_schema')
+
+        # extract model settings 'valid_metrics' options, and check both match
+        global__valid_output_metrics = set(model_schema['properties']['model_settings']['properties']['valid_output_metrics']['items']['enum'])
+        event_set__valid_metrics = set(model_schema['properties']['model_settings']['properties']['event_set']
+                                       ['properties']['options']['items']['properties']['valid_metrics']['items']['enum'])
+        self.assertEqual(global__valid_output_metrics, event_set__valid_metrics)
+
+        # Build expected list from analysis settings schema.
+        excluded_keys_list = ['id', 'ord_output', 'oed_fields', 'lec_output',
+                              'return_period_file', 'parquet_format', 'eltcalc', 'pltcalc', 'leccalc', 'aalcalc']
+        extra_keys_list = ['aal', 'elt', 'plt', 'lec', 'aep', 'oep', 'ept', 'psept']
+
+        settings_output_options = {
+            **analysis_schema['definitions']['output_summaries']['items']['properties'],
+            **analysis_schema['definitions']['output_summaries']['items']['properties']['leccalc']['properties'],
+            **analysis_schema['definitions']['output_summaries']['items']['properties']['ord_output']['properties']
+        }
+        expected_list = set(extra_keys_list + [k for k in settings_output_options if k not in excluded_keys_list])
+
+        self.assertEqual(expected_list, global__valid_output_metrics)
+        self.assertEqual(expected_list, event_set__valid_metrics)
