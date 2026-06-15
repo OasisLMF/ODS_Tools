@@ -45,7 +45,7 @@ class OdsPackageTests(TestCase):
     @classmethod
     def setUpClass(self):
         self.tmp_exposure_dir = tempfile.TemporaryDirectory()
-        self.tmp_dir_path = self.tmp_exposure_dir.name
+        self.tmp_dir_path = pathlib.Path(self.tmp_exposure_dir.name)
         self.addClassCleanup(self.tmp_exposure_dir.cleanup)
 
         for oed_type, extension in itertools.product(OED_TYPE_TO_NAME.keys(), ['csv', 'parquet']):
@@ -286,13 +286,10 @@ class OdsPackageTests(TestCase):
             assert str(exposure.location.dataframe['loc_id'].dtype) == additional_fields_config['Loc']['loc_id'][exposure.backend_dtype]
 
     def test_load_oed_from_stream(self):
-        with tempfile.TemporaryDirectory() as tmp_run_dir:
-            # read_parquet needs stream with seek method which urllib.request.urlopen doesn't have
-            with open(os.path.join(tmp_run_dir, 'SourceAccOEDPiWind.parquet'), 'wb') as acc_parquet:
-                acc_parquet.write(urllib.request.urlopen(self.tmp_dir_path + '/SourceAccOEDPiWind.parquet').read())
-
-            config = {'location': urllib.request.urlopen(self.tmp_dir_path + '/SourceLocOEDPiWind.csv'),
-                      'account': {'oed_info': open(os.path.join(tmp_run_dir, 'SourceAccOEDPiWind.parquet'), 'rb'), 'format': 'parquet'},
+        with open(self.tmp_dir_path / 'SourceLocOEDPiWind.csv', 'rb') as loc_file, \
+                open(self.tmp_dir_path / 'SourceAccOEDPiWind.parquet', 'rb') as acc_file:
+            config = {'location': loc_file,
+                      'account': {'oed_info': acc_file, 'format': 'parquet'},
                       'use_field': True
                       }
             exposure = OedExposure(**config)
@@ -335,16 +332,8 @@ class OdsPackageTests(TestCase):
             pd.testing.assert_frame_equal(exposure_csv_file.ri_scope.dataframe, exposure_parquet_stream.ri_scope.dataframe, check_categorical=False)
 
     def test_load_oed_from_stream__detect_type(self):
-        with tempfile.TemporaryDirectory() as tmp_run_dir:
-
-            # read_parquet needs stream with seek method which urllib.request.urlopen doesn't have
-            with open(os.path.join(tmp_run_dir, 'SourceLocOEDPiWind.csv'), 'wb') as loc_csv:
-                loc_csv.write(urllib.request.urlopen(self.tmp_dir_path + '/SourceLocOEDPiWind.csv').read())
-            with open(os.path.join(tmp_run_dir, 'SourceAccOEDPiWind.parquet'), 'wb') as acc_parquet:
-                acc_parquet.write(urllib.request.urlopen(self.tmp_dir_path + '/SourceAccOEDPiWind.parquet').read())
-
-            csv_loc_obj = open(os.path.join(tmp_run_dir, 'SourceLocOEDPiWind.csv'))
-            parquet_acc_obj = open(os.path.join(tmp_run_dir, 'SourceAccOEDPiWind.parquet'), 'rb')
+        with open(self.tmp_dir_path / 'SourceLocOEDPiWind.csv') as csv_loc_obj, \
+                open(self.tmp_dir_path / 'SourceAccOEDPiWind.parquet', 'rb') as parquet_acc_obj:
 
             config = {
                 'location': csv_loc_obj,
@@ -360,17 +349,18 @@ class OdsPackageTests(TestCase):
             self.assertTrue(isinstance(account, pd.DataFrame))
 
     def test_load_oed_from_stream__invalid_types(self):
-        with tempfile.TemporaryDirectory() as tmp_run_dir:
+        with open(self.tmp_dir_path / 'SourceLocOEDPiWind.csv', 'rb') as csv_loc_file, \
+                open(self.tmp_dir_path / 'SourceAccOEDPiWind.parquet', 'rb') as parquet_acc_file, \
+                tempfile.TemporaryDirectory() as tmp_run_dir:
 
             # read_parquet needs stream with seek method which urllib.request.urlopen doesn't have
             with open(os.path.join(tmp_run_dir, 'SourceLocOEDPiWind.parquet'), 'wb') as loc_csv:
-                loc_csv.write(urllib.request.urlopen(self.tmp_dir_path + '/SourceLocOEDPiWind.csv').read())
+                shutil.copyfileobj(csv_loc_file, loc_csv)
             with open(os.path.join(tmp_run_dir, 'SourceAccOEDPiWind.csv'), 'wb') as acc_parquet:
-                acc_parquet.write(urllib.request.urlopen(self.tmp_dir_path + '/SourceAccOEDPiWind.parquet').read())
+                shutil.copyfileobj(parquet_acc_file, acc_parquet)
 
             csv_as_parquet = open(os.path.join(tmp_run_dir, 'SourceLocOEDPiWind.parquet'), 'rb')
             parquet_as_csv = open(os.path.join(tmp_run_dir, 'SourceAccOEDPiWind.csv'))
-
             with self.assertRaises(OdsException):
                 OedExposure(**{'location': csv_as_parquet})
             with self.assertRaises(OdsException):
