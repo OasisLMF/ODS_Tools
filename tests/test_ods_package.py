@@ -663,12 +663,12 @@ class OdsPackageTests(TestCase):
             with tempfile.TemporaryDirectory() as tmp_dir:
                 abs_dir = pathlib.Path(tmp_dir, "abs")
                 abs_dir.mkdir()
-                with urllib.request.urlopen(self.tmp_dir_path / 'SourceLocOEDPiWind10.csv') as response, \
+                with open(self.tmp_dir_path / 'SourceLocOEDPiWind10.csv', 'rb') as in_file, \
                         open(pathlib.Path(tmp_dir, 'SourceLocOEDPiWind10.csv'), 'wb') as out_file:
-                    shutil.copyfileobj(response, out_file)
-                with urllib.request.urlopen(self.tmp_dir_path / 'SourceAccOEDPiWind.csv') as response, \
+                    shutil.copyfileobj(in_file, out_file)
+                with open(self.tmp_dir_path / 'SourceAccOEDPiWind.csv', 'rb') as in_file, \
                         open(pathlib.Path(abs_dir, 'SourceAccOEDPiWind.csv'), 'wb') as out_file:
-                    shutil.copyfileobj(response, out_file)
+                    shutil.copyfileobj(in_file, out_file)
 
                 os.chdir(tmp_dir)
                 original_exposure = OedExposure(**{
@@ -762,10 +762,10 @@ class OdsPackageTests(TestCase):
 
     def test_to_version_with_invalid_format(self):
         oed_exposure = OedExposure(
-            location=self.tmp_dir_path + "/SourceLocOEDPiWind.csv",
-            account=self.tmp_dir_path + "/SourceAccOEDPiWind.csv",
-            ri_info=self.tmp_dir_path + "/SourceReinsInfoOEDPiWind.csv",
-            ri_scope=self.tmp_dir_path + "/SourceReinsScopeOEDPiWind.csv",
+            location=self.tmp_dir_path / "SourceLocOEDPiWind.csv",
+            account=self.tmp_dir_path / "SourceAccOEDPiWind.csv",
+            ri_info=self.tmp_dir_path / "SourceReinsInfoOEDPiWind.csv",
+            ri_scope=self.tmp_dir_path / "SourceReinsScopeOEDPiWind.csv",
             use_field=True,
         )
 
@@ -777,10 +777,10 @@ class OdsPackageTests(TestCase):
 
     def test_versioning_fallback(self):
         oed_exposure = OedExposure(
-            location=self.tmp_dir_path + "/SourceLocOEDPiWind.csv",
-            account=self.tmp_dir_path + "/SourceAccOEDPiWind.csv",
-            ri_info=self.tmp_dir_path + "/SourceReinsInfoOEDPiWind.csv",
-            ri_scope=self.tmp_dir_path + "/SourceReinsScopeOEDPiWind.csv",
+            location=self.tmp_dir_path / "SourceLocOEDPiWind.csv",
+            account=self.tmp_dir_path / "SourceAccOEDPiWind.csv",
+            ri_info=self.tmp_dir_path / "SourceReinsInfoOEDPiWind.csv",
+            ri_scope=self.tmp_dir_path / "SourceReinsScopeOEDPiWind.csv",
             use_field=True,
         )
 
@@ -808,10 +808,10 @@ class OdsPackageTests(TestCase):
 
     def test_versioning_fallback_not_exact(self):
         oed_exposure = OedExposure(
-            location=self.tmp_dir_path + "/SourceLocOEDPiWind.csv",
-            account=self.tmp_dir_path + "/SourceAccOEDPiWind.csv",
-            ri_info=self.tmp_dir_path + "/SourceReinsInfoOEDPiWind.csv",
-            ri_scope=self.tmp_dir_path + "/SourceReinsScopeOEDPiWind.csv",
+            location=self.tmp_dir_path / "SourceLocOEDPiWind.csv",
+            account=self.tmp_dir_path / "SourceAccOEDPiWind.csv",
+            ri_info=self.tmp_dir_path / "SourceReinsInfoOEDPiWind.csv",
+            ri_scope=self.tmp_dir_path / "SourceReinsScopeOEDPiWind.csv",
             use_field=True,
         )
 
@@ -853,10 +853,10 @@ class OdsPackageTests(TestCase):
 
     def test_versioning_higher(self):
         oed_exposure = OedExposure(
-            location=self.tmp_dir_path + "/SourceLocOEDPiWind.csv",
-            account=self.tmp_dir_path + "/SourceAccOEDPiWind.csv",
-            ri_info=self.tmp_dir_path + "/SourceReinsInfoOEDPiWind.csv",
-            ri_scope=self.tmp_dir_path + "/SourceReinsScopeOEDPiWind.csv",
+            location=self.tmp_dir_path / "SourceLocOEDPiWind.csv",
+            account=self.tmp_dir_path / "SourceAccOEDPiWind.csv",
+            ri_info=self.tmp_dir_path / "SourceReinsInfoOEDPiWind.csv",
+            ri_scope=self.tmp_dir_path / "SourceReinsScopeOEDPiWind.csv",
             use_field=True,
         )
 
@@ -884,10 +884,10 @@ class OdsPackageTests(TestCase):
 
     def test_versioning_lower_than_supported(self):
         oed_exposure = OedExposure(
-            location=self.tmp_dir_path + "/SourceLocOEDPiWind.csv",
-            account=self.tmp_dir_path + "/SourceAccOEDPiWind.csv",
-            ri_info=self.tmp_dir_path + "/SourceReinsInfoOEDPiWind.csv",
-            ri_scope=self.tmp_dir_path + "/SourceReinsScopeOEDPiWind.csv",
+            location=self.tmp_dir_path / "SourceLocOEDPiWind.csv",
+            account=self.tmp_dir_path / "SourceAccOEDPiWind.csv",
+            ri_info=self.tmp_dir_path / "SourceReinsInfoOEDPiWind.csv",
+            ri_scope=self.tmp_dir_path / "SourceReinsScopeOEDPiWind.csv",
             use_field=True,
         )
 
@@ -929,10 +929,10 @@ class OdsPackageTests(TestCase):
 
     def test_versioning_wrong_order(self):
         oed_exposure = OedExposure(
-            location=self.tmp_dir_path + "/SourceLocOEDPiWind.csv",
-            account=self.tmp_dir_path + "/SourceAccOEDPiWind.csv",
-            ri_info=self.tmp_dir_path + "/SourceReinsInfoOEDPiWind.csv",
-            ri_scope=self.tmp_dir_path + "/SourceReinsScopeOEDPiWind.csv",
+            location=self.tmp_dir_path / "SourceLocOEDPiWind.csv",
+            account=self.tmp_dir_path / "SourceAccOEDPiWind.csv",
+            ri_info=self.tmp_dir_path / "SourceReinsInfoOEDPiWind.csv",
+            ri_scope=self.tmp_dir_path / "SourceReinsScopeOEDPiWind.csv",
             use_field=True,
         )
 
@@ -982,8 +982,8 @@ class OdsPackageTests(TestCase):
 
     def test_probe_oedversion_from_oedsource(self):
         exposure = OedExposure(
-            location=self.tmp_dir_path + "/SourceLocOEDPiWind.csv",
-            account=self.tmp_dir_path + "/SourceAccOEDPiWind.csv",
+            location=self.tmp_dir_path / "SourceLocOEDPiWind.csv",
+            account=self.tmp_dir_path / "SourceAccOEDPiWind.csv",
         )
 
         df = exposure.location.dataframe
@@ -993,7 +993,7 @@ class OdsPackageTests(TestCase):
         self.assertEqual(oedversion, "4.0.0")
 
     def test_probe_oedversion_from_dataframe(self):
-        df = pd.read_csv(self.tmp_dir_path + "/SourceLocOEDPiWind.csv",
+        df = pd.read_csv(self.tmp_dir_path / "SourceLocOEDPiWind.csv",
                          dtype=str, keep_default_na=False)
         df["OEDVersion"] = "4.0.0"
 
@@ -1001,7 +1001,7 @@ class OdsPackageTests(TestCase):
         self.assertEqual(oedversion, "4.0.0")
 
     def test_probe_oedversion_from_resolved_dict(self):
-        df = pd.read_csv(self.tmp_dir_path + "/SourceLocOEDPiWind.csv",
+        df = pd.read_csv(self.tmp_dir_path / "SourceLocOEDPiWind.csv",
                          dtype=str, keep_default_na=False)
         df["OEDVersion"] = "4.0.0"
         with tempfile.TemporaryDirectory() as d:
@@ -1024,7 +1024,7 @@ class OdsPackageTests(TestCase):
             self.assertEqual(oedversion, "4.0.0")
 
     def test_probe_oedversion_from_csv_stream(self):
-        df = pd.read_csv(self.tmp_dir_path + "/SourceLocOEDPiWind.csv",
+        df = pd.read_csv(self.tmp_dir_path / "SourceLocOEDPiWind.csv",
                          dtype=str, keep_default_na=False)
         df["OEDVersion"] = "4.0.0"
 
@@ -1036,7 +1036,7 @@ class OdsPackageTests(TestCase):
         self.assertEqual(oedversion, "4.0.0")
 
     def test_probe_oedversion_from_parquet_stream(self):
-        df = pd.read_csv(self.tmp_dir_path + "/SourceLocOEDPiWind.csv",
+        df = pd.read_csv(self.tmp_dir_path / "SourceLocOEDPiWind.csv",
                          dtype=str, keep_default_na=False)
         df["OEDVersion"] = "4.0.0"
 
@@ -1049,7 +1049,7 @@ class OdsPackageTests(TestCase):
         self.assertEqual(oedversion, "4.0.0")
 
     def test_probe_oedversion_from_csv_path(self):
-        df = pd.read_csv(self.tmp_dir_path + "/SourceLocOEDPiWind.csv",
+        df = pd.read_csv(self.tmp_dir_path / "SourceLocOEDPiWind.csv",
                          dtype=str, keep_default_na=False)
         df["OEDVersion"] = "4.0.0"
         with tempfile.TemporaryDirectory() as d:
@@ -1060,7 +1060,7 @@ class OdsPackageTests(TestCase):
             self.assertEqual(oedversion, "4.0.0")
 
     def test_probe_oedversion_from_parquet_path(self):
-        df = pd.read_csv(self.tmp_dir_path + "/SourceLocOEDPiWind.csv",
+        df = pd.read_csv(self.tmp_dir_path / "SourceLocOEDPiWind.csv",
                          dtype=str, keep_default_na=False)
         df["OEDVersion"] = "4.0.0"
         with tempfile.TemporaryDirectory() as d:
