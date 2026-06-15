@@ -90,11 +90,11 @@ class OdsPackageTests(TestCase):
             self.assertTrue(isinstance(ri_scope, pd.DataFrame))
 
     def test_load_oed_from_config(self):
-        config = {'location': self.tmp_dir_path + '/SourceLocOEDPiWind.csv',
-                  'account': self.tmp_dir_path + '/SourceAccOEDPiWind.parquet',
+        config = {'location': self.tmp_dir_path / 'SourceLocOEDPiWind.csv',
+                  'account': self.tmp_dir_path / 'SourceAccOEDPiWind.parquet',
                   'ri_info': {'cur_version_name': 'orig',
                               'sources': {'orig': {'source_type': 'filepath',
-                                                   'filepath': self.tmp_dir_path + '/SourceReinsInfoOEDPiWind.csv',
+                                                   'filepath': self.tmp_dir_path / 'SourceReinsInfoOEDPiWind.csv',
                                                    'read_param': {
                                                        'usecols': ['ReinsNumber', 'ReinsLayerNumber', 'ReinsName',
                                                                    'ReinsPeril',
@@ -104,7 +104,7 @@ class OdsPackageTests(TestCase):
                                                                    'PlacedPercent',
                                                                    'ReinsCurrency', 'InuringPriority', 'ReinsType',
                                                                    'RiskLevel', 'OEDVersion']}}}},
-                  'ri_scope': self.tmp_dir_path + '/SourceReinsScopeOEDPiWind.csv',
+                  'ri_scope': self.tmp_dir_path / 'SourceReinsScopeOEDPiWind.csv',
                   'use_field': True
                   }
         with tempfile.TemporaryDirectory() as tmp_run_dir:
@@ -148,10 +148,10 @@ class OdsPackageTests(TestCase):
                     .read())
 
             config = {
-                'location': self.tmp_dir_path + '/SourceLocOEDPiWind.csv',
-                'account': self.tmp_dir_path + '/SourceAccOEDPiWind.csv',
-                'ri_info': self.tmp_dir_path + '/SourceReinsInfoOEDPiWind.csv',
-                'ri_scope': self.tmp_dir_path + '/SourceReinsScopeOEDPiWind.csv',
+                'location': self.tmp_dir_path / 'SourceLocOEDPiWind.csv',
+                'account': self.tmp_dir_path / 'SourceAccOEDPiWind.csv',
+                'ri_info': self.tmp_dir_path / 'SourceReinsInfoOEDPiWind.csv',
+                'ri_scope': self.tmp_dir_path / 'SourceReinsScopeOEDPiWind.csv',
                 'oed_schema_info': os.path.join(tmp_run_dir, 'OpenExposureData_Spec.json'),
                 'check_oed': True,
                 'use_field': True,
@@ -196,7 +196,7 @@ class OdsPackageTests(TestCase):
         # UseReinsDates is a string column with a non null default, check default setting works
         with tempfile.TemporaryDirectory() as tmp_run_dir:
             config = {
-                'ri_info': self.tmp_dir_path + '/SourceReinsInfoOEDPiWind.csv',
+                'ri_info': self.tmp_dir_path / 'SourceReinsInfoOEDPiWind.csv',
                 'use_field': True
             }
             exposure = OedExposure(**config)
@@ -368,10 +368,10 @@ class OdsPackageTests(TestCase):
 
     def test_reporting_currency(self):
         config = {
-            'location': self.tmp_dir_path + '/SourceLocOEDPiWind10Currency.csv',
-            'account': self.tmp_dir_path + '/SourceAccOEDPiWind.csv',
-            'ri_info': self.tmp_dir_path + '/SourceReinsInfoOEDPiWind.csv',
-            'ri_scope': self.tmp_dir_path + '/SourceReinsScopeOEDPiWind.csv',
+            'location': self.tmp_dir_path / 'SourceLocOEDPiWind10Currency.csv',
+            'account': self.tmp_dir_path / 'SourceAccOEDPiWind.csv',
+            'ri_info': self.tmp_dir_path / 'SourceReinsInfoOEDPiWind.csv',
+            'ri_scope': self.tmp_dir_path / 'SourceReinsScopeOEDPiWind.csv',
             'currency_conversion': {
                 "currency_conversion_type": "DictBasedCurrencyRates",
                 "source_type": "dict",
@@ -411,10 +411,10 @@ class OdsPackageTests(TestCase):
 
     def test_convert_to_parquet(self):
         with tempfile.TemporaryDirectory() as tmp_run_dir:
-            config = {'location': self.tmp_dir_path + '/SourceLocOEDPiWind.csv',
-                      'account': self.tmp_dir_path + '/SourceAccOEDPiWind.csv',
-                      'ri_info': self.tmp_dir_path + '/SourceReinsInfoOEDPiWind.csv',
-                      'ri_scope': self.tmp_dir_path + '/SourceReinsScopeOEDPiWind.csv',
+            config = {'location': str(self.tmp_dir_path / 'SourceLocOEDPiWind.csv'),
+                      'account': str(self.tmp_dir_path / 'SourceAccOEDPiWind.csv'),
+                      'ri_info': str(self.tmp_dir_path / 'SourceReinsInfoOEDPiWind.csv'),
+                      'ri_scope': str(self.tmp_dir_path / 'SourceReinsScopeOEDPiWind.csv'),
                       }
             with open(pathlib.Path(tmp_run_dir, 'config.json'), 'w') as config_json:
                 json.dump(config, config_json)
@@ -432,10 +432,10 @@ class OdsPackageTests(TestCase):
                         os.path.isfile(pathlib.Path(tmp_run_dir, folder, f'Source{oed_name}OEDPiWind.parquet')))
 
     def test_validation_raise_exception(self):
-        config = {'location': self.tmp_dir_path + '/SourceLocOEDPiWind10.csv',
-                  'account': self.tmp_dir_path + '/SourceAccOEDPiWind.csv',
-                  'ri_info': self.tmp_dir_path + '/SourceReinsInfoOEDPiWind.csv',
-                  'ri_scope': self.tmp_dir_path + '/SourceReinsScopeOEDPiWind.csv',
+        config = {'location': self.tmp_dir_path / 'SourceLocOEDPiWind10.csv',
+                  'account': self.tmp_dir_path / 'SourceAccOEDPiWind.csv',
+                  'ri_info': self.tmp_dir_path / 'SourceReinsInfoOEDPiWind.csv',
+                  'ri_scope': self.tmp_dir_path / 'SourceReinsScopeOEDPiWind.csv',
                   }
         exposure = OedExposure(**config)
 
@@ -470,10 +470,10 @@ class OdsPackageTests(TestCase):
 
         for invalid_value in invalid_values:
             exposure = OedExposure(
-                location=self.tmp_dir_path + '/SourceLocOEDPiWind10.csv',
-                account=self.tmp_dir_path + '/SourceAccOEDPiWind.csv',
-                ri_info=self.tmp_dir_path + '/SourceReinsInfoOEDPiWind.csv',
-                ri_scope=self.tmp_dir_path + '/SourceReinsScopeOEDPiWind.csv',
+                location=self.tmp_dir_path / 'SourceLocOEDPiWind10.csv',
+                account=self.tmp_dir_path / 'SourceAccOEDPiWind.csv',
+                ri_info=self.tmp_dir_path / 'SourceReinsInfoOEDPiWind.csv',
+                ri_scope=self.tmp_dir_path / 'SourceReinsScopeOEDPiWind.csv',
             )
 
             date_cols = ['PolInceptionDate', 'PolExpiryDate']
@@ -499,10 +499,10 @@ class OdsPackageTests(TestCase):
 
         for valid_value in valid_values:
             exposure = OedExposure(
-                location=self.tmp_dir_path + '/SourceLocOEDPiWind10.csv',
-                account=self.tmp_dir_path + '/SourceAccOEDPiWind.csv',
-                ri_info=self.tmp_dir_path + '/SourceReinsInfoOEDPiWind.csv',
-                ri_scope=self.tmp_dir_path + '/SourceReinsScopeOEDPiWind.csv',
+                location=self.tmp_dir_path / 'SourceLocOEDPiWind10.csv',
+                account=self.tmp_dir_path / 'SourceAccOEDPiWind.csv',
+                ri_info=self.tmp_dir_path / 'SourceReinsInfoOEDPiWind.csv',
+                ri_scope=self.tmp_dir_path / 'SourceReinsScopeOEDPiWind.csv',
             )
 
             date_cols = ['PolInceptionDate', 'PolExpiryDate']
@@ -556,8 +556,8 @@ class OdsPackageTests(TestCase):
         """
         Check that exposure loads correctly after it has been moved to another place
         """
-        config = {'location': self.tmp_dir_path + '/SourceLocOEDPiWind.csv',
-                  'account': self.tmp_dir_path + '/SourceAccOEDPiWind.csv', }
+        config = {'location': self.tmp_dir_path / 'SourceLocOEDPiWind.csv',
+                  'account': self.tmp_dir_path / 'SourceAccOEDPiWind.csv', }
 
         with tempfile.TemporaryDirectory() as tmp_save_dir, tempfile.TemporaryDirectory() as tmp_move_dir:
             exposure_save = OedExposure(**config)
@@ -571,10 +571,10 @@ class OdsPackageTests(TestCase):
 
     def test_field_required_allow_blank_are_set_to_default(self):
         original_exposure = OedExposure(**{
-            'location': self.tmp_dir_path + '/SourceLocOEDPiWind.csv',
-            'account': self.tmp_dir_path + '/SourceAccOEDPiWind.csv',
-            'ri_info': self.tmp_dir_path + '/SourceReinsInfoOEDPiWind.csv',
-            'ri_scope': self.tmp_dir_path + '/SourceReinsScopeOEDPiWind.csv',
+            'location': self.tmp_dir_path / 'SourceLocOEDPiWind.csv',
+            'account': self.tmp_dir_path / 'SourceAccOEDPiWind.csv',
+            'ri_info': self.tmp_dir_path / 'SourceReinsInfoOEDPiWind.csv',
+            'ri_scope': self.tmp_dir_path / 'SourceReinsScopeOEDPiWind.csv',
             'use_field': True})
 
         original_exposure.location.dataframe = original_exposure.location.dataframe.drop(columns='ContentsTIV')
@@ -663,10 +663,10 @@ class OdsPackageTests(TestCase):
             with tempfile.TemporaryDirectory() as tmp_dir:
                 abs_dir = pathlib.Path(tmp_dir, "abs")
                 abs_dir.mkdir()
-                with urllib.request.urlopen(self.tmp_dir_path + '/SourceLocOEDPiWind10.csv') as response, \
+                with urllib.request.urlopen(self.tmp_dir_path / 'SourceLocOEDPiWind10.csv') as response, \
                         open(pathlib.Path(tmp_dir, 'SourceLocOEDPiWind10.csv'), 'wb') as out_file:
                     shutil.copyfileobj(response, out_file)
-                with urllib.request.urlopen(self.tmp_dir_path + '/SourceAccOEDPiWind.csv') as response, \
+                with urllib.request.urlopen(self.tmp_dir_path / 'SourceAccOEDPiWind.csv') as response, \
                         open(pathlib.Path(abs_dir, 'SourceAccOEDPiWind.csv'), 'wb') as out_file:
                     shutil.copyfileobj(response, out_file)
 
@@ -1072,10 +1072,10 @@ class OdsPackageTests(TestCase):
 
     def test_check_oedversion_consistency_valid_val(self):
         exposure = OedExposure(
-            location=self.tmp_dir_path + '/SourceLocOEDPiWind10.csv',
-            account=self.tmp_dir_path + '/SourceAccOEDPiWind.csv',
-            ri_info=self.tmp_dir_path + '/SourceReinsInfoOEDPiWind.csv',
-            ri_scope=self.tmp_dir_path + '/SourceReinsScopeOEDPiWind.csv',
+            location=self.tmp_dir_path / 'SourceLocOEDPiWind10.csv',
+            account=self.tmp_dir_path / 'SourceAccOEDPiWind.csv',
+            ri_info=self.tmp_dir_path / 'SourceReinsInfoOEDPiWind.csv',
+            ri_scope=self.tmp_dir_path / 'SourceReinsScopeOEDPiWind.csv',
         )
         exposure.location.dataframe["OEDVersion"] = "4.0.0"
         exposure.account.dataframe["OEDVersion"] = "4.0.0"
@@ -1089,10 +1089,10 @@ class OdsPackageTests(TestCase):
 
     def test_check_oedversion_consistency_valid_none(self):
         exposure = OedExposure(
-            location=self.tmp_dir_path + '/SourceLocOEDPiWind10.csv',
-            account=self.tmp_dir_path + '/SourceAccOEDPiWind.csv',
-            ri_info=self.tmp_dir_path + '/SourceReinsInfoOEDPiWind.csv',
-            ri_scope=self.tmp_dir_path + '/SourceReinsScopeOEDPiWind.csv',
+            location=self.tmp_dir_path / 'SourceLocOEDPiWind10.csv',
+            account=self.tmp_dir_path / 'SourceAccOEDPiWind.csv',
+            ri_info=self.tmp_dir_path / 'SourceReinsInfoOEDPiWind.csv',
+            ri_scope=self.tmp_dir_path / 'SourceReinsScopeOEDPiWind.csv',
         )
         exposure.location.dataframe["OEDVersion"] = None
         exposure.account.dataframe["OEDVersion"] = None
@@ -1115,10 +1115,10 @@ class OdsPackageTests(TestCase):
         ]
         for exposure_type, pos, val in invalid_vals:
             exposure = OedExposure(
-                location=self.tmp_dir_path + '/SourceLocOEDPiWind10.csv',
-                account=self.tmp_dir_path + '/SourceAccOEDPiWind.csv',
-                ri_info=self.tmp_dir_path + '/SourceReinsInfoOEDPiWind.csv',
-                ri_scope=self.tmp_dir_path + '/SourceReinsScopeOEDPiWind.csv',
+                location=self.tmp_dir_path / 'SourceLocOEDPiWind10.csv',
+                account=self.tmp_dir_path / 'SourceAccOEDPiWind.csv',
+                ri_info=self.tmp_dir_path / 'SourceReinsInfoOEDPiWind.csv',
+                ri_scope=self.tmp_dir_path / 'SourceReinsScopeOEDPiWind.csv',
             )
             OEDVersion = "4.0.0"
             exposure.location.dataframe["OEDVersion"] = OEDVersion
@@ -1141,10 +1141,10 @@ class OdsPackageTests(TestCase):
 
     def test_check_oedversion_consistency_regex_valid(self):
         exposure = OedExposure(
-            location=self.tmp_dir_path + '/SourceLocOEDPiWind10.csv',
-            account=self.tmp_dir_path + '/SourceAccOEDPiWind.csv',
-            ri_info=self.tmp_dir_path + '/SourceReinsInfoOEDPiWind.csv',
-            ri_scope=self.tmp_dir_path + '/SourceReinsScopeOEDPiWind.csv',
+            location=self.tmp_dir_path / 'SourceLocOEDPiWind10.csv',
+            account=self.tmp_dir_path / 'SourceAccOEDPiWind.csv',
+            ri_info=self.tmp_dir_path / 'SourceReinsInfoOEDPiWind.csv',
+            ri_scope=self.tmp_dir_path / 'SourceReinsScopeOEDPiWind.csv',
         )
         exposure.location.dataframe["OEDVersion"] = "4.0.0"  # without starting v
         exposure.account.dataframe["OEDVersion"] = "v4.0.0"  # with starting v
@@ -1158,10 +1158,10 @@ class OdsPackageTests(TestCase):
 
     def test_check_oedversion_consistency_regex_invalid(self):
         exposure = OedExposure(
-            location=self.tmp_dir_path + '/SourceLocOEDPiWind10.csv',
-            account=self.tmp_dir_path + '/SourceAccOEDPiWind.csv',
-            ri_info=self.tmp_dir_path + '/SourceReinsInfoOEDPiWind.csv',
-            ri_scope=self.tmp_dir_path + '/SourceReinsScopeOEDPiWind.csv',
+            location=self.tmp_dir_path / 'SourceLocOEDPiWind10.csv',
+            account=self.tmp_dir_path / 'SourceAccOEDPiWind.csv',
+            ri_info=self.tmp_dir_path / 'SourceReinsInfoOEDPiWind.csv',
+            ri_scope=self.tmp_dir_path / 'SourceReinsScopeOEDPiWind.csv',
         )
         exposure.location.dataframe["OEDVersion"] = "4.0.0"
         exposure.account.dataframe["OEDVersion"] = "4.0.0"
