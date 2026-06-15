@@ -1,3 +1,4 @@
+from contextlib import ExitStack
 import io
 import json
 import logging
@@ -298,7 +299,7 @@ class OdsPackageTests(TestCase):
             self.assertTrue(isinstance(location, pd.DataFrame))
 
     def test_parquet_and_csv_return_same_df(self):
-        with tempfile.TemporaryDirectory() as tmp_run_dir:
+        with ExitStack() as stack:
             # read_parquet needs stream with seek method which urllib.request.urlopen doesn't have
             configs_from_file = {}
             configs_from_stream = {}
@@ -306,10 +307,9 @@ class OdsPackageTests(TestCase):
                 configs_from_file[extension] = {'use_field': True}
                 configs_from_stream[extension] = {'use_field': True}
                 for oed_type, oed_name in OED_TYPE_TO_NAME.items():
-                    configs_from_file[extension][oed_name] = os.path.join(tmp_run_dir, f'Source{oed_type}OEDPiWind.{extension}')
-                    with open(configs_from_file[extension][oed_name], 'wb') as acc_parquet:
-                        acc_parquet.write(urllib.request.urlopen(self.tmp_dir_path + f'/Source{oed_type}OEDPiWind.{extension}').read())
-                    configs_from_stream[extension][oed_name] = open(os.path.join(tmp_run_dir, f'Source{oed_type}OEDPiWind.{extension}'), 'rb')
+                    configs_from_file[extension][oed_name] = self.tmp_dir_path / f'Source{oed_type}OEDPiWind.{extension}'
+                    configs_from_stream[extension][oed_name] = stack.enter_context(
+                        open(self.tmp_dir_path / f'Source{oed_type}OEDPiWind.{extension}', 'rb'))
 
             exposure_csv_file = OedExposure(**configs_from_file['csv'])
             exposure_parquet_file = OedExposure(**configs_from_file['parquet'])
