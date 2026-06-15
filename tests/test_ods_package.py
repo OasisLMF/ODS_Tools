@@ -678,6 +678,26 @@ class OdsPackageTests(TestCase):
         finally:
             os.chdir(original_cwd)
 
+    def test_relative_and_absolute_path__oed_dir(self):
+        original_cwd = os.getcwd()
+        try:
+            with tempfile.TemporaryDirectory() as tmp_dir:
+                abs_dir = pathlib.Path(tmp_dir, "abs")
+                abs_dir.mkdir()
+                with open(self.tmp_dir_path / 'SourceLocOEDPiWind10.csv', 'rb') as in_file, \
+                        open(pathlib.Path(abs_dir, 'location.csv'), 'wb') as out_file:
+                    shutil.copyfileobj(in_file, out_file)
+
+                os.chdir(tmp_dir)
+                relative_path = "./abs"
+                relative_exposure = OedExposure.from_dir(relative_path)   # relative path
+                relative_exposure.check()
+
+                absolute_exposure = OedExposure.from_dir(str(abs_dir))    # absolute path
+                absolute_exposure.check()
+        finally:
+            os.chdir(original_cwd)
+
     def test_NA_value_are_not_nan(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
             loc_path = pathlib.Path(tmp_dir, 'location.csv')
