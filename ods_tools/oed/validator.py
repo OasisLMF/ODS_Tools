@@ -4,6 +4,7 @@ import re
 import numpy as np
 import logging
 import pandas as pd
+import pyarrow as pa
 import tqdm
 
 from pathlib import Path
@@ -334,7 +335,10 @@ class Validator:
                 series = df[col]
                 blank = is_empty(df, col)
                 if field_info['Default'] != 'n/a':
-                    if series.dtype.name == 'category':
+                    if series.dtype.name == 'category' or (
+                        isinstance(series.dtype, pd.ArrowDtype)
+                        and pa.types.is_dictionary(series.dtype.pyarrow_dtype)
+                    ):
                         default_val = field_info['Default']
                     else:
                         default_val = series.dtype.type(field_info['Default'])

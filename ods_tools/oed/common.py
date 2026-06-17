@@ -7,6 +7,7 @@ from urllib.parse import urlparse
 from pathlib import Path
 import numpy as np
 import pandas as pd
+import pyarrow as pa
 from enum import Enum
 
 
@@ -227,6 +228,35 @@ default_string_dtype = {
 }
 
 pd_default_string = object if pd.__version__ < "3" else "str"
+
+# varchar/nvarchar identifier fields that are dictionary-encoded in addition to
+# char/nchar fields (which are encoded via their Data Type). These fields repeat
+# at portfolio/account/policy level, so unique values << row count in practice.
+PA_DICT_STRING_ALLOWLIST = {
+    'PortNumber', 'AccNumber', 'PolNumber', 'CondNumber',
+    'LocPerilsCovered', 'AccPeril', 'PolPeril', 'CondPeril',
+    'LocGroup', 'AccGroup',
+}
+
+
+def pa_dict_encode(series):
+    """Dictionary-encode a string[pyarrow] series using the smallest fitting index type.
+
+    Mirrors the adaptive index sizing that pandas category uses internally:
+    int8 for ≤127 unique values, int16 for ≤32767, int32 otherwise.
+    Returns None if encoding fails (caller should keep the original series).
+    """
+    n = series.nunique()
+    if n <= 127:
+        index_type = pa.int8()
+    elif n <= 32767:
+        index_type = pa.int16()
+    else:
+        index_type = pa.int32()
+    try:
+        return series.astype(pd.ArrowDtype(pa.dictionary(index_type, pa.string())))
+    except Exception:
+        return None
 
 
 def is_empty(df, columns):
