@@ -240,7 +240,7 @@ def pa_dict_encode(series):
     Uses a head-slice pre-check to cheaply reject high-cardinality columns, then a single
     PyArrow compute pass to encode and count unique values simultaneously (avoids the
     separate nunique() + astype() double scan). Adaptive index sizing mirrors pandas
-    category: int8 for ≤127 unique values, int16 for ≤32767, int32 otherwise.
+    category: int8 for ≤128 unique values, int16 for ≤32767, int32 otherwise.
     Returns None if encoding is skipped (high cardinality) or fails (caller keeps original).
     """
     sample_size = min(2000, len(series))

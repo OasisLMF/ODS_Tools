@@ -1198,13 +1198,12 @@ class OdsPackageTests(TestCase):
             self.fail(f"check_country_and_area_code raised with dict-encoded CountryCode: {e}")
 
     def test_check_conditional_requirement_pa_dtype_dict_encoded(self):
-        """check_conditional_requirement must not raise TypeError when a string cr_field column
-        with a non-n/a default is dictionary-encoded (defensive fix for custom/future schemas)."""
+        """check_conditional_requirement must not raise TypeError when a dict-encoded string
+        column with a non-n/a default appears in cr_field."""
         import pyarrow as pa
         from ods_tools.oed.common import pa_dict_encode
 
         oed_schema = OedSchema.from_oed_schema_info(None)
-        # Inject a custom string field with a non-n/a default into cr_field
         custom_field = {
             'Input Field Name': 'CustomStatus',
             'Type & Description': 'custom string field for test',
@@ -1233,7 +1232,6 @@ class OdsPackageTests(TestCase):
         })
         exposure = OedExposure(location=loc_df, use_field=True, oed_schema_info=oed_schema, backend_dtype='pa_dtype')
 
-        # Force dict-encoding on CustomStatus so we exercise the guard
         encoded = pa_dict_encode(exposure.location.dataframe['CustomStatus'].astype('string[pyarrow]'))
         if encoded is not None:
             exposure.location.dataframe['CustomStatus'] = encoded
@@ -1250,7 +1248,6 @@ class OdsPackageTests(TestCase):
 
 
 class PaDictEncodeTests(TestCase):
-    """Unit tests for ods_tools.oed.common.pa_dict_encode."""
 
     def setUp(self):
         from ods_tools.oed.common import pa_dict_encode
@@ -1284,13 +1281,11 @@ class PaDictEncodeTests(TestCase):
         self.assertEqual(result.dtype.pyarrow_dtype.index_type, self.pa.int16())
 
     def test_high_cardinality_returns_none(self):
-        # Every value is unique → cardinality ratio == 1.0 → must be rejected
         s = self._make_series([str(i) for i in range(1000)])
         result = self.pa_dict_encode(s)
         self.assertIsNone(result)
 
     def test_presample_short_circuit(self):
-        # First 2000 rows are all unique (>50% threshold) → should bail before full encode
         unique_prefix = [str(i) for i in range(2001)]
         repeated_suffix = ['X'] * 50000
         s = self._make_series(unique_prefix + repeated_suffix)
@@ -1298,10 +1293,8 @@ class PaDictEncodeTests(TestCase):
         self.assertIsNone(result)
 
     def test_empty_series_encodes_without_error(self):
-        # Empty series has 0 unique values; encoding is valid and should not raise.
         s = self._make_series([], dtype='string[pyarrow]')
         result = self.pa_dict_encode(s)
-        # Either None (skipped) or a valid empty dict-encoded series are acceptable.
         if result is not None:
             self.assertIsInstance(result.dtype, pd.ArrowDtype)
             self.assertTrue(self.pa.types.is_dictionary(result.dtype.pyarrow_dtype))

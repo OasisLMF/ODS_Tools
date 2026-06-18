@@ -310,6 +310,7 @@ class Validator:
                                          f"{invalid_country_area[identifier_field + [country_code_column, area_code_column]]}"})
             else:
                 country_only_df = oed_source.dataframe
+            # np.isin handles dict-encoded ArrowDtype columns directly; no decode needed here.
             invalid_country = (country_only_df[~(np.isin(country_only_df[country_code_column],
                                                          list(self.exposure.oed_schema.schema['country']))
                                                  | is_empty(country_only_df, country_code_column))])
@@ -441,8 +442,8 @@ class Validator:
                 continue
             oedversion_rows_for_str = (
                 oedversion_rows.astype('string[pyarrow]')
-                if isinstance(oedversion_rows.dtype, pd.ArrowDtype)
-                and pa.types.is_dictionary(oedversion_rows.dtype.pyarrow_dtype)
+                if (isinstance(oedversion_rows.dtype, pd.ArrowDtype)
+                    and pa.types.is_dictionary(oedversion_rows.dtype.pyarrow_dtype))
                 else oedversion_rows
             )
             oedversion_rows_normalised = oedversion_rows_for_str.str.lstrip("v")
