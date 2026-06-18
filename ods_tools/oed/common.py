@@ -230,6 +230,7 @@ default_string_dtype = {
 
 pd_default_string = object if pd.__version__ < "3" else "str"
 
+
 def pa_dict_encode(series):
     """Dictionary-encode a string[pyarrow] series using the smallest fitting index type.
 
