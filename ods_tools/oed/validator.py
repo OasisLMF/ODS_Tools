@@ -292,8 +292,14 @@ class Validator:
                 country_only_df = oed_source.dataframe[is_empty(oed_source.dataframe, area_code_column)]
                 country_area_df = oed_source.dataframe[~is_empty(oed_source.dataframe, area_code_column)]
 
+                cc = country_area_df[country_code_column]
+                ac = country_area_df[area_code_column]
+                if isinstance(cc.dtype, pd.ArrowDtype) and pa.types.is_dictionary(cc.dtype.pyarrow_dtype):
+                    cc = cc.astype('string[pyarrow]')
+                if isinstance(ac.dtype, pd.ArrowDtype) and pa.types.is_dictionary(ac.dtype.pyarrow_dtype):
+                    ac = ac.astype('string[pyarrow]')
                 invalid_country_area = (country_area_df[
-                    ~(country_area_df[[country_code_column, area_code_column]]
+                    ~(pd.DataFrame({country_code_column: cc, area_code_column: ac})
                       .apply(tuple, axis=1)
                       .isin(self.exposure.oed_schema.schema['country_area'])
                       )]
@@ -433,7 +439,13 @@ class Validator:
             oedversion_rows = oed_source.dataframe.get("OEDVersion")
             if oedversion_rows is None:
                 continue
-            oedversion_rows_normalised = oedversion_rows.str.lstrip("v")
+            oedversion_rows_for_str = (
+                oedversion_rows.astype('string[pyarrow]')
+                if isinstance(oedversion_rows.dtype, pd.ArrowDtype)
+                and pa.types.is_dictionary(oedversion_rows.dtype.pyarrow_dtype)
+                else oedversion_rows
+            )
+            oedversion_rows_normalised = oedversion_rows_for_str.str.lstrip("v")
 
             if not first_val_set:
                 first_val = oedversion_rows_normalised.iloc[0]

@@ -8,6 +8,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pyarrow as pa
+import pyarrow.compute as pc
 from enum import Enum
 
 
@@ -229,32 +230,28 @@ default_string_dtype = {
 
 pd_default_string = object if pd.__version__ < "3" else "str"
 
-# varchar/nvarchar identifier fields that are dictionary-encoded in addition to
-# char/nchar fields (which are encoded via their Data Type). These fields repeat
-# at portfolio/account/policy level, so unique values << row count in practice.
-PA_DICT_STRING_ALLOWLIST = {
-    'PortNumber', 'AccNumber', 'PolNumber', 'CondNumber',
-    'LocPerilsCovered', 'AccPeril', 'PolPeril', 'CondPeril',
-    'LocGroup', 'AccGroup',
-}
-
-
 def pa_dict_encode(series):
     """Dictionary-encode a string[pyarrow] series using the smallest fitting index type.
 
-    Mirrors the adaptive index sizing that pandas category uses internally:
-    int8 for ≤127 unique values, int16 for ≤32767, int32 otherwise.
-    Returns None if encoding fails (caller should keep the original series).
+    Uses a head-slice pre-check to cheaply reject high-cardinality columns, then a single
+    PyArrow compute pass to encode and count unique values simultaneously (avoids the
+    separate nunique() + astype() double scan). Adaptive index sizing mirrors pandas
+    category: int8 for ≤127 unique values, int16 for ≤32767, int32 otherwise.
+    Returns None if encoding is skipped (high cardinality) or fails (caller keeps original).
     """
-    n = series.nunique()
-    if n <= 127:
-        index_type = pa.int8()
-    elif n <= 32767:
-        index_type = pa.int16()
-    else:
-        index_type = pa.int32()
+    sample_size = min(2000, len(series))
+    if len(series) > sample_size:
+        if series.iloc[:sample_size].nunique() > sample_size * 0.5:
+            return None
     try:
-        return series.astype(pd.ArrowDtype(pa.dictionary(index_type, pa.string())))
+        arr = series.array._pa_array.combine_chunks()
+        encoded = pc.dictionary_encode(arr)
+        n = len(encoded.dictionary)
+        if n > len(series) * 0.5:
+            return None
+        index_type = pa.int8() if n <= 127 else pa.int16() if n <= 32767 else pa.int32()
+        casted = pa.DictionaryArray.from_arrays(encoded.indices.cast(index_type), encoded.dictionary)
+        return pd.Series(pd.array(pa.chunked_array([casted]), dtype=pd.ArrowDtype(casted.type)), index=series.index)
     except Exception:
         return None
 
