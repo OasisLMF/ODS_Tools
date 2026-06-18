@@ -2,6 +2,7 @@
 common static variable and ods_tools exceptions
 """
 import enum
+import logging
 
 from urllib.parse import urlparse
 from pathlib import Path
@@ -10,6 +11,8 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.compute as pc
 from enum import Enum
+
+logger = logging.getLogger(__name__)
 
 
 class OdsException(Exception):
@@ -245,15 +248,16 @@ def pa_dict_encode(series):
         if series.iloc[:sample_size].nunique() > sample_size * 0.5:
             return None
     try:
-        arr = series.array._pa_array.combine_chunks()
+        arr = series.array.__arrow_array__().combine_chunks()
         encoded = pc.dictionary_encode(arr)
         n = len(encoded.dictionary)
         if n > len(series) * 0.5:
             return None
-        index_type = pa.int8() if n <= 127 else pa.int16() if n <= 32767 else pa.int32()
+        index_type = pa.int8() if n <= 128 else pa.int16() if n <= 32767 else pa.int32()
         casted = pa.DictionaryArray.from_arrays(encoded.indices.cast(index_type), encoded.dictionary)
         return pd.Series(pd.array(pa.chunked_array([casted]), dtype=pd.ArrowDtype(casted.type)), index=series.index)
-    except Exception:
+    except Exception as e:
+        logger.debug("pa_dict_encode failed, keeping original dtype: %s", e)
         return None
 
 
