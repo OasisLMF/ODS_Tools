@@ -5,6 +5,7 @@ import setuptools
 from urllib.error import HTTPError
 
 from setuptools.command.install import install
+from setuptools.command.build_py import build_py
 from setuptools.command.editable_wheel import editable_wheel
 
 import urllib.request
@@ -118,24 +119,24 @@ class DownloadSpecODSEditable(DownloadSpecODSBase, editable_wheel):
         editable_wheel.run(self)
 
 
-class DownloadSpecODS(DownloadSpecODSBase, install):
+class DownloadSpecODS(DownloadSpecODSBase, build_py):
     """A custom command to download a JSON ODS spec during installation.
 
         Example Install:
             pip install -v . --install-option="--local-oed-spec=<path>" .
 
     """
-    user_options = install.user_options + [
+    user_options = build_py.user_options + [
         ('local-oed-spec=', None, 'Override to build package with extracted spec (filepath)'),
     ]
 
     def __init__(self, *args, **kwargs):
         DownloadSpecODSBase.__init__(self, *args, **kwargs)
-        install.__init__(self, *args, **kwargs)
+        build_py.__init__(self, *args, **kwargs)
         self.src_path_attr = 'build_lib'
 
     def initialize_options(self):
-        install.initialize_options(self)
+        build_py.initialize_options(self)
         self.local_oed_spec = None
 
     def finalize_options(self):
@@ -143,9 +144,10 @@ class DownloadSpecODS(DownloadSpecODSBase, install):
         if self.local_oed_spec is not None:
             if not os.path.isfile(self.local_oed_spec):
                 raise ValueError(f"Local OED Spec '{self.local_oed_spec}' not found")
-        install.finalize_options(self)
+        build_py.finalize_options(self)
 
     def run(self):
+        build_py.run(self)
         DownloadSpecODSBase.run(self)
 
         if self.local_oed_spec:
@@ -158,8 +160,6 @@ class DownloadSpecODS(DownloadSpecODSBase, install):
                 with open(download_path, 'w+') as f:
                     json.dump(data, f)
                 data['version'] = 'DEV'
-
-        install.run(self)
 
 
 version = get_version()
@@ -194,7 +194,7 @@ setuptools.setup(
     long_description_content_type='text/markdown',
     url='https://github.com/OasisLMF/OpenDataStandards',
     cmdclass={
-        'install': DownloadSpecODS,
+        'build_py': DownloadSpecODS,
         'editable_wheel': DownloadSpecODSEditable
     },
 )
