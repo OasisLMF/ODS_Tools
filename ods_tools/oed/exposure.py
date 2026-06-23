@@ -369,7 +369,7 @@ class OedExposure:
             for name in names:
                 for extension in PANDAS_COMPRESSION_MAP.values():
                     if Path(oed_dir, name).with_suffix(extension).is_file():
-                        return Path(oed_dir, name).with_suffix(extension)
+                        return Path(name).with_suffix(extension)
 
         necessary_files = ["location"]
         files_found = {file: False for file in necessary_files}
