@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=67"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ods_tools"
+dynamic = ["version", "dependencies", "optional-dependencies"]
+description = "Tools to manage ODS files"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [{name = "Oasis LMF", email = "support@oasislmf.org"}]
+
+[project.urls]
+Homepage = "https://github.com/OasisLMF/OpenDataStandards"
+
+[project.scripts]
+ods_tools = "ods_tools.main:main"
+
+[tool.setuptools.dynamic]
+version = {attr = "ods_tools.__version__"}
+dependencies = {file = ["requirements.in"]}
+optional-dependencies.extra = {file = ["requirements-extra.in"]}
+
+[tool.setuptools.packages.find]
+exclude = ["tests", "tests.*", "tests.*.*"]
+
+[tool.setuptools.package-data]
+"*" = ["*.md"]
+"ods_tools" = ["data/*", "odtf/data/**/*"]

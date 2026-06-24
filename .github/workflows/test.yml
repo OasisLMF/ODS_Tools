@@ -19,7 +19,7 @@ jobs:
       oed_spec_branch: ${{ inputs.oed_spec_branch }}
 
   build-odm:
-    uses: OasisLMF/OasisDataManager/.github/workflows/build.yml@main
+    uses: OasisLMF/OasisDataManager/.github/workflows/build.yml@develop
     secrets: inherit
     with:
       odm_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' ||  inputs.odm_branch }}
@@ -30,7 +30,7 @@ jobs:
     needs: [build-ods, build-odm]
     strategy:
       matrix:
-        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
 
     steps:
     - uses: actions/checkout@v3
