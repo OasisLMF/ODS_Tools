@@ -4,7 +4,6 @@ import re
 import setuptools
 from urllib.error import HTTPError
 
-from setuptools.command.install import install
 from setuptools.command.build_py import build_py
 from setuptools.command.editable_wheel import editable_wheel
 
