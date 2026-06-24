@@ -1,47 +1,15 @@
-import io
 import os
-import re
-import setuptools
+import json
+import urllib.request
 from urllib.error import HTTPError
 
+from setuptools import setup
 from setuptools.command.build_py import build_py
 from setuptools.command.editable_wheel import editable_wheel
 
-import urllib.request
-import json
-
-
-SCRIPT_DIR = os.path.abspath(os.path.dirname(__file__))
-
-# ORD_VERSION =
-
-
-def get_readme():
-    with io.open(os.path.join(SCRIPT_DIR, 'README.md'), encoding='utf-8') as readme:
-        return readme.read()
-
-
-def get_version():
-    """
-    Return package version as listed in `__version__` in `init.py`.
-    """
-    with io.open(os.path.join(SCRIPT_DIR, 'ods_tools', '__init__.py'), encoding='utf-8') as init_py:
-        return re.search('__version__ = [\'"]([^\'"]+)[\'"]', init_py.read()).group(1)
-
-
-def get_install_requirements():
-    with io.open(os.path.join(SCRIPT_DIR, 'requirements.in'), encoding='utf-8') as reqs:
-        return reqs.readlines()
-
-
-def get_extra_requirements():
-    with io.open(os.path.join(SCRIPT_DIR, 'requirements-extra.in'), encoding='utf-8') as extrareqs:
-        return extrareqs.readlines()
-
 
 class DownloadSpecODSBase:
-    """Base class for supporting downloading OEDSpec
-    """
+    """Base class for supporting downloading OEDSpec"""
     description = 'Download a ODS JSON spec file from a release URL.'
 
     def __init__(self, *args, **kwargs):
@@ -53,10 +21,8 @@ class DownloadSpecODSBase:
         self.skip_if_present = False
 
     def run(self):
-        # Install all releases
         print(f'Install all versions from url: {self.url}')
         tags = self.get_all_tags()
-        data = {}
         for tag in tags:
             try:
                 download_path = os.path.join(getattr(self, self.src_path_attr), 'ods_tools', 'data', self.filename.format(tag))
@@ -126,39 +92,7 @@ class DownloadSpecODS(DownloadSpecODSBase, build_py):
         DownloadSpecODSBase.run(self)
 
 
-version = get_version()
-readme = get_readme()
-reqs = get_install_requirements()
-extra_reqs = get_extra_requirements()
-
-setuptools.setup(
-    name="ods_tools",
-    version=version,
-    include_package_data=True,
-    package_data={
-        "": ["*.md"],                # Copy in readme
-        "ods_tools": ["data/*", "odtf/data/**/*"]  # Copy spec JSON/CSV and YAML mappings
-    },
-    entry_points={
-        'console_scripts': [
-            'ods_tools=ods_tools.main:main',
-        ]
-    },
-    author='Oasis LMF',
-    author_email="support@oasislmf.org",
-    packages=setuptools.find_packages(exclude=('tests', 'tests.*', 'tests.*.*')),
-    package_dir={'ods_tools': 'ods_tools'},
-    python_requires='>=3.8',
-    install_requires=reqs,
-    extras_require={
-        'extra': extra_reqs,
-    },
-    description='Tools to manage ODS files',
-    long_description=readme,
-    long_description_content_type='text/markdown',
-    url='https://github.com/OasisLMF/OpenDataStandards',
-    cmdclass={
-        'build_py': DownloadSpecODS,
-        'editable_wheel': DownloadSpecODSEditable
-    },
-)
+setup(cmdclass={
+    'build_py': DownloadSpecODS,
+    'editable_wheel': DownloadSpecODSEditable,
+})
