@@ -7,6 +7,7 @@
         "output_summaries": {
             "type": "array",
             "uniqueItems": false,
+            "minItems": 1,
             "title": "Insured loss summary outputs",
             "description": "Specified which outputs should be generated for which summary sets, for insured losses.",
             "items": {
@@ -623,8 +624,6 @@
     "required": [
         "model_supplier_id",
         "model_name_id",
-        "model_settings",
-        "gul_output",
-        "gul_summaries"
+        "model_settings"
     ]
 }

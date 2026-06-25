@@ -2,12 +2,17 @@
 common static variable and ods_tools exceptions
 """
 import enum
+import logging
 
 from urllib.parse import urlparse
 from pathlib import Path
 import numpy as np
 import pandas as pd
+import pyarrow as pa
+import pyarrow.compute as pc
 from enum import Enum
+
+logger = logging.getLogger(__name__)
 
 
 class OdsException(Exception):
@@ -227,6 +232,33 @@ default_string_dtype = {
 }
 
 pd_default_string = object if pd.__version__ < "3" else "str"
+
+
+def pa_dict_encode(series):
+    """Dictionary-encode a string[pyarrow] series using the smallest fitting index type.
+
+    Uses a head-slice pre-check to cheaply reject high-cardinality columns, then a single
+    PyArrow compute pass to encode and count unique values simultaneously (avoids the
+    separate nunique() + astype() double scan). Adaptive index sizing mirrors pandas
+    category: int8 for ≤128 unique values, int16 for ≤32767, int32 otherwise.
+    Returns None if encoding is skipped (high cardinality) or fails (caller keeps original).
+    """
+    sample_size = min(2000, len(series))
+    if len(series) > sample_size:
+        if series.iloc[:sample_size].nunique() > sample_size * 0.5:
+            return None
+    try:
+        arr = series.array.__arrow_array__().combine_chunks()
+        encoded = pc.dictionary_encode(arr)
+        n = len(encoded.dictionary)
+        if n > len(series) * 0.5:
+            return None
+        index_type = pa.int8() if n <= 128 else pa.int16() if n <= 32767 else pa.int32()
+        casted = pa.DictionaryArray.from_arrays(encoded.indices.cast(index_type), encoded.dictionary)
+        return pd.Series(pd.array(pa.chunked_array([casted]), dtype=pd.ArrowDtype(casted.type)), index=series.index)
+    except Exception as e:
+        logger.debug("pa_dict_encode failed, keeping original dtype: %s", e)
+        return None
 
 
 def is_empty(df, columns):

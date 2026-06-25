@@ -1,6 +1,15 @@
 ODS_Tools Changelog
 ===================
 
+`5.0.6`_
+ ---------
+* [#271](https://github.com/OasisLMF/ODS_Tools/pull/271) - Fix/analysis settings empty fields
+* [#273](https://github.com/OasisLMF/ODS_Tools/pull/273) - fix relative path from_dir + cache test exposure files
+* [#276](https://github.com/OasisLMF/ODS_Tools/pull/276) - Fix MSSQL connector ignoring custom port
+* [#277](https://github.com/OasisLMF/ODS_Tools/pull/277) - enhance/data_type_optimisation
+* [#278](https://github.com/OasisLMF/ODS_Tools/pull/278) - Updated build and packaging
+.. _`5.0.6`:  https://github.com/OasisLMF/ODS_Tools/compare/5.0.5...5.0.6
+
 `5.0.5`_
  ---------
 * [#266](https://github.com/OasisLMF/ODS_Tools/pull/266) - Vectorize check_conditional_requirement (~127x speedup)

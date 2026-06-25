@@ -13,6 +13,8 @@ settings_logger = logging.getLogger(__name__)
 ROOT_USER_ROLE = {'admin'}
 DATA_PATH = Path(Path(__file__).parent.parent, 'data')
 
+PERSPECTIVES = ['gul', 'il', 'ri', 'rl']
+
 
 def json_dict_walk(json_dict, key_path):
     """
@@ -443,7 +445,7 @@ class SettingHandler:
 
 class AnalysisSettingHandler(SettingHandler):
     default_analysis_setting_schema_json = 'analysis_settings_schema.json'
-    extra_checks = ['unique_summary_ids', 'deprecated_ktools_outputs']
+    extra_checks = ['unique_summary_ids', 'deprecated_ktools_outputs', 'output_summaries']
     default_analysis_compatibility_profile = {
         "module_supplier_id": {
             "from_ver": "1.23.0",
@@ -529,7 +531,7 @@ class AnalysisSettingHandler(SettingHandler):
             'lec_output'
         ]
 
-        for summary_type in ['gul_summaries', 'il_summaries', 'ri_summaries']:
+        for summary_type in [f'{p}_summaries' for p in PERSPECTIVES]:
             if summary_type in setting_data:
                 summaries = setting_data[summary_type]
                 if not isinstance(summaries, list):
@@ -572,13 +574,35 @@ class AnalysisSettingHandler(SettingHandler):
 
         """
         exception_msgs = {}
-        runtype_summaries = [f'{runtype}_summaries' for runtype in ['gul', 'il', 'ri']]
+        runtype_summaries = [f'{runtype}_summaries' for runtype in PERSPECTIVES]
         for runtype_summary in runtype_summaries:
             summary_ids = [summary.get('id', []) for summary in setting_data.get(runtype_summary, [])]
             duplicate_ids = set(summary_id for summary_id in summary_ids if summary_ids.count(summary_id) > 1)
             if duplicate_ids:
                 error_msgs = [f'id {summary_id} is duplicated' for summary_id in duplicate_ids]
                 exception_msgs[runtype_summary] = error_msgs
+
+        return exception_msgs
+
+    def check_output_summaries(self, setting_data):
+        """
+        Ensure that at least one output is enabled and that all selected outputs have a summary.
+
+        Args:
+            setting_data (dict): The loaded JSON data.
+
+        Returns:
+            dict: Exception messages.
+        """
+        exception_msgs = {}
+
+        output_present = [p for p in PERSPECTIVES if setting_data.get(f'{p}_output', False)]
+        if not output_present:
+            exception_msgs['no output'] = ['no output selected, please enable at least one output']
+
+        for p in output_present:
+            if not setting_data.get(f'{p}_summaries', None):
+                exception_msgs[f'{p}_summaries missing'] = [f'{p}_output requested but {p}_summaries missing']
 
         return exception_msgs
 

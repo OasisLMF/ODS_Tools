@@ -24,11 +24,13 @@ class SQLServerConnector(BaseDBConnector):
         """
 
         try:
+            server = database["host"]
+            if database.get("port"):
+                server = f"{server},{database['port']}"
             conn = pyodbc.connect(
-                "DRIVER={};SERVER={};PORT={};DATABASE={};UID={};PWD={}".format(
+                "DRIVER={};SERVER={};DATABASE={};UID={};PWD={}".format(
                     self.driver,
-                    database["host"],
-                    database["port"],
+                    server,
                     database["database"],
                     database["user"],
                     database["password"],
