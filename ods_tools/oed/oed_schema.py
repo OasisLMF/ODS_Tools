@@ -10,7 +10,7 @@ from packaging.version import parse
 
 from .common import OdsException, BLANK_VALUES, cached_property, dtype_to_python
 
-OED_VERSION = '4.0.0'
+OED_VERSION = '5.0.0'
 
 logger = logging.getLogger(__name__)
 

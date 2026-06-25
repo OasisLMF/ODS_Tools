@@ -1197,6 +1197,147 @@ class OdsPackageTests(TestCase):
         self.assertTrue("Mismatched \"OEDVersion\" value found in exposure file" in msg)
         self.assertTrue("v4 at row 0" in msg)
 
+    def test_check_oedversion_consistency_pa_dtype_dict_encoded(self):
+        """check_oedversion_consistency must not raise TypeError when OEDVersion is dictionary-encoded."""
+        exposure = OedExposure(
+            location=base_url + '/SourceLocOEDPiWind10.csv',
+            account=base_url + '/SourceAccOEDPiWind.csv',
+            ri_info=base_url + '/SourceReinsInfoOEDPiWind.csv',
+            ri_scope=base_url + '/SourceReinsScopeOEDPiWind.csv',
+            backend_dtype='pa_dtype',
+        )
+        # Setting a constant OEDVersion ensures pa_dict_encode will dictionary-encode it.
+        for src in [exposure.location, exposure.account, exposure.ri_info, exposure.ri_scope]:
+            src.dataframe['OEDVersion'] = OED_VERSION
+        try:
+            exposure.check()
+        except Exception as e:
+            self.fail(f"check_oedversion_consistency raised with dict-encoded OEDVersion: {e}")
+
+    def test_check_country_and_area_code_pa_dtype_dict_encoded(self):
+        """check_country_and_area_code must not raise TypeError when CountryCode is dictionary-encoded."""
+        exposure = OedExposure(
+            location=base_url + '/SourceLocOEDPiWind10.csv',
+            account=base_url + '/SourceAccOEDPiWind.csv',
+            ri_info=base_url + '/SourceReinsInfoOEDPiWind.csv',
+            ri_scope=base_url + '/SourceReinsScopeOEDPiWind.csv',
+            use_field=True,
+            backend_dtype='pa_dtype',
+        )
+        import pyarrow as pa
+        cc_dtype = exposure.location.dataframe['CountryCode'].dtype
+        self.assertTrue(
+            isinstance(cc_dtype, pd.ArrowDtype) and pa.types.is_dictionary(cc_dtype.pyarrow_dtype),
+            f"Expected CountryCode to be dict-encoded, got {cc_dtype}",
+        )
+        try:
+            exposure.check()
+        except Exception as e:
+            self.fail(f"check_country_and_area_code raised with dict-encoded CountryCode: {e}")
+
+    def test_check_conditional_requirement_pa_dtype_dict_encoded(self):
+        """check_conditional_requirement must not raise TypeError when a dict-encoded string
+        column with a non-n/a default appears in cr_field."""
+        import pyarrow as pa
+        from ods_tools.oed.common import pa_dict_encode
+
+        oed_schema = OedSchema.from_oed_schema_info(None)
+        custom_field = {
+            'Input Field Name': 'CustomStatus',
+            'Type & Description': 'custom string field for test',
+            'Required Field': 'O',
+            'Data Type': 'nvarchar(10)',
+            'Allow blanks?': 'YES',
+            'Default': 'OPEN',
+            'Valid value range': 'n/a',
+            'pd_dtype': 'category',
+            'pa_dtype': 'string[pyarrow]',
+            'File Name': 'Loc',
+        }
+        oed_schema.schema['input_fields']['Loc']['customstatus'] = custom_field
+        oed_schema.schema.setdefault('cr_field', {}).setdefault('Loc', {})['CustomStatus'] = ['CustomStatus']
+
+        loc_df = pd.DataFrame({
+            'PortNumber': ['1', '1'],
+            'AccNumber': ['A1', 'A1'],
+            'LocNumber': ['L1', 'L2'],
+            'CountryCode': ['GB', 'GB'],
+            'LocPerilsCovered': ['WTC', 'WTC'],
+            'BuildingTIV': [1000.0, 2000.0],
+            'ContentsTIV': [0.0, 0.0],
+            'LocCurrency': ['GBP', 'GBP'],
+            'CustomStatus': ['OPEN', 'OPEN'],
+        })
+        exposure = OedExposure(location=loc_df, use_field=True, oed_schema_info=oed_schema, backend_dtype='pa_dtype')
+
+        encoded = pa_dict_encode(exposure.location.dataframe['CustomStatus'].astype('string[pyarrow]'))
+        if encoded is not None:
+            exposure.location.dataframe['CustomStatus'] = encoded
+
+        cs_dtype = exposure.location.dataframe['CustomStatus'].dtype
+        self.assertTrue(
+            isinstance(cs_dtype, pd.ArrowDtype) and pa.types.is_dictionary(cs_dtype.pyarrow_dtype),
+            f"Expected CustomStatus to be dict-encoded, got {cs_dtype}",
+        )
+        try:
+            exposure.check()
+        except TypeError as e:
+            self.fail(f"check_conditional_requirement raised TypeError on dict-encoded string column: {e}")
+
+
+class PaDictEncodeTests(TestCase):
+
+    def setUp(self):
+        from ods_tools.oed.common import pa_dict_encode
+        import pyarrow as pa
+        self.pa_dict_encode = pa_dict_encode
+        self.pa = pa
+
+    def _make_series(self, values, dtype='string[pyarrow]'):
+        return pd.Series(pd.array(values, dtype=dtype))
+
+    def test_low_cardinality_returns_dict_encoded(self):
+        s = self._make_series(['GB', 'US', 'GB', 'FR'] * 250)
+        result = self.pa_dict_encode(s)
+        self.assertIsNotNone(result)
+        self.assertIsInstance(result.dtype, pd.ArrowDtype)
+        self.assertTrue(self.pa.types.is_dictionary(result.dtype.pyarrow_dtype))
+        self.assertEqual(len(result), len(s))
+
+    def test_int8_boundary_exactly_128_unique(self):
+        values = [str(i) for i in range(128)] * 100
+        s = self._make_series(values)
+        result = self.pa_dict_encode(s)
+        self.assertIsNotNone(result)
+        self.assertEqual(result.dtype.pyarrow_dtype.index_type, self.pa.int8())
+
+    def test_int16_boundary_129_unique(self):
+        values = [str(i) for i in range(129)] * 100
+        s = self._make_series(values)
+        result = self.pa_dict_encode(s)
+        self.assertIsNotNone(result)
+        self.assertEqual(result.dtype.pyarrow_dtype.index_type, self.pa.int16())
+
+    def test_high_cardinality_returns_none(self):
+        s = self._make_series([str(i) for i in range(1000)])
+        result = self.pa_dict_encode(s)
+        self.assertIsNone(result)
+
+    def test_presample_short_circuit(self):
+        unique_prefix = [str(i) for i in range(2001)]
+        repeated_suffix = ['X'] * 50000
+        s = self._make_series(unique_prefix + repeated_suffix)
+        result = self.pa_dict_encode(s)
+        self.assertIsNone(result)
+
+    def test_empty_series_encodes_without_error(self):
+        s = self._make_series([], dtype='string[pyarrow]')
+        result = self.pa_dict_encode(s)
+        if result is not None:
+            self.assertIsInstance(result.dtype, pd.ArrowDtype)
+            self.assertTrue(self.pa.types.is_dictionary(result.dtype.pyarrow_dtype))
+            self.assertEqual(len(result), 0)
+
 
 class OdsSettingsTests(TestCase):
     @pytest.fixture(autouse=True)

@@ -9,7 +9,8 @@ from chardet import UniversalDetector
 from pandas.api.types import is_numeric_dtype
 
 from .common import (OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, fill_empty,
-                     UnknownColumnSaveOption, cached_property, is_empty, dtype_str_to_dtype, default_string_dtype, pd_default_string)
+                     UnknownColumnSaveOption, cached_property, is_empty, dtype_str_to_dtype, default_string_dtype, pd_default_string,
+                     pa_dict_encode)
 from .forex import convert_currency
 from .oed_schema import OedSchema
 
@@ -329,11 +330,25 @@ class OedSource:
                     if field_info[backend_dtype] == default_string_dtype[backend_dtype]:
                         df[col] = '' if field_info['Default'] == 'n/a' else field_info['Default']
                         df[col] = df[col].astype(default_string_dtype[backend_dtype])
+                        if backend_dtype == 'pa_dtype':
+                            encoded = pa_dict_encode(df[col])
+                            if encoded is not None:
+                                df[col] = encoded
                     else:
                         df[col] = np.nan
                         df[col] = df[col].astype(field_info[backend_dtype])
                         if field_info['Default'] != 'n/a':
                             df[col] = df[col].fillna(df[col].dtype.type(field_info['Default'])).astype(field_info[backend_dtype])
+
+        # Dictionary-encode low-cardinality string columns in the pa_dtype backend,
+        # recovering the memory efficiency that pd_dtype gets from pandas categories.
+        if backend_dtype == 'pa_dtype':
+            for col in column_to_field:
+                if str(df[col].dtype) not in ('string', 'string[pyarrow]'):
+                    continue
+                encoded = pa_dict_encode(df[col])
+                if encoded is not None:
+                    df[col] = encoded
         return df
 
     @cached_property
