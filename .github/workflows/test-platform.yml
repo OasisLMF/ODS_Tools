@@ -10,8 +10,8 @@ on:
 
 jobs:
   platform_testing:
-    uses: OasisLMF/OasisPlatform/.github/workflows/test-python_api.yml@stable/2.3.x
+    uses: OasisLMF/OasisPlatform/.github/workflows/test-python_api.yml@stable/2.4.x
     secrets: inherit
     with:
       ods_branch: ${{ github.ref }}
-      platform_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' ||  inputs.platform_branch }}
+      platform_branch: ${{ github.event_name != 'workflow_dispatch' && 'stable/2.4.x' ||  inputs.platform_branch }}
