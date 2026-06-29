@@ -19,7 +19,7 @@ jobs:
     uses: OasisLMF/OasisDataManager/.github/workflows/build.yml@main
     secrets: inherit
     with:
-      odm_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' ||  inputs.ods_branch }}
+      odm_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' ||  inputs.ods_branch }}
 
   test:
     name: Run Pytest
@@ -27,7 +27,7 @@ jobs:
     needs: [build-ods, build-odm]
     strategy:
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11"]
+        python-version: ["3.10", "3.11", "3.12"]
 
     steps:
     - uses: actions/checkout@v3
