@@ -27,6 +27,9 @@ on:
       whl_filename:
         description: "Wheel Package filename"
         value: ${{ jobs.build.outputs.whl_filename }}
+      has_dev_spec:
+        description: "Whether a dev OED spec was baked into the wheel"
+        value: ${{ jobs.build.outputs.has_dev_spec }}
 
 jobs:
   oed_spec:
@@ -44,6 +47,7 @@ jobs:
     outputs:
       src_filename: ${{ steps.build_package.outputs.source }}
       whl_filename: ${{ steps.build_package.outputs.wheel }}
+      has_dev_spec: ${{ steps.build_package.outputs.has_dev_spec }}
 
     steps:
     - name: Github context
@@ -103,6 +107,7 @@ jobs:
         SRC=$(find ./dist/ -name "*.tar.gz"  -exec basename {} \;)
         echo "wheel=$WHL" >> $GITHUB_OUTPUT
         echo "source=$SRC" >> $GITHUB_OUTPUT
+        echo "has_dev_spec=${{ inputs.oed_spec_branch != '' || inputs.oed_spec_json != '' }}" >> $GITHUB_OUTPUT
 
     - name: Store source package
       uses: actions/upload-artifact@v4
