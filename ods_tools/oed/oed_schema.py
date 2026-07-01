@@ -15,6 +15,7 @@ OED_VERSION = '5.0.0'
 logger = logging.getLogger(__name__)
 
 ENV_ODS_SCHEMA_PATH = os.getenv('ODS_SCHEMA_PATH')
+ENV_ODS_SCHEMA_OVERRIDE = os.getenv('ODS_SCHEMA_OVERRIDE')
 
 
 # function to check if a subperil is part of a peril
@@ -93,14 +94,12 @@ class OedSchema:
         Returns:
             OedSchema
         """
+        if ENV_ODS_SCHEMA_OVERRIDE:
+            logger.debug(f"loading schema override: {ENV_ODS_SCHEMA_OVERRIDE}")
+            return cls.from_json(ENV_ODS_SCHEMA_OVERRIDE)
         if oed_schema_info is None or oed_schema_info == "":
-            try:
-                dev_schema_path = cls.DEFAULT_ODS_SCHEMA_PATH.format('DEV')
-                logger.debug(f"attempting to load DEV schema {dev_schema_path}")
-                return cls.from_json(dev_schema_path)
-            except FileNotFoundError as e:
-                logger.debug(f"loading default schema {cls.DEFAULT_ODS_SCHEMA_PATH}")
-                return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(OED_VERSION))
+            logger.debug(f"loading default schema {cls.DEFAULT_ODS_SCHEMA_PATH}")
+            return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(OED_VERSION))
         if isinstance(oed_schema_info, str):
             if oed_schema_info == "latest version":
                 oed_spec_files = glob(cls.DEFAULT_ODS_SCHEMA_PATH.format('*'))
