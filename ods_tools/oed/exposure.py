@@ -51,7 +51,9 @@ class OedExposure:
                  portfolio_numbers=None,
                  base_df_engine=None,
                  exposure_df_engine=None,
-                 backend_dtype=None, **kwargs):
+                 backend_dtype=None,
+                 supported_oed_versions=None,
+                 disable_oed_version_update=False, **kwargs):
         """
         Create an OED object,
         each input can be the object itself or  information that will be used to create the object
@@ -174,6 +176,24 @@ class OedExposure:
             self.working_dir = Path('.').absolute()
         else:
             self.working_dir = working_dir
+
+        if supported_oed_versions:
+            if isinstance(supported_oed_versions, str):
+                supported_oed_versions = [supported_oed_versions]
+            if isinstance(supported_oed_versions, list):
+                for v in supported_oed_versions:
+                    try:
+                        OedSchema.from_oed_schema_info(v)
+                    except (ValueError, OdsException) as e:
+                        raise OdsException(f"supported_oed_versions contains invalid version '{v}': {e}") from e
+                if not disable_oed_version_update:
+                    target = max(supported_oed_versions, key=version.parse)
+                    logger.info(f"Converting to OED version {target}")
+                    self.to_version(target)
+            else:
+                logger.warning(f"Invalid OED version information in model settings: {supported_oed_versions}")
+        else:
+            logger.debug("No supported OED version information in model settings.")
 
         if check_oed:
             self.check()
