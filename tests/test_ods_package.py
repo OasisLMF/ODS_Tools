@@ -1000,6 +1000,39 @@ class OdsPackageTests(TestCase):
         # # Assert the OccupancyCode is as expected
         assert oed_exposure.location.dataframe.loc[0, "OccupancyCode"] == 9995
 
+    def test_supported_oed_versions_calls_to_version(self):
+        from unittest.mock import patch
+        with patch.object(OedExposure, 'to_version') as mock_to_version:
+            OedExposure(
+                location=self.tmp_dir_path / "SourceLocOEDPiWind.csv",
+                account=self.tmp_dir_path / "SourceAccOEDPiWind.csv",
+                use_field=True,
+                supported_oed_versions=["3.4.1", "4.0.0"],
+            )
+            mock_to_version.assert_called_once_with("4.0.0")
+
+    def test_supported_oed_versions_disable_update(self):
+        from unittest.mock import patch
+        with patch.object(OedExposure, 'to_version') as mock_to_version:
+            OedExposure(
+                location=self.tmp_dir_path / "SourceLocOEDPiWind.csv",
+                account=self.tmp_dir_path / "SourceAccOEDPiWind.csv",
+                use_field=True,
+                supported_oed_versions=["3.4.1", "4.0.0"],
+                disable_oed_version_update=True,
+            )
+            mock_to_version.assert_not_called()
+
+    def test_supported_oed_versions_invalid_version_raises(self):
+        from ods_tools.oed.common import OdsException
+        with self.assertRaises(OdsException):
+            OedExposure(
+                location=self.tmp_dir_path / "SourceLocOEDPiWind.csv",
+                account=self.tmp_dir_path / "SourceAccOEDPiWind.csv",
+                use_field=True,
+                supported_oed_versions=["99.99.99"],
+            )
+
     def test_probe_oedversion_from_oedsource(self):
         exposure = OedExposure(
             location=self.tmp_dir_path / "SourceLocOEDPiWind.csv",
