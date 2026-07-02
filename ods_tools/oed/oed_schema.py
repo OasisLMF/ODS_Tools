@@ -81,6 +81,13 @@ class OedSchema:
         """
         return self.json_path
 
+    @cached_property
+    def version(self):
+        """OED spec version parsed from json_path, or None for custom schemas."""
+        version_pattern = re.compile(r"OpenExposureData_(\d+\.\d+\.\d+)Spec\.json")
+        m = version_pattern.search(str(self.json_path))
+        return m.group(1) if m else None
+
     @classmethod
     def from_oed_schema_info(cls, oed_schema_info):
         """
