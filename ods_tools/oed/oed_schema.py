@@ -15,7 +15,6 @@ OED_VERSION = '5.0.0'
 logger = logging.getLogger(__name__)
 
 ENV_ODS_SCHEMA_PATH = os.getenv('ODS_SCHEMA_PATH')
-ENV_ODS_SCHEMA_OVERRIDE = os.getenv('ODS_SCHEMA_OVERRIDE')
 
 
 # function to check if a subperil is part of a peril
@@ -94,9 +93,10 @@ class OedSchema:
         Returns:
             OedSchema
         """
-        if ENV_ODS_SCHEMA_OVERRIDE:
-            logger.debug(f"loading schema override: {ENV_ODS_SCHEMA_OVERRIDE}")
-            return cls.from_json(ENV_ODS_SCHEMA_OVERRIDE)
+        schema_override = os.getenv('ODS_SCHEMA_OVERRIDE')
+        if schema_override:
+            logger.debug(f"loading schema override: {schema_override}")
+            return cls.from_json(schema_override)
         if oed_schema_info is None or oed_schema_info == "":
             logger.debug(f"loading default schema {cls.DEFAULT_ODS_SCHEMA_PATH}")
             return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(OED_VERSION))
