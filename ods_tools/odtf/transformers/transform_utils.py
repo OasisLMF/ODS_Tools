@@ -198,7 +198,9 @@ def replace_double(row, first_column, second_column, *triplets):
     return first_column
 
 
-def safe_lookup(r, name):
+def safe_lookup(r, name, *extra):
+    if extra:
+        name = extra[-1]
     if isinstance(name, Token):
         name = name.value
     if name == 'True':
