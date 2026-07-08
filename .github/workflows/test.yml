@@ -57,6 +57,17 @@ jobs:
         pip install ${{ needs.build-odm.outputs.whl_filename }}
         pip install ${{ needs.build-ods.outputs.whl_filename }}
 
+    - name: Download OED spec (if dev spec was built)
+      if: needs.build-ods.outputs.has_dev_spec == 'true'
+      uses: actions/download-artifact@v4
+      with:
+        name: extracted_spec
+        path: ${{ github.workspace }}/
+
+    - name: Activate dev OED spec
+      if: needs.build-ods.outputs.has_dev_spec == 'true'
+      run: echo "ODS_SCHEMA_OVERRIDE=${{ github.workspace }}/OpenExposureData_Spec.json" >> $GITHUB_ENV
+
     - name: Install test deps
       run: pip install -r tests/requirements.in
 
