@@ -133,6 +133,8 @@ def create_transformer_class(row, transformer_mapping):
     :return: The new transformer class
     """
     def mapped_function(name, *args, **kwargs):
+        if args and args[0].__class__.__name__ == "TreeTransformer":
+            args = args[1:]
         return transformer_mapping[name](row, *args, **kwargs)
 
     @v_args(inline=True)
