@@ -75,6 +75,12 @@ class OedExposure:
             base_df_engine (Union[str, InputReaderConfig]): The default engine to use when loading dataframes
             exposure_df_engine (Union[str, InputReaderConfig]):
                 The exposure specific engine to use when loading dataframes
+            supported_oed_versions (list[str], None): A list of OED version strings this model supports
+                (from model_settings.json data_settings). When set and disable_oed_version_update is False,
+                the exposure is converted to the highest supported version via to_version(). Accepts both
+                2-part ("3.4") and 3-part ("3.4.1") version strings.
+            disable_oed_version_update (bool): If True, skip the to_version() conversion even when
+                supported_oed_versions is set.
         """
         self.use_field = use_field
 
@@ -183,12 +189,11 @@ class OedExposure:
             if isinstance(supported_oed_versions, list):
                 for v in supported_oed_versions:
                     try:
-                        OedSchema.from_oed_schema_info(v)
-                    except (ValueError, OdsException) as e:
+                        version.parse(v)
+                    except version.InvalidVersion as e:
                         raise OdsException(f"supported_oed_versions contains invalid version '{v}': {e}") from e
                 if not disable_oed_version_update:
                     target = max(supported_oed_versions, key=version.parse)
-                    logger.info(f"Converting to OED version {target}")
                     self.to_version(target)
             else:
                 logger.warning(f"Invalid OED version information in model settings: {supported_oed_versions}")
@@ -556,12 +561,18 @@ class OedExposure:
 
     def to_version(self, to_version):
         """
-        goes through location to convert columns to specific version.
-        Right now it works for OccupancyCode and ConstructionCode.
-        (please note that it only supports minor version changes in "major.minor" format, e.g. 3.2, 7.4, etc.)
+        Convert OccupancyCode and ConstructionCode values in the location dataframe to be
+        compatible with an older OED version by applying versioning fallback rules from the
+        loaded schema.
+
+        Only affects columns present in the location file. Only OccupancyCode and ConstructionCode
+        are currently handled. The target version is stripped to major.minor before comparison,
+        so "3.4.1" and "3.4.0" behave identically. Versioning rules for versions strictly newer
+        than the target are applied in descending order.
 
         Args:
-            version (str): specific version to roll to
+            to_version (str): target OED version string (e.g. "3.4", "3.4.1"). Codes introduced
+                in OED versions newer than this target will be replaced with their fallback values.
 
         Returns:
             itself (OedExposure): updated object
@@ -576,7 +587,8 @@ class OedExposure:
         except version.InvalidVersion:
             raise ValueError(f"Invalid version: {to_version}")
 
-        # Select which conversions to apply
+        # Select which conversions to apply: versioning keys represent the last OED version
+        # *without* those codes, so keys >= target mean codes introduced after the target.
         conversions = sorted(
             [
                 ver
@@ -586,6 +598,11 @@ class OedExposure:
             key=lambda x: version.parse(x),
             reverse=True,
         )
+
+        if conversions:
+            logger.info(f"Converting to OED version {to_version} — applying fallbacks for: {conversions}")
+        else:
+            logger.debug(f"to_version({to_version!r}): no versioning rules apply, no changes made")
 
         # Check for the existence of OccupancyCode and ConstructionCode columns
         has_occupancy_code = "OccupancyCode" in self.location.dataframe.columns

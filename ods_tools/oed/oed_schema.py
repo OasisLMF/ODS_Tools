@@ -112,7 +112,7 @@ class OedSchema:
             if oed_schema_info == "latest version":
                 oed_spec_files = glob(cls.DEFAULT_ODS_SCHEMA_PATH.format('*'))
 
-                version_pattern = re.compile("OpenExposureData_(\\d+\\.\\d+\\.\\d+)Spec\.json")
+                version_pattern = re.compile("OpenExposureData_(\\d+\\.\\d+\\.\\d+)Spec\\.json")
                 versions = [version_pattern.search(path).group(1) for path in oed_spec_files if version_pattern.search(path)]
 
                 try:

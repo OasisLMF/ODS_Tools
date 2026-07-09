@@ -1030,7 +1030,7 @@ class OdsPackageTests(TestCase):
                 location=self.tmp_dir_path / "SourceLocOEDPiWind.csv",
                 account=self.tmp_dir_path / "SourceAccOEDPiWind.csv",
                 use_field=True,
-                supported_oed_versions=["99.99.99"],
+                supported_oed_versions=["not-a-version"],
             )
 
     def test_probe_oedversion_from_oedsource(self):
