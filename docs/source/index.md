@@ -13,4 +13,5 @@ in the `ODS_OpenExposureData` / `ODS_OpenResultsData` repositories.
 :maxdepth: 2
 
 tutorials/index
+reference/index
 ```
