@@ -14,6 +14,7 @@ import sys
 import pandas as pd
 import numpy as np
 from unittest import TestCase
+from unittest.mock import patch
 import tempfile
 
 # WORKAROUND - this line to to force an import from the installed ods_tools package
@@ -523,34 +524,36 @@ class OdsPackageTests(TestCase):
         self.assertTrue(exposure.location.dataframe['StreetAddress'][0] == 'Ô, Avenue des Champs-Élysées')
 
     def test_aliases_columns(self):
-        location_df = pd.DataFrame({
-            'PortNumber': [1, 1],
-            'AccNumber': [1, 2],
-            'LocNumberAlias': [1, 2],
-            'CountryCode': ['GB', 'FR'],
-            'LocPerilsCovered': 'WTC',
-            'BuildingTIV': ['1000', '20000'],
-            'ContentsTIV': [0, 0],
-            'LocCurrency': ['GBP', 'EUR']})
-        with tempfile.TemporaryDirectory() as tmp_run_dir:
-            # create a custom schema to init the test
-            custom_schema_path = pathlib.Path(tmp_run_dir, 'custom_schema.json')
-            with (open(OedSchema.DEFAULT_ODS_SCHEMA_PATH.format(OED_VERSION)) as default_schema_file,
-                  open(custom_schema_path, 'w') as custom_schema_file):
-                default_schema = json.load(default_schema_file)
-                default_schema['input_fields']['Loc']['locnumber']['alias'] = 'LocNumberAlias'
-                json.dump(default_schema, custom_schema_file)
+        with patch.dict(os.environ):
+            os.environ.pop('ODS_SCHEMA_OVERRIDE', None)
+            location_df = pd.DataFrame({
+                'PortNumber': [1, 1],
+                'AccNumber': [1, 2],
+                'LocNumberAlias': [1, 2],
+                'CountryCode': ['GB', 'FR'],
+                'LocPerilsCovered': 'WTC',
+                'BuildingTIV': ['1000', '20000'],
+                'ContentsTIV': [0, 0],
+                'LocCurrency': ['GBP', 'EUR']})
+            with tempfile.TemporaryDirectory() as tmp_run_dir:
+                # create a custom schema to init the test
+                custom_schema_path = pathlib.Path(tmp_run_dir, 'custom_schema.json')
+                with (open(OedSchema.DEFAULT_ODS_SCHEMA_PATH.format(OED_VERSION)) as default_schema_file,
+                      open(custom_schema_path, 'w') as custom_schema_file):
+                    default_schema = json.load(default_schema_file)
+                    default_schema['input_fields']['Loc']['locnumber']['alias'] = 'LocNumberAlias'
+                    json.dump(default_schema, custom_schema_file)
 
-            exposure = OedExposure(**{
-                'location': location_df,
-                'oed_schema_info': custom_schema_path,
-                'use_field': True,
-                'check_oed': True,
-                'backend_dtype': 'pa_dtype',
-            })
-            pd.testing.assert_series_equal(exposure.location.dataframe['LocNumber'].astype(str),
-                                           location_df['LocNumberAlias'].astype(str),
-                                           check_names=False)
+                exposure = OedExposure(**{
+                    'location': location_df,
+                    'oed_schema_info': custom_schema_path,
+                    'use_field': True,
+                    'check_oed': True,
+                    'backend_dtype': 'pa_dtype',
+                })
+                pd.testing.assert_series_equal(exposure.location.dataframe['LocNumber'].astype(str),
+                                               location_df['LocNumberAlias'].astype(str),
+                                               check_names=False)
 
     def test_load_exposure_from_different_directory(self):
         """
@@ -599,63 +602,65 @@ class OdsPackageTests(TestCase):
             assert (modified_exposure.ri_info.dataframe['RiskLevel'] == '').all()  # check it works for string
 
     def test_fill_empty(self):
-        oed_schema = OedSchema.from_oed_schema_info(None)
-        test_fields = {
-            'intvalue': {
-                'Input Field Name': 'IntValue',
-                'Type & Description': 'a single int column with default',
-                'Required Field': 'O',
-                'Data Type': 'int',
-                'Allow blanks?': 'YES',
-                'Default': '0',
-                'Valid value range': 'n/a',
-                'pd_dtype': 'Int32',
-                'pa_dtype': 'int32[pyarrow]',
-            },
-            'IntValueMultipleXX': {
-                'Input Field Name': 'IntValueMultipleXX',
-                'Type & Description': '',
-                'Required Field': 'O',
-                'Data Type': 'int',
-                'Allow blanks?': 'YES',
-                'Default': '0',
-                'Valid value range': 'n/a',
-                'pd_dtype': 'Int32',
-                'pa_dtype': 'int32[pyarrow]',
-            },
-            'StringValueMultipleXX': {
-                'Input Field Name': 'StringValueMultipleXX',
-                'Type & Description': '',
-                'Required Field': 'O',
-                'Data Type': 'nvarchar(50)',
-                'Allow blanks?': 'YES',
-                'Default': 'foobar',
-                'Valid value range': 'n/a',
-                'pd_dtype': 'category',
-                'pa_dtype': 'string[pyarrow]',
+        with patch.dict(os.environ):
+            os.environ.pop('ODS_SCHEMA_OVERRIDE', None)
+            oed_schema = OedSchema.from_oed_schema_info(None)
+            test_fields = {
+                'intvalue': {
+                    'Input Field Name': 'IntValue',
+                    'Type & Description': 'a single int column with default',
+                    'Required Field': 'O',
+                    'Data Type': 'int',
+                    'Allow blanks?': 'YES',
+                    'Default': '0',
+                    'Valid value range': 'n/a',
+                    'pd_dtype': 'Int32',
+                    'pa_dtype': 'int32[pyarrow]',
+                },
+                'IntValueMultipleXX': {
+                    'Input Field Name': 'IntValueMultipleXX',
+                    'Type & Description': '',
+                    'Required Field': 'O',
+                    'Data Type': 'int',
+                    'Allow blanks?': 'YES',
+                    'Default': '0',
+                    'Valid value range': 'n/a',
+                    'pd_dtype': 'Int32',
+                    'pa_dtype': 'int32[pyarrow]',
+                },
+                'StringValueMultipleXX': {
+                    'Input Field Name': 'StringValueMultipleXX',
+                    'Type & Description': '',
+                    'Required Field': 'O',
+                    'Data Type': 'nvarchar(50)',
+                    'Allow blanks?': 'YES',
+                    'Default': 'foobar',
+                    'Valid value range': 'n/a',
+                    'pd_dtype': 'category',
+                    'pa_dtype': 'string[pyarrow]',
+                }
             }
-        }
 
-        for field_name, field_info in test_fields.items():
-            oed_schema.schema['input_fields']['Loc'][field_name.lower()] = field_info
+            for field_name, field_info in test_fields.items():
+                oed_schema.schema['input_fields']['Loc'][field_name.lower()] = field_info
 
-        loc_df = pd.DataFrame({
-            'PortNumber': [1, 1, 1, 1],
-            'AccNumber': [1, 1, 1, 1],
-            'LocNumber': [1, 2, 3, 4],
-            'CountryCode': ['UK', 'UK', 'UK', 'UK', ],
-            'LocPerilsCovered': ['WW2', 'WTC;WSS', 'QQ1;WW2', 'WTC'],
-            'BuildingTIV': ['1', '1', '1', '1'],
-            'ContentsTIV': ['1', '1', '1', '1'],
-            'LocCurrency': ['GBP', 'GBP', 'GBP', 'GBP'],
-            'intvalue': [1, '2', '', ''],
-            'IntValueMultiple1': [1, '2', '', ''],
-            'StringValueMultiple01': [1, '2', '', ''],
-        })
-        oed = OedExposure(**{'location': loc_df, 'use_field': True, 'oed_schema_info': oed_schema})
-        assert oed.location.dataframe['IntValue'].to_list() == [1, 2, 0, 0]
-        assert oed.location.dataframe['IntValueMultiple1'].to_list() == [1, 2, 0, 0]
-        assert oed.location.dataframe['StringValueMultiple01'].to_list() == ['1', '2', 'foobar', 'foobar']
+            loc_df = pd.DataFrame({
+                'PortNumber': [1, 1, 1, 1],
+                'AccNumber': [1, 1, 1, 1],
+                'LocNumber': [1, 2, 3, 4],
+                'CountryCode': ['UK', 'UK', 'UK', 'UK', ],
+                'LocPerilsCovered': ['WW2', 'WTC;WSS', 'QQ1;WW2', 'WTC'],
+                'BuildingTIV': ['1', '1', '1', '1'],
+                'ContentsTIV': ['1', '1', '1', '1'],
+                'LocCurrency': ['GBP', 'GBP', 'GBP', 'GBP'],
+                'intvalue': [1, '2', '', ''],
+                'IntValueMultiple1': [1, '2', '', ''],
+                'StringValueMultiple01': [1, '2', '', ''],
+            })
+            oed = OedExposure(**{'location': loc_df, 'use_field': True, 'oed_schema_info': oed_schema})
+            assert oed.location.dataframe['IntValue'].to_list() == [1, 2, 0, 0]
+            assert oed.location.dataframe['IntValueMultiple1'].to_list() == [1, 2, 0, 0]
+            assert oed.location.dataframe['StringValueMultiple01'].to_list() == ['1', '2', 'foobar', 'foobar']
 
     def test_relative_and_absolute_path(self):
         original_cwd = os.getcwd()
@@ -1196,6 +1201,149 @@ class OdsPackageTests(TestCase):
         msg = str(e.exception)
         self.assertTrue("Mismatched \"OEDVersion\" value found in exposure file" in msg)
         self.assertTrue("v4 at row 0" in msg)
+
+    def test_check_oedversion_consistency_pa_dtype_dict_encoded(self):
+        """check_oedversion_consistency must not raise TypeError when OEDVersion is dictionary-encoded."""
+        exposure = OedExposure(
+            location=base_url + '/SourceLocOEDPiWind10.csv',
+            account=base_url + '/SourceAccOEDPiWind.csv',
+            ri_info=base_url + '/SourceReinsInfoOEDPiWind.csv',
+            ri_scope=base_url + '/SourceReinsScopeOEDPiWind.csv',
+            backend_dtype='pa_dtype',
+        )
+        # Setting a constant OEDVersion ensures pa_dict_encode will dictionary-encode it.
+        for src in [exposure.location, exposure.account, exposure.ri_info, exposure.ri_scope]:
+            src.dataframe['OEDVersion'] = OED_VERSION
+        try:
+            exposure.check()
+        except Exception as e:
+            self.fail(f"check_oedversion_consistency raised with dict-encoded OEDVersion: {e}")
+
+    def test_check_country_and_area_code_pa_dtype_dict_encoded(self):
+        """check_country_and_area_code must not raise TypeError when CountryCode is dictionary-encoded."""
+        exposure = OedExposure(
+            location=base_url + '/SourceLocOEDPiWind10.csv',
+            account=base_url + '/SourceAccOEDPiWind.csv',
+            ri_info=base_url + '/SourceReinsInfoOEDPiWind.csv',
+            ri_scope=base_url + '/SourceReinsScopeOEDPiWind.csv',
+            use_field=True,
+            backend_dtype='pa_dtype',
+        )
+        import pyarrow as pa
+        cc_dtype = exposure.location.dataframe['CountryCode'].dtype
+        self.assertTrue(
+            isinstance(cc_dtype, pd.ArrowDtype) and pa.types.is_dictionary(cc_dtype.pyarrow_dtype),
+            f"Expected CountryCode to be dict-encoded, got {cc_dtype}",
+        )
+        try:
+            exposure.check()
+        except Exception as e:
+            self.fail(f"check_country_and_area_code raised with dict-encoded CountryCode: {e}")
+
+    def test_check_conditional_requirement_pa_dtype_dict_encoded(self):
+        """check_conditional_requirement must not raise TypeError when a dict-encoded string
+        column with a non-n/a default appears in cr_field."""
+        import pyarrow as pa
+        from ods_tools.oed.common import pa_dict_encode
+
+        with patch.dict(os.environ):
+            os.environ.pop('ODS_SCHEMA_OVERRIDE', None)
+            oed_schema = OedSchema.from_oed_schema_info(None)
+            custom_field = {
+                'Input Field Name': 'CustomStatus',
+                'Type & Description': 'custom string field for test',
+                'Required Field': 'O',
+                'Data Type': 'nvarchar(10)',
+                'Allow blanks?': 'YES',
+                'Default': 'OPEN',
+                'Valid value range': 'n/a',
+                'pd_dtype': 'category',
+                'pa_dtype': 'string[pyarrow]',
+                'File Name': 'Loc',
+            }
+            oed_schema.schema['input_fields']['Loc']['customstatus'] = custom_field
+            oed_schema.schema.setdefault('cr_field', {}).setdefault('Loc', {})['CustomStatus'] = ['CustomStatus']
+
+            loc_df = pd.DataFrame({
+                'PortNumber': ['1', '1'],
+                'AccNumber': ['A1', 'A1'],
+                'LocNumber': ['L1', 'L2'],
+                'CountryCode': ['GB', 'GB'],
+                'LocPerilsCovered': ['WTC', 'WTC'],
+                'BuildingTIV': [1000.0, 2000.0],
+                'ContentsTIV': [0.0, 0.0],
+                'LocCurrency': ['GBP', 'GBP'],
+                'CustomStatus': ['OPEN', 'OPEN'],
+            })
+            exposure = OedExposure(location=loc_df, use_field=True, oed_schema_info=oed_schema, backend_dtype='pa_dtype')
+
+            encoded = pa_dict_encode(exposure.location.dataframe['CustomStatus'].astype('string[pyarrow]'))
+            if encoded is not None:
+                exposure.location.dataframe['CustomStatus'] = encoded
+
+            cs_dtype = exposure.location.dataframe['CustomStatus'].dtype
+            self.assertTrue(
+                isinstance(cs_dtype, pd.ArrowDtype) and pa.types.is_dictionary(cs_dtype.pyarrow_dtype),
+                f"Expected CustomStatus to be dict-encoded, got {cs_dtype}",
+            )
+            try:
+                exposure.check()
+            except TypeError as e:
+                self.fail(f"check_conditional_requirement raised TypeError on dict-encoded string column: {e}")
+
+
+class PaDictEncodeTests(TestCase):
+
+    def setUp(self):
+        from ods_tools.oed.common import pa_dict_encode
+        import pyarrow as pa
+        self.pa_dict_encode = pa_dict_encode
+        self.pa = pa
+
+    def _make_series(self, values, dtype='string[pyarrow]'):
+        return pd.Series(pd.array(values, dtype=dtype))
+
+    def test_low_cardinality_returns_dict_encoded(self):
+        s = self._make_series(['GB', 'US', 'GB', 'FR'] * 250)
+        result = self.pa_dict_encode(s)
+        self.assertIsNotNone(result)
+        self.assertIsInstance(result.dtype, pd.ArrowDtype)
+        self.assertTrue(self.pa.types.is_dictionary(result.dtype.pyarrow_dtype))
+        self.assertEqual(len(result), len(s))
+
+    def test_int8_boundary_exactly_128_unique(self):
+        values = [str(i) for i in range(128)] * 100
+        s = self._make_series(values)
+        result = self.pa_dict_encode(s)
+        self.assertIsNotNone(result)
+        self.assertEqual(result.dtype.pyarrow_dtype.index_type, self.pa.int8())
+
+    def test_int16_boundary_129_unique(self):
+        values = [str(i) for i in range(129)] * 100
+        s = self._make_series(values)
+        result = self.pa_dict_encode(s)
+        self.assertIsNotNone(result)
+        self.assertEqual(result.dtype.pyarrow_dtype.index_type, self.pa.int16())
+
+    def test_high_cardinality_returns_none(self):
+        s = self._make_series([str(i) for i in range(1000)])
+        result = self.pa_dict_encode(s)
+        self.assertIsNone(result)
+
+    def test_presample_short_circuit(self):
+        unique_prefix = [str(i) for i in range(2001)]
+        repeated_suffix = ['X'] * 50000
+        s = self._make_series(unique_prefix + repeated_suffix)
+        result = self.pa_dict_encode(s)
+        self.assertIsNone(result)
+
+    def test_empty_series_encodes_without_error(self):
+        s = self._make_series([], dtype='string[pyarrow]')
+        result = self.pa_dict_encode(s)
+        if result is not None:
+            self.assertIsInstance(result.dtype, pd.ArrowDtype)
+            self.assertTrue(self.pa.types.is_dictionary(result.dtype.pyarrow_dtype))
+            self.assertEqual(len(result), 0)
 
 
 class OdsSettingsTests(TestCase):

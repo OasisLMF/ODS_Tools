@@ -19,10 +19,10 @@ jobs:
       oed_spec_branch: ${{ inputs.oed_spec_branch }}
 
   build-odm:
-    uses: OasisLMF/OasisDataManager/.github/workflows/build.yml@develop
+    uses: OasisLMF/OasisDataManager/.github/workflows/build.yml@main
     secrets: inherit
     with:
-      odm_branch: ${{ github.event_name != 'workflow_dispatch' && 'develop' ||  inputs.odm_branch }}
+      odm_branch: ${{ github.event_name != 'workflow_dispatch' && 'main' ||  inputs.odm_branch }}
 
   test:
     name: Run Pytest
@@ -30,7 +30,7 @@ jobs:
     needs: [build-ods, build-odm]
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
 
     steps:
     - uses: actions/checkout@v3
@@ -56,6 +56,17 @@ jobs:
       run: |
         pip install ${{ needs.build-odm.outputs.whl_filename }}
         pip install ${{ needs.build-ods.outputs.whl_filename }}
+
+    - name: Download OED spec (if dev spec was built)
+      if: needs.build-ods.outputs.has_dev_spec == 'true'
+      uses: actions/download-artifact@v4
+      with:
+        name: extracted_spec
+        path: ${{ github.workspace }}/
+
+    - name: Activate dev OED spec
+      if: needs.build-ods.outputs.has_dev_spec == 'true'
+      run: echo "ODS_SCHEMA_OVERRIDE=${{ github.workspace }}/OpenExposureData_Spec.json" >> $GITHUB_ENV
 
     - name: Install test deps
       run: pip install -r tests/requirements.in
