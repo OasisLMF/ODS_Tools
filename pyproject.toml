@@ -27,3 +27,7 @@ exclude = ["tests", "tests.*", "tests.*.*"]
 [tool.setuptools.package-data]
 "*" = ["*.md"]
 "ods_tools" = ["data/*", "odtf/data/**/*"]
+
+[tool.coverage.run]
+source_pkgs = ["ods_tools"]
+relative_files = true
