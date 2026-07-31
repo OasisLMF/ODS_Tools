@@ -3,6 +3,7 @@ pyarrow
 openpyxl
 click
 pytest
+pytest-cov
 requests
 chardet
 PyYAML
