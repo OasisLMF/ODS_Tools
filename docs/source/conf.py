@@ -50,12 +50,13 @@ html_title = "ODS Tools"
 # The GenerateDocs orchestrator sets OASIS_INTERSPHINX_MAP (JSON) to point cross-references at
 # the other components' built inventories, e.g. {external+ord:doc}`reference/tables`.
 #
-# Those roles only resolve under the orchestrator. Building this repo on its own leaves the
-# mapping empty, and an unresolved {external+...} role does NOT fall back to plain text —
-# Sphinx drops the link text, silently mangling the sentence around it. So for prose a reader
-# must be able to follow, write an ordinary link to the published address instead: the
-# orchestrator's rewrite pass turns any in-site URL into a page-relative one, so those stay
-# relocatable (and keep working under file://) without depending on an inventory.
+# Those roles only resolve under the orchestrator, so don't write one straight into a page:
+# building this repo on its own leaves the mapping empty, and an unresolved {external+...} role
+# does NOT fall back to plain text — Sphinx drops the link text, silently mangling the sentence
+# around it. Route cross-component targets through the substitutions below, which pick the right
+# form per build mode. Either form is fine for the assembled site: the orchestrator's rewrite
+# pass turns any in-site URL into a page-relative one, so both stay relocatable (and keep
+# working under file://).
 extensions.append("sphinx.ext.intersphinx")
 _oasis_inventories = json.loads(os.environ.get("OASIS_INTERSPHINX_MAP") or "{}")
 intersphinx_mapping = {name: (base, inv) for name, (base, inv) in _oasis_inventories.items()}
