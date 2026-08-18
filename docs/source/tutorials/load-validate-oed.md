@@ -22,10 +22,11 @@ import warnings; warnings.filterwarnings("ignore")
 from pathlib import Path
 import ods_tools.oed as oed
 
-_c = [Path("data/oed"), Path("tutorials/data/oed"), Path("docs/source/tutorials/data/oed")]
-DATA = next((c for c in _c if c.exists()), None)
-assert DATA is not None, "OED example data not found"
-LOCATION = DATA / "SourceLocOEDPiWind10Currency.csv"
+# the repo's own OED sample, found by walking up from wherever the build runs
+_sample = Path("validation") / "SourceLocOEDPiWind10Currency.csv"
+_cwd = Path.cwd()
+LOCATION = next((d / _sample for d in (_cwd, *_cwd.parents) if (d / _sample).is_file()), None)
+assert LOCATION is not None, f"{_sample} not found above {_cwd}"
 ```
 
 ## Load an OED location file

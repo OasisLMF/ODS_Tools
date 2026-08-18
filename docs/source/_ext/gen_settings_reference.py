@@ -66,15 +66,62 @@ def _type_str(s):
     return "object" if "properties" in s else ""
 
 
-def _constraints(s):
+# JSON Schema validation keywords, in the order they read best in a table cell.
+_LIMITS = (
+    ("minimum", "minimum"),
+    ("maximum", "maximum"),
+    ("exclusiveMinimum", "exclusive minimum"),
+    ("exclusiveMaximum", "exclusive maximum"),
+    ("multipleOf", "multiple of"),
+    ("minLength", "min length"),
+    ("maxLength", "max length"),
+    ("minItems", "min items"),
+    ("maxItems", "max items"),
+    ("minProperties", "min properties"),
+    ("maxProperties", "max properties"),
+)
+
+
+def _constraints(s, root=None):
+    """Summarise a property's validation keywords for the Constraints column.
+
+    Array properties need two passes: keywords on the array itself (``minItems``,
+    ``uniqueItems``) constrain the list, while the allowed values and per-value limits
+    sit on ``items`` and are reported as "each item ...". Without that second pass the
+    ``items.enum`` allowed-value lists — e.g. combine's ``group_event_set_fields`` —
+    render as an empty cell, which is the one thing a generated reference must not do.
+
+    Args:
+        s (dict): The (already ``$ref``-resolved) schema for one property.
+        root (dict): The whole schema document, for resolving a ``$ref`` under ``items``.
+
+    Returns:
+        str: Semicolon-separated constraints, or "" if the property has none.
+    """
     bits = []
     if "enum" in s:
         bits.append("one of: " + ", ".join(f"`{e}`" for e in s["enum"]))
+    if "const" in s:
+        bits.append(f"always `{s['const']}`")
     if "default" in s:
         bits.append(f"default `{s['default']}`")
-    for k in ("minimum", "maximum"):
-        if k in s:
-            bits.append(f"{k} {s[k]}")
+    for key, label in _LIMITS:
+        if key in s:
+            bits.append(f"{label} {s[key]}")
+    if s.get("uniqueItems"):
+        bits.append("unique items")
+    if "pattern" in s:
+        bits.append(f"pattern `{s['pattern']}`")
+    if "format" in s:
+        bits.append(f"format `{s['format']}`")
+    if s.get("type") == "array" and isinstance(s.get("items"), dict):
+        items = _resolve(s["items"], root) if root is not None else s["items"]
+        # arrays of objects expand into their own subsection (see _object_children),
+        # so only summarise scalar item constraints here
+        if isinstance(items, dict) and "properties" not in items:
+            inner = _constraints(items, root)
+            if inner:
+                bits.append("each item " + inner)
     return "; ".join(bits)
 
 
@@ -105,7 +152,7 @@ def _render(name, schema, root, level, out, path):
     for pname, praw in props.items():
         ps = _resolve(praw, root)
         rows.append([f"`{pname}`", _type_str(ps), "Yes" if pname in required else "",
-                     _constraints(ps), ps.get("description") or ps.get("title") or ""])
+                     _constraints(ps, root), ps.get("description") or ps.get("title") or ""])
         child = _object_children(pname, praw, root)
         if child is not None and level < MAX_DEPTH:
             nested.append((pname, child))
