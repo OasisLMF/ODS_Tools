@@ -48,16 +48,19 @@ html_title = "ODS Tools"
 
 # -- Cross-component links (intersphinx, aggregated site) --------------------
 # The GenerateDocs orchestrator sets OASIS_INTERSPHINX_MAP (JSON) to point cross-references at
-# the other components' built inventories. Use explicit roles, e.g.
-# {external+ord:doc}`reference/tables` or :external+oed:ref:`some-label`.
+# the other components' built inventories, e.g. {external+ord:doc}`reference/tables`.
+#
+# Those roles only resolve under the orchestrator. Building this repo on its own leaves the
+# mapping empty, and an unresolved {external+...} role does NOT fall back to plain text —
+# Sphinx drops the link text, silently mangling the sentence around it. So for prose a reader
+# must be able to follow, write an ordinary link to the published address instead: the
+# orchestrator's rewrite pass turns any in-site URL into a page-relative one, so those stay
+# relocatable (and keep working under file://) without depending on an inventory.
 extensions.append("sphinx.ext.intersphinx")
-_oasis_inventories = json.loads(os.environ.get("OASIS_INTERSPHINX_MAP", "{}"))
-intersphinx_mapping = {name: (base, inv) for name, (base, inv) in _oasis_inventories.items()}
-if not _oasis_inventories:
-    # Standalone build: the sibling components' inventories don't exist yet, so an
-    # {external+...} reference cannot resolve and warning about it says nothing useful.
-    # Only the orchestrated build can actually check these, so it stays strict.
-    suppress_warnings = ["intersphinx.external"]
+intersphinx_mapping = {
+    name: (base, inv)
+    for name, (base, inv) in json.loads(os.environ.get("OASIS_INTERSPHINX_MAP", "{}")).items()
+}
 
 # -- Oasis shared branding (logo, palette, GitHub footer) -------------------
 html_static_path = ["_static"]
