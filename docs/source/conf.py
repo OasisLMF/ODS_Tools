@@ -57,10 +57,19 @@ html_title = "ODS Tools"
 # orchestrator's rewrite pass turns any in-site URL into a page-relative one, so those stay
 # relocatable (and keep working under file://) without depending on an inventory.
 extensions.append("sphinx.ext.intersphinx")
-intersphinx_mapping = {
-    name: (base, inv)
-    for name, (base, inv) in json.loads(os.environ.get("OASIS_INTERSPHINX_MAP", "{}")).items()
-}
+_oasis_inventories = json.loads(os.environ.get("OASIS_INTERSPHINX_MAP") or "{}")
+intersphinx_mapping = {name: (base, inv) for name, (base, inv) in _oasis_inventories.items()}
+
+# Cross-component targets are written here rather than inline, because the two build modes need
+# different forms. Under the orchestrator the sibling inventory exists, so use the role: the URL
+# is derived from ORD's own inventory and the build reports it if that page is renamed. Standalone
+# there is no inventory, and an unresolved role drops its link text instead of degrading, so fall
+# back to a plain link to the published address.
+if "ord" in _oasis_inventories:
+    _ord_tables = "{external+ord:doc}`ORD standard <reference/tables>`"
+else:
+    _ord_tables = "[ORD standard](https://oasislmf.github.io/ord/reference/tables.html)"
+myst_substitutions = {"ord_tables": _ord_tables}
 
 # -- Oasis shared branding (logo, palette, GitHub footer) -------------------
 html_static_path = ["_static"]
