@@ -25,7 +25,24 @@ MAX_DEPTH = 4  # how deep to expand nested objects into their own subsections
 
 
 def _cell(text):
-    return str(text).replace("|", "\\|").replace("\n", " ").replace("\r", " ").strip()
+    """Flatten a schema string into a single Markdown table cell.
+
+    Angle brackets are escaped so placeholders survive the MyST parser: it reads ``<id>`` as a
+    raw HTML tag and drops it, turning ``events_<id>.bin`` into ``events_.bin``. Only the text
+    outside code spans is escaped, because inside backticks an entity is not decoded and would
+    render as a literal ``&lt;``.
+
+    Args:
+        text: Any schema value — a description, type or constraint string.
+
+    Returns:
+        str: The value on one line, safe to place between table pipes.
+    """
+    text = str(text).replace("|", "\\|").replace("\n", " ").replace("\r", " ").strip()
+    parts = text.split("`")
+    for i in range(0, len(parts), 2):  # even indexes fall outside code spans
+        parts[i] = parts[i].replace("<", "&lt;").replace(">", "&gt;")
+    return "`".join(parts)
 
 
 def _resolve(schema, root):
