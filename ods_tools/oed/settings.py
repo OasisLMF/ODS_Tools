@@ -601,7 +601,7 @@ class AnalysisSettingHandler(SettingHandler):
             exception_msgs['no output'] = ['no output selected, please enable at least one output']
 
         for p in output_present:
-            if not setting_data.get(f'{p}_summaries', None):
+            if len(setting_data.get(f'{p}_summaries', [])) == 0:
                 exception_msgs[f'{p}_summaries missing'] = [f'{p}_output requested but {p}_summaries missing']
 
         return exception_msgs

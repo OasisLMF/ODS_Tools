@@ -1,6 +1,16 @@
 ODS_Tools Changelog
 ===================
 
+`5.0.7`_
+ ---------
+* [#281](https://github.com/OasisLMF/ODS_Tools/pull/281) - update DataManager default-branch
+* [#285](https://github.com/OasisLMF/ODS_Tools/pull/285) - enhance/fix_dev_schema
+* [#286](https://github.com/OasisLMF/ODS_Tools/pull/286) - enhance/supported_oed_versions
+* [#288](https://github.com/OasisLMF/ODS_Tools/pull/288) - feature/py314_ci
+* [#291](https://github.com/OasisLMF/ODS_Tools/pull/291) - fix/rollback minItems for output_summaries in analysis_settings schema
+* [#293](https://github.com/OasisLMF/ODS_Tools/pull/293) - Switch pip-tools to UV
+.. _`5.0.7`:  https://github.com/OasisLMF/ODS_Tools/compare/5.0.6...5.0.7
+
 `5.0.6`_
  ---------
 * [#271](https://github.com/OasisLMF/ODS_Tools/pull/271) - Fix/analysis settings empty fields
