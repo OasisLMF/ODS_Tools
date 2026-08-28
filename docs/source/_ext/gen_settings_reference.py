@@ -22,6 +22,7 @@ SCHEMAS = [
 ]
 
 MAX_DEPTH = 4  # how deep to expand nested objects into their own subsections
+_dropped = []  # paths elided by MAX_DEPTH, reported by run() rather than dropped silently
 
 
 def _cell(text):
@@ -40,9 +41,29 @@ def _cell(text):
     """
     text = str(text).replace("|", "\\|").replace("\n", " ").replace("\r", " ").strip()
     parts = text.split("`")
+    if len(parts) % 2 == 0:
+        # An odd number of backticks: there is no consistent inside/outside split to make, and
+        # guessing inverts the parity and escapes exactly the wrong halves. Escape the lot.
+        return text.replace("<", "&lt;").replace(">", "&gt;")
     for i in range(0, len(parts), 2):  # even indexes fall outside code spans
         parts[i] = parts[i].replace("<", "&lt;").replace(">", "&gt;")
     return "`".join(parts)
+
+
+def _literal(value):
+    """Render a schema value as the JSON a reader would type, not as a Python repr.
+
+    These pages document JSON files, so ``True``/``None`` and bare strings are wrong: pasting
+    ``default True`` into an analysis_settings.json is a syntax error, and ``default csv`` omits
+    the quotes the file needs.
+
+    Args:
+        value: Any JSON-compatible value from the schema (default, const or enum member).
+
+    Returns:
+        str: The value in JSON form — ``true``, ``null``, ``"csv"``, ``1.5``.
+    """
+    return json.dumps(value)
 
 
 def _resolve(schema, root):
@@ -67,7 +88,16 @@ def _resolve(schema, root):
 
 def _type_str(s):
     if "enum" in s:
-        return "enum"
+        # Keep the underlying type: an enum of integers and an enum of strings are otherwise
+        # indistinguishable in the Type column.
+        t = s.get("type")
+        if isinstance(t, list):
+            t = " / ".join(t)
+        if not t:
+            kinds = sorted({type(e).__name__ for e in s["enum"]})
+            t = {"str": "string", "int": "integer", "float": "number", "bool": "boolean"}.get(
+                kinds[0], kinds[0]) if len(kinds) == 1 else None
+        return f"enum[{t}]" if t else "enum"
     t = s.get("type")
     if isinstance(t, list):
         return " / ".join(t)
@@ -117,11 +147,11 @@ def _constraints(s, root=None):
     """
     bits = []
     if "enum" in s:
-        bits.append("one of: " + ", ".join(f"`{e}`" for e in s["enum"]))
+        bits.append("one of: " + ", ".join(f"`{_literal(e)}`" for e in s["enum"]))
     if "const" in s:
-        bits.append(f"always `{s['const']}`")
+        bits.append(f"always `{_literal(s['const'])}`")
     if "default" in s:
-        bits.append(f"default `{s['default']}`")
+        bits.append(f"default `{_literal(s['default'])}`")
     for key, label in _LIMITS:
         if key in s:
             bits.append(f"{label} {s[key]}")
@@ -142,7 +172,7 @@ def _constraints(s, root=None):
     return "; ".join(bits)
 
 
-def _object_children(name, s, root):
+def _object_children(s, root):
     """Return (child_object_schema, heading) if this property expands, else None."""
     s = _resolve(s, root)
     if s.get("type") == "object" and "properties" in s:
@@ -154,7 +184,7 @@ def _object_children(name, s, root):
     return None
 
 
-def _render(name, schema, root, level, out, path):
+def _render(schema, root, level, out, path):
     """Render an object schema: a properties table plus subsections for nested objects."""
     schema = _resolve(schema, root)
     props = schema.get("properties", {})
@@ -170,9 +200,15 @@ def _render(name, schema, root, level, out, path):
         ps = _resolve(praw, root)
         rows.append([f"`{pname}`", _type_str(ps), "Yes" if pname in required else "",
                      _constraints(ps, root), ps.get("description") or ps.get("title") or ""])
-        child = _object_children(pname, praw, root)
-        if child is not None and level < MAX_DEPTH:
-            nested.append((pname, child))
+        child = _object_children(praw, root)
+        if child is not None:
+            if level < MAX_DEPTH:
+                nested.append((pname, child))
+            else:
+                # Past MAX_DEPTH the parent row still says "object" and the subsection never
+                # appears. Unreached today (the deepest schema nests 3), but silence here would
+                # look identical to a property that genuinely has no children.
+                _dropped.append(f"{path}.{pname}" if path else pname)
     if rows:
         out.append("| Field | Type | Required | Constraints | Description |")
         out.append("| --- | --- | --- | --- | --- |")
@@ -180,14 +216,14 @@ def _render(name, schema, root, level, out, path):
             out.append("| " + " | ".join(_cell(c) for c in r) + " |")
     for pname, child in nested:
         child_path = f"{path}.{pname}" if path else pname
-        _render(pname, child, root, level + 1, out, child_path)
+        _render(child, root, level + 1, out, child_path)
 
 
 def generate_one(src, dst):
     with open(os.path.join(DATA_DIR, src), encoding="utf-8") as fh:
         schema = json.load(fh)
     out = [f"<!-- generated by _ext/gen_settings_reference.py from ods_tools/data/{src} -->"]
-    _render(schema.get("title", src), schema, schema, level=1, out=out, path="")
+    _render(schema, schema, level=1, out=out, path="")
     os.makedirs(OUT_DIR, exist_ok=True)
     with open(os.path.join(OUT_DIR, dst), "w", encoding="utf-8") as fh:
         fh.write("\n".join(out) + "\n")
@@ -196,13 +232,21 @@ def generate_one(src, dst):
 
 
 def run(app=None, config=None):
+    _dropped.clear()
     total = {dst: generate_one(src, dst) for src, dst in SCHEMAS}
     msg = "[gen_settings_reference] " + ", ".join(f"{k}:{v} fields" for k, v in total.items())
+    warning = (f"[gen_settings_reference] MAX_DEPTH={MAX_DEPTH} elided nested properties: "
+               + ", ".join(_dropped)) if _dropped else None
     if app is not None:
         from sphinx.util import logging
-        logging.getLogger(__name__).info(msg)
+        logger = logging.getLogger(__name__)
+        logger.info(msg)
+        if warning:
+            logger.warning(warning)
     else:
         print(msg)
+        if warning:
+            print(warning)
 
 
 def setup(app):
