@@ -55,7 +55,9 @@ return_config = [{**check, "on_error": "return"} for check in DEFAULT_VALIDATION
 findings = exposure.check(return_config)
 print(f"{len(findings)} validation finding(s)")
 for f in findings:
-    print(f"- [{f['name']}] {f['msg'].splitlines()[0]}")
+    # 'name' is the OED source the finding is about (location/account/...), not the check name
+    print(f"--- in the {f['name']} file ---")
+    print(f["msg"])
 ```
 
 This example file is missing a **conditionally required** column: OED requires a
@@ -75,7 +77,10 @@ print(f"{len(findings)} validation finding(s) after fix")
 ## Enforcing validation
 
 Passing `check_oed=True` (or `on_error='raise'` in the config) makes `ods_tools`
-**raise** on the first failing check instead of returning — this is what the CLI does:
+**raise** instead of returning the findings. Every check still runs: results are grouped
+by their `on_error` action, `log` findings are warned about, and a single `OdsException`
+is raised at the end carrying all the `raise`-level messages together — so expect one
+exception describing every failure, not the first one only. This is what the CLI does:
 
 ```bash
 ods_tools check --location SourceLocOEDPiWind10Currency.csv

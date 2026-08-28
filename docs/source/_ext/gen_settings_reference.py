@@ -67,7 +67,21 @@ def _literal(value):
 
 
 def _resolve(schema, root):
-    """Follow a ``$ref`` (and merge a single-branch allOf) to a concrete schema."""
+    """Follow a ``$ref`` (and merge a single-branch allOf) to a concrete schema.
+
+    Keywords written alongside a ``$ref`` override the target's, per JSON Schema 2019-09.
+    Dropping them documents the wrong thing rather than merely less: all four of analysis
+    settings' ``*_summaries`` are ``{title, description, $ref}`` sharing one definition, so
+    taking the target's description told the reader that ``gul_summaries``, ``ri_summaries`` and
+    ``rl_summaries`` were all "for insured losses".
+
+    Args:
+        schema (dict): A schema node, possibly a ``$ref`` or single-branch ``allOf``.
+        root (dict): The whole schema document, for resolving the pointer.
+
+    Returns:
+        dict: The resolved schema, with the caller's own keywords taking precedence.
+    """
     seen = 0
     while isinstance(schema, dict) and "$ref" in schema and seen < 10:
         ref = schema["$ref"]
@@ -77,11 +91,13 @@ def _resolve(schema, root):
                 node = node[part]
             else:
                 return schema  # unresolvable; leave as-is
-        schema = node
+        siblings = {k: v for k, v in schema.items() if k != "$ref"}
+        schema = {**node, **siblings} if isinstance(node, dict) else node
         seen += 1
     if isinstance(schema, dict) and "allOf" in schema and len(schema["allOf"]) == 1:
-        merged = {k: v for k, v in schema.items() if k != "allOf"}
-        merged.update(_resolve(schema["allOf"][0], root))
+        # Same precedence: the outer keywords win over the single branch's.
+        merged = _resolve(schema["allOf"][0], root)
+        merged = {**merged, **{k: v for k, v in schema.items() if k != "allOf"}}
         return merged
     return schema
 
@@ -184,7 +200,10 @@ def _constraints(s, root=None):
         if isinstance(items, dict) and "properties" not in items:
             inner = _constraints(items, root)
             if inner:
-                bits.append("each item " + inner)
+                # Parenthesised, or only the first constraint reads as scoped to the items and
+                # the rest look like list-level keywords: "min items 1; each item min length 3;
+                # max length 3". Matches the "each value ..." form below.
+                bits.append(f"each item ({inner})" if "; " in inner else "each item " + inner)
     for pattern, value in (s.get("patternProperties") or {}).items():
         # A pattern-keyed map. Without this the row reads "object" with an empty Constraints
         # cell: the reader is told neither what the keys look like nor what a value may be.
