@@ -132,11 +132,19 @@ _LIMITS = (
 def _constraints(s, root=None):
     """Summarise a property's validation keywords for the Constraints column.
 
-    Array properties need two passes: keywords on the array itself (``minItems``,
-    ``uniqueItems``) constrain the list, while the allowed values and per-value limits
-    sit on ``items`` and are reported as "each item ...". Without that second pass the
-    ``items.enum`` allowed-value lists — e.g. combine's ``group_event_set_fields`` —
-    render as an empty cell, which is the one thing a generated reference must not do.
+    Composite properties need more than one pass, because the keywords that matter sit on a
+    nested schema rather than the property itself:
+
+    * Arrays: ``minItems``/``uniqueItems`` constrain the list, while allowed values and
+      per-value limits sit on ``items`` and are reported as "each item ...". Without that,
+      ``items.enum`` lists — e.g. combine's ``group_event_set_fields`` — render as an empty
+      cell, which is the one thing a generated reference must not do.
+    * ``patternProperties``: a map whose keys are described by a regex. Reported as "keys
+      matching ``<pattern>``" plus "each value ...", so ``vulnerability_adjustments`` says what
+      the keys are and what a value may hold instead of just "object".
+    * ``prefixItems``: a positional tuple, where each entry constrains one slot. Reported as
+      "in order: ...", which is the only way ``replace_data``'s [integer, integer, number]
+      triples appear at all.
 
     Args:
         s (dict): The (already ``$ref``-resolved) schema for one property.
@@ -161,6 +169,14 @@ def _constraints(s, root=None):
         bits.append(f"pattern `{s['pattern']}`")
     if "format" in s:
         bits.append(f"format `{s['format']}`")
+    if isinstance(s.get("prefixItems"), list):
+        # A positional tuple: each entry constrains one slot, not the whole list.
+        slots = []
+        for entry in s["prefixItems"]:
+            entry = _resolve(entry, root) if root is not None else entry
+            inner = _constraints(entry, root)
+            slots.append(f"{_type_str(entry)} ({inner})" if inner else _type_str(entry))
+        bits.append("in order: " + ", ".join(slots))
     if s.get("type") == "array" and isinstance(s.get("items"), dict):
         items = _resolve(s["items"], root) if root is not None else s["items"]
         # arrays of objects expand into their own subsection (see _object_children),
@@ -169,6 +185,18 @@ def _constraints(s, root=None):
             inner = _constraints(items, root)
             if inner:
                 bits.append("each item " + inner)
+    for pattern, value in (s.get("patternProperties") or {}).items():
+        # A pattern-keyed map. Without this the row reads "object" with an empty Constraints
+        # cell: the reader is told neither what the keys look like nor what a value may be.
+        value = _resolve(value, root) if root is not None else value
+        bits.append(f"keys matching `{pattern}`")
+        if isinstance(value, dict) and "properties" not in value:
+            described = _type_str(value)
+            inner = _constraints(value, root)
+            if inner:
+                described = f"{described} ({inner})" if described else inner
+            if described:
+                bits.append("each value " + described)
     return "; ".join(bits)
 
 
@@ -181,6 +209,10 @@ def _object_children(s, root):
         items = _resolve(s.get("items", {}), root)
         if isinstance(items, dict) and "properties" in items:
             return items
+    for value in (s.get("patternProperties") or {}).values():
+        value = _resolve(value, root)
+        if isinstance(value, dict) and "properties" in value:
+            return value
     return None
 
 
