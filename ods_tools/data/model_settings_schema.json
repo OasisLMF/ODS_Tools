@@ -1401,6 +1401,27 @@
                "default": true,
                "deprecated": true
            },
+           "coverage_dependency_settings": {
+               "type": "array",
+               "title": "Coverage Dependency Settings",
+               "description": "Links a dependent coverage type to a source coverage type at the same location: in gulmc the source coverage's sampled damage bin indexes the dependent coverage's damage-bin-authored vulnerability, so the dependent's damage is conditioned on the source's. Each dependent coverage type may appear at most once.",
+               "items": {
+                   "type": "object",
+                   "properties": {
+                       "source_coverage_type": {
+                           "type": "integer",
+                           "title": "Source Coverage Type",
+                           "description": "The coverage type whose damage drives the dependent coverage."
+                       },
+                       "dependent_coverage_type": {
+                           "type": "integer",
+                           "title": "Dependent Coverage Type",
+                           "description": "The coverage type whose damage is driven by the source coverage."
+                       }
+                   },
+                   "required": ["source_coverage_type", "dependent_coverage_type"]
+               }
+           },
            "summary_report_fields": {
                "type":"array",
                "title":"Additional summary report fields",

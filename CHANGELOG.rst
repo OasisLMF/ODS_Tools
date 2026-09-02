@@ -1,6 +1,14 @@
 ODS_Tools Changelog
 ===================
 
+`5.0.8`_
+ ---------
+* [#289](https://github.com/OasisLMF/ODS_Tools/pull/289) - docs: OED load/validate notebook + settings-schema reference
+* [#295](https://github.com/OasisLMF/ODS_Tools/pull/295) - Add codecov upload to repo
+* [#297](https://github.com/OasisLMF/ODS_Tools/pull/297) - Add coverage_dependency_settings to model_settings schema
+* [#298](https://github.com/OasisLMF/ODS_Tools/pull/298) - Hubspot ticket tracking
+.. _`5.0.8`:  https://github.com/OasisLMF/ODS_Tools/compare/5.0.7...5.0.8
+
 `5.0.7`_
  ---------
 * [#281](https://github.com/OasisLMF/ODS_Tools/pull/281) - update DataManager default-branch
