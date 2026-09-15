@@ -248,3 +248,107 @@ class ReinsuranceLossPerspectiveSchemaChecks(unittest.TestCase):
         handler = ModelSettingHandler.make()
         ok, errors = handler.validate(data, raise_error=False)
         self.assertTrue(ok, f"expected valid pre-#1495 doc, got errors: {errors}")
+
+
+class ModelCertificationScopeSchemaChecks(unittest.TestCase):
+    """Schema regression tests for the Model Certification Programme's scope metadata.
+
+    Adds six fields proposed by Matt Jones (CTO) so a partner platform (e.g. Moody's Risk
+    Modeler) can build a model profile from model_settings.json alone, without a separate
+    'Key Facts' document: ``data_settings.supported_coverages``, ``geographic_extent_notes``,
+    ``geographic_exclusions``, ``geographic_schemes_supported``, ``field_behaviour``,
+    ``out_of_scope``, and ``model_settings.loss_methodology_notes``. Populated by the
+    certification development team during review, not authored by vendors.
+    """
+
+    def setUp(self):
+        self.model_settings = {
+            "model_settings": {
+                "loss_methodology_notes": {
+                    "ground_up_loss_capping": {
+                        "gul_alloc_rule": 2,
+                        "description": "Sub-peril losses capped at coverage TIV; max sub-peril loss used to avoid double counting.",
+                    },
+                    "correlation_methodology": "Hazard uncertainty applies only to coarse-geocoded locations.",
+                },
+            },
+            "lookup_settings": {},
+            "data_settings": {
+                "supported_coverages": [
+                    {"oed_field": "BuildingTIV", "supported": True},
+                    {"oed_field": "OtherTIV", "supported": False, "notes": "Not modelled"},
+                ],
+                "geographic_extent_notes": "60 degrees S to 80 degrees N, excludes Greenland and Antarctica.",
+                "geographic_exclusions": ["Greenland", "Antarctica"],
+                "geographic_schemes_supported": [
+                    {"scheme": "Coordinate", "oed_fields": ["Latitude", "Longitude"]},
+                    {"scheme": "GeogSchemeX", "oed_fields": ["GeogSchemeX"], "scheme_codes": ["FTM1"]},
+                ],
+                "field_behaviour": [
+                    {
+                        "oed_field": "OccupancyCode",
+                        "role": "modifier",
+                        "excluded_values": [
+                            {"value": "1250", "effect": "no_loss", "notes": "Transportation and Auto"},
+                        ],
+                    },
+                ],
+                "out_of_scope": [
+                    {"item": "Demand surge / Post Loss Amplification (PLA)", "category": "loss_element"},
+                ],
+            },
+        }
+
+    def test_scope_metadata_accepted(self):
+        handler = ModelSettingHandler.make()
+        ok, errors = handler.validate(copy.deepcopy(self.model_settings), raise_error=False)
+        self.assertTrue(ok, f"expected valid model_settings, got errors: {errors}")
+        self.assertEqual(errors, {})
+
+    def test_supported_coverages_oed_field_enum_enforced(self):
+        data = copy.deepcopy(self.model_settings)
+        data["data_settings"]["supported_coverages"][0]["oed_field"] = "NotARealCoverage"
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        self.assertIn("'NotARealCoverage' is not one of", str(ctx.exception))
+
+    def test_field_behaviour_effect_enum_enforced(self):
+        data = copy.deepcopy(self.model_settings)
+        data["data_settings"]["field_behaviour"][0]["excluded_values"][0]["effect"] = "explodes"
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        self.assertIn("'explodes' is not one of", str(ctx.exception))
+
+    def test_field_behaviour_requires_oed_field_and_role(self):
+        data = copy.deepcopy(self.model_settings)
+        del data["data_settings"]["field_behaviour"][0]["role"]
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        self.assertIn("'role' is a required property", str(ctx.exception))
+
+    def test_out_of_scope_category_enum_enforced(self):
+        data = copy.deepcopy(self.model_settings)
+        data["data_settings"]["out_of_scope"][0]["category"] = "not_a_category"
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        self.assertIn("'not_a_category' is not one of", str(ctx.exception))
+
+    def test_geographic_schemes_scheme_enum_enforced(self):
+        data = copy.deepcopy(self.model_settings)
+        data["data_settings"]["geographic_schemes_supported"][0]["scheme"] = "CarrierPigeon"
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        self.assertIn("'CarrierPigeon' is not one of", str(ctx.exception))
+
+    def test_loss_methodology_notes_rejects_unknown_property(self):
+        data = copy.deepcopy(self.model_settings)
+        data["model_settings"]["loss_methodology_notes"]["unexpected_field"] = True
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        self.assertIn("'unexpected_field' was unexpected", str(ctx.exception))

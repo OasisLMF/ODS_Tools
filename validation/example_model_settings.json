@@ -145,10 +145,17 @@
                 {"id":"o_hazard", "desc":"Observed Hazard tooltip"}
              ]
           }
-      ]
+      ],
+      "loss_methodology_notes": {
+         "ground_up_loss_capping": {
+            "gul_alloc_rule": 2,
+            "description": "Ground-up losses from each sub-peril (pluvial, fluvial, coastal) are calculated separately and capped at coverage TIV; location-level damage from multiple perils uses the maximum sub-peril loss to avoid double counting."
+         },
+         "correlation_methodology": "Hazard uncertainty applies only to coarse-geocoded locations; coverage correlation 1.0, sub-peril correlation 0.0, within-event correlation 0.0. Damage uncertainty uses a Beta distribution with finite probability of nil/100% loss; coverage and sub-peril correlation 1.0, within-event correlation 0.3."
+      }
    },
    "data_settings":{
-        "supported_oed_versions": ["1.5", "2.0"], 
+        "supported_oed_versions": ["1.5", "2.0"],
         "model_data_version": "1.0.0",
         "keys_data_version": "1.0.0",
         "worker_image": "coreoasis/model_worker",
@@ -156,6 +163,72 @@
         "uses_model_files": true,
         "countries": ["UK", "US"],
         "mandatory_fields": ["AreaName", "PostalCode", "OccupancyCode"],
+        "supported_coverages": [
+            {"oed_field": "BuildingTIV", "supported": true},
+            {"oed_field": "ContentsTIV", "supported": true},
+            {
+               "oed_field": "BITIV",
+               "supported": true,
+               "notes": "Represents BI for industrial/commercial and Additional Living Expenses for residential. Must be an annualised figure; if BIPOI != 365 the model scales BITIV by BIPOI/365."
+            },
+            {
+               "oed_field": "OtherTIV",
+               "supported": false,
+               "notes": "Not supported, e.g. motor, appurtenant structures."
+            }
+        ],
+        "geographic_extent_notes": "60 degrees S to 80 degrees N, excludes Greenland and Antarctica.",
+        "geographic_exclusions": ["Greenland", "Antarctica"],
+        "geographic_schemes_supported": [
+            {
+               "scheme": "Coordinate",
+               "oed_fields": ["Latitude", "Longitude"],
+               "notes": "Assigns the relevant 1 arcsecond (~30m) hazard grid cell."
+            },
+            {
+               "scheme": "PostalCode",
+               "oed_fields": ["PostalCode"]
+            },
+            {
+               "scheme": "GeogSchemeX",
+               "oed_fields": ["GeogSchemeX", "GeogNameX"],
+               "scheme_codes": ["FTM1"],
+               "notes": "FTM1 supports both postcode and city-level disaggregation."
+            }
+        ],
+        "field_behaviour": [
+            {
+               "oed_field": "OccupancyCode",
+               "role": "modifier",
+               "excluded_values": [
+                  {"value": "1250", "effect": "no_loss", "notes": "Transportation and Auto"},
+                  {"value": "1251", "effect": "no_loss", "notes": "Transportation and Auto"},
+                  {"value": "1255", "effect": "no_loss", "notes": "Transportation and Auto"},
+                  {"value": "1260", "effect": "no_loss", "notes": "Transportation and Auto"},
+                  {"value": "3000-3999", "effect": "no_loss", "notes": "Offshore"}
+               ]
+            },
+            {
+               "oed_field": "FloodDefenseHeight",
+               "role": "modifier",
+               "requires_companion_field": "FloodDefenseHeightUnit",
+               "excluded_values": [
+                  {"value": "> 10 metres", "effect": "no_loss"}
+               ]
+            },
+            {
+               "oed_field": "BIPOI",
+               "role": "modifier",
+               "excluded_values": [
+                  {"value": "> 1095", "effect": "capped", "notes": "Capped at 1095 days"}
+               ]
+            }
+        ],
+        "out_of_scope": [
+            {"item": "Allocated Loss Adjustment Expenses (ALAE)", "category": "loss_element"},
+            {"item": "Demand surge / Post Loss Amplification (PLA)", "category": "loss_element"},
+            {"item": "OtherTIV coverage", "category": "coverage"}
+        ],
         "additional_assets": [
             {
                "name": "catresponsedata",
