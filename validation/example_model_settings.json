@@ -149,9 +149,9 @@
       "loss_methodology_notes": {
          "ground_up_loss_capping": {
             "gul_alloc_rule": 2,
-            "description": "Ground-up losses from each sub-peril (pluvial, fluvial, coastal) are calculated separately and capped at coverage TIV; location-level damage from multiple perils uses the maximum sub-peril loss to avoid double counting."
+            "description": "Ground-up loss is capped at coverage TIV using Oasis gul-alloc-rule 2; see model documentation for the full allocation methodology."
          },
-         "correlation_methodology": "Hazard uncertainty applies only to coarse-geocoded locations; coverage correlation 1.0, sub-peril correlation 0.0, within-event correlation 0.0. Damage uncertainty uses a Beta distribution with finite probability of nil/100% loss; coverage and sub-peril correlation 1.0, within-event correlation 0.3."
+         "correlation_methodology": "Free-text summary of the methodology behind the hazard and damage correlation values declared in correlation_settings, e.g. which sampling stages are correlated and why."
       }
    },
    "data_settings":{
@@ -169,21 +169,21 @@
             {
                "oed_field": "BITIV",
                "supported": true,
-               "notes": "Represents BI for industrial/commercial and Additional Living Expenses for residential. Must be an annualised figure; if BIPOI != 365 the model scales BITIV by BIPOI/365."
+               "notes": "Example only: illustrates that a coverage can carry qualifying notes, e.g. how it is scaled or annualised."
             },
             {
                "oed_field": "OtherTIV",
                "supported": false,
-               "notes": "Not supported, e.g. motor, appurtenant structures."
+               "notes": "Example only: illustrates declaring a coverage as unsupported."
             }
         ],
-        "geographic_extent_notes": "60 degrees S to 80 degrees N, excludes Greenland and Antarctica.",
-        "geographic_exclusions": ["Greenland", "Antarctica"],
+        "geographic_extent_notes": "Example only: free-text qualification of the country list above, e.g. latitude bands or partial-country exclusions not captured by 'countries'.",
+        "geographic_exclusions": ["Example Excluded Territory"],
         "geographic_schemes_supported": [
             {
                "scheme": "Coordinate",
                "oed_fields": ["Latitude", "Longitude"],
-               "notes": "Assigns the relevant 1 arcsecond (~30m) hazard grid cell."
+               "notes": "Example only: assigns the relevant hazard grid cell."
             },
             {
                "scheme": "PostalCode",
@@ -192,8 +192,8 @@
             {
                "scheme": "GeogSchemeX",
                "oed_fields": ["GeogSchemeX", "GeogNameX"],
-               "scheme_codes": ["FTM1"],
-               "notes": "FTM1 supports both postcode and city-level disaggregation."
+               "scheme_codes": ["EX1"],
+               "notes": "Example only: a model-defined geocoding scheme code."
             }
         ],
         "field_behaviour": [
@@ -201,26 +201,22 @@
                "oed_field": "OccupancyCode",
                "role": "modifier",
                "excluded_values": [
-                  {"value": "1250", "effect": "no_loss", "notes": "Transportation and Auto"},
-                  {"value": "1251", "effect": "no_loss", "notes": "Transportation and Auto"},
-                  {"value": "1255", "effect": "no_loss", "notes": "Transportation and Auto"},
-                  {"value": "1260", "effect": "no_loss", "notes": "Transportation and Auto"},
-                  {"value": "3000-3999", "effect": "no_loss", "notes": "Offshore"}
+                  {"value": "9998", "effect": "no_loss", "notes": "Example only: an occupancy category this model does not generate loss for"},
+                  {"value": "9000-9099", "effect": "no_loss", "notes": "Example only: a range of excluded occupancy categories"}
                ]
             },
             {
-               "oed_field": "FloodDefenseHeight",
+               "oed_field": "YearBuilt",
                "role": "modifier",
-               "requires_companion_field": "FloodDefenseHeightUnit",
                "excluded_values": [
-                  {"value": "> 10 metres", "effect": "no_loss"}
+                  {"value": "< 1900", "effect": "default_applied", "notes": "Example only: illustrates a value range triggering a default"}
                ]
             },
             {
                "oed_field": "BIPOI",
                "role": "modifier",
                "excluded_values": [
-                  {"value": "> 1095", "effect": "capped", "notes": "Capped at 1095 days"}
+                  {"value": "> 730", "effect": "capped", "notes": "Example only: illustrates a value being capped rather than rejected"}
                ]
             }
         ],

@@ -267,9 +267,9 @@ class ModelCertificationScopeSchemaChecks(unittest.TestCase):
                 "loss_methodology_notes": {
                     "ground_up_loss_capping": {
                         "gul_alloc_rule": 2,
-                        "description": "Sub-peril losses capped at coverage TIV; max sub-peril loss used to avoid double counting.",
+                        "description": "Example only: ground-up loss capped at coverage TIV.",
                     },
-                    "correlation_methodology": "Hazard uncertainty applies only to coarse-geocoded locations.",
+                    "correlation_methodology": "Example only: free-text summary of the correlation methodology.",
                 },
             },
             "lookup_settings": {},
@@ -278,18 +278,18 @@ class ModelCertificationScopeSchemaChecks(unittest.TestCase):
                     {"oed_field": "BuildingTIV", "supported": True},
                     {"oed_field": "OtherTIV", "supported": False, "notes": "Not modelled"},
                 ],
-                "geographic_extent_notes": "60 degrees S to 80 degrees N, excludes Greenland and Antarctica.",
-                "geographic_exclusions": ["Greenland", "Antarctica"],
+                "geographic_extent_notes": "Example only: free-text qualification of the country list.",
+                "geographic_exclusions": ["Example Excluded Territory"],
                 "geographic_schemes_supported": [
                     {"scheme": "Coordinate", "oed_fields": ["Latitude", "Longitude"]},
-                    {"scheme": "GeogSchemeX", "oed_fields": ["GeogSchemeX"], "scheme_codes": ["FTM1"]},
+                    {"scheme": "GeogSchemeX", "oed_fields": ["GeogSchemeX"], "scheme_codes": ["EX1"]},
                 ],
                 "field_behaviour": [
                     {
                         "oed_field": "OccupancyCode",
                         "role": "modifier",
                         "excluded_values": [
-                            {"value": "1250", "effect": "no_loss", "notes": "Transportation and Auto"},
+                            {"value": "9998", "effect": "no_loss", "notes": "Example only"},
                         ],
                     },
                 ],
