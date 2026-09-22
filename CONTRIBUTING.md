@@ -67,7 +67,7 @@ or in MyST Markdown:
 
 `NEXT` is deliberate. The release version does not exist yet when you open the PR: it is
 chosen on the release branch, and `scripts/resolve-version-markers.sh` rewrites every
-`NEXT` to the real version in the same commit that bumps `oasislmf/__init__.py`. Nothing
+`NEXT` to the real version in the same commit that bumps `ods_tools/__init__.py`. Nothing
 ships with `NEXT` in it — the release workflow refuses to tag if any survives.
 
 `versionchanged`, `deprecated` and `versionremoved` work the same way. `NEXT` must be the
