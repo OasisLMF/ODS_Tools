@@ -51,7 +51,10 @@ jobs:
       run: |
         CURRENT_VER=$(grep ${{ env.ver_regex }} ${{ env.ver_file }} | awk -F"'" '{print $2}')
         sed -i 's|'$CURRENT_VER'|'${{ inputs.package_version }}'|g' ${{ env.ver_file }}
-        git add ${{ env.ver_file }}
+        # Docs and docstrings are authored as '.. versionadded:: NEXT' because the release
+        # version is not known at PR time; resolve them in the same commit as the bump.
+        ./scripts/resolve-version-markers.sh ${{ inputs.package_version }}
+        git add -u
         # Only commit if something changed
         [[ -z $(git status -s) ]] || git commit -m "Set package to version ${{ inputs.package_version }}"
 
