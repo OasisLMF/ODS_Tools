@@ -1350,6 +1350,37 @@
                   }
                }
             },
+            "loss_methodology_notes": {
+               "type": "object",
+               "title": "Loss methodology notes",
+               "description": "Fixed methodology facts that explain the model's correlation settings and how ground-up loss is capped across sub-perils. Part of the Model Certification Programme's scope metadata.",
+               "additionalProperties": false,
+               "properties": {
+                  "ground_up_loss_capping": {
+                     "type": "object",
+                     "title": "Ground-up loss capping",
+                     "description": "How ground-up loss is capped so a location's loss cannot exceed its TIV",
+                     "additionalProperties": false,
+                     "properties": {
+                        "gul_alloc_rule": {
+                           "type": "integer",
+                           "title": "GUL allocation rule",
+                           "description": "The Oasis gul-alloc-rule used to cap and allocate ground-up loss"
+                        },
+                        "description": {
+                           "type": "string",
+                           "title": "Description",
+                           "description": "Free-text description of the capping methodology"
+                        }
+                     }
+                  },
+                  "correlation_methodology": {
+                     "type": "string",
+                     "title": "Correlation methodology",
+                     "description": "Free-text description of the hazard and vulnerability uncertainty correlation methodology behind correlation_settings"
+                  }
+               }
+            },
             "vulnerability_adjustments": {
                "type": "object",
                "title": "Vulnerability Adjustments",
@@ -1610,6 +1641,181 @@
                "items":{
                   "type":"string",
                   "minLength":1
+               }
+            },
+            "supported_coverages": {
+               "type": "array",
+               "title": "Supported OED coverage fields",
+               "description": "Declares which of the four canonical OED coverage TIV fields this model generates loss for. Part of the Model Certification Programme's scope metadata (see Section 4/5 of the Model Certification Plan).",
+               "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                     "oed_field": {
+                        "type": "string",
+                        "title": "OED coverage field",
+                        "description": "The canonical OED coverage TIV field",
+                        "enum": ["BuildingTIV", "ContentsTIV", "BITIV", "OtherTIV"]
+                     },
+                     "supported": {
+                        "type": "boolean",
+                        "title": "Is supported",
+                        "description": "Whether the model generates loss for this coverage"
+                     },
+                     "notes": {
+                        "type": "string",
+                        "title": "Notes",
+                        "description": "Free-text qualification, e.g. scaling or annualisation rules"
+                     }
+                  },
+                  "required": ["oed_field", "supported"]
+               }
+            },
+            "geographic_extent_notes": {
+               "type": "string",
+               "title": "Geographic extent beyond the country list",
+               "description": "Free-text qualification of 'countries', e.g. latitude bands or partial-country exclusions."
+            },
+            "geographic_exclusions": {
+               "type": "array",
+               "title": "Named geographic exclusions",
+               "description": "Named areas explicitly excluded from model coverage even where the country as a whole is supported.",
+               "items": {
+                  "type": "string",
+                  "minLength": 1
+               }
+            },
+            "geographic_schemes_supported": {
+               "type": "array",
+               "title": "Supported geocoding schemes",
+               "description": "Declares which OED location fields the model can use to resolve hazard, and any specific geographic scheme codes recognised.",
+               "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                     "scheme": {
+                        "type": "string",
+                        "title": "Geocoding scheme",
+                        "description": "The class of geocoding used to resolve hazard",
+                        "enum": ["Coordinate", "PostalCode", "GeogSchemeX"]
+                     },
+                     "oed_fields": {
+                        "type": "array",
+                        "title": "OED fields",
+                        "description": "OED location fields used by this scheme",
+                        "items": {
+                           "type": "string",
+                           "minLength": 1
+                        }
+                     },
+                     "scheme_codes": {
+                        "type": "array",
+                        "title": "Scheme codes",
+                        "description": "Specific GeogSchemeX (or similar) codes recognised by the model",
+                        "items": {
+                           "type": "string",
+                           "minLength": 1
+                        }
+                     },
+                     "notes": {
+                        "type": "string",
+                        "title": "Notes",
+                        "description": "Free-text qualification, e.g. resolution or disaggregation behaviour"
+                     }
+                  },
+                  "required": ["scheme"]
+               }
+            },
+            "field_behaviour": {
+               "type": "array",
+               "title": "OED field usage and value-level behaviour",
+               "description": "Every OED field the model reads beyond 'mandatory_fields', and any field values that change or suppress the result. Directly extends the model certification scope metadata for 'vulnerability mapping' and 'in-model / out-of-model' fields.",
+               "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                     "oed_field": {
+                        "type": "string",
+                        "title": "OED field",
+                        "description": "The OED field the model reads",
+                        "minLength": 1
+                     },
+                     "role": {
+                        "type": "string",
+                        "title": "Field role",
+                        "description": "Whether the field is merely consumed when present ('optional') or changes model behaviour when present ('modifier')",
+                        "enum": ["optional", "modifier"]
+                     },
+                     "requires_companion_field": {
+                        "type": "string",
+                        "title": "Companion field",
+                        "description": "Another OED field required to interpret this field's value, e.g. a unit field",
+                        "minLength": 1
+                     },
+                     "excluded_values": {
+                        "type": "array",
+                        "title": "Excluded / special-cased values",
+                        "description": "Specific values (or ranges) of this field that suppress, cap or default the result",
+                        "items": {
+                           "type": "object",
+                           "additionalProperties": false,
+                           "properties": {
+                              "value": {
+                                 "type": "string",
+                                 "title": "Value",
+                                 "description": "The field value, code or range affected"
+                              },
+                              "effect": {
+                                 "type": "string",
+                                 "title": "Effect",
+                                 "description": "What happens to the result when this value is present",
+                                 "enum": ["no_loss", "capped", "default_applied", "rejected"]
+                              },
+                              "notes": {
+                                 "type": "string",
+                                 "title": "Notes",
+                                 "description": "Free-text detail on the effect"
+                              }
+                           },
+                           "required": ["value", "effect"]
+                        }
+                     },
+                     "notes": {
+                        "type": "string",
+                        "title": "Notes",
+                        "description": "Free-text detail on the field's role"
+                     }
+                  },
+                  "required": ["oed_field", "role"]
+               }
+            },
+            "out_of_scope": {
+               "type": "array",
+               "title": "Items explicitly out of scope",
+               "description": "Structured exclusions list, the mirror image of 'supported_perils' under lookup_settings.",
+               "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                     "item": {
+                        "type": "string",
+                        "title": "Excluded item",
+                        "description": "Short name of the excluded item",
+                        "minLength": 1
+                     },
+                     "category": {
+                        "type": "string",
+                        "title": "Category",
+                        "description": "The kind of thing being excluded",
+                        "enum": ["loss_element", "peril", "coverage", "geography", "other"]
+                     },
+                     "notes": {
+                        "type": "string",
+                        "title": "Notes",
+                        "description": "Free-text detail on the exclusion"
+                     }
+                  },
+                  "required": ["item"]
                }
             },
             "additional_assets":{

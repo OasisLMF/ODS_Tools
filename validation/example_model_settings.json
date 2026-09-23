@@ -145,10 +145,17 @@
                 {"id":"o_hazard", "desc":"Observed Hazard tooltip"}
              ]
           }
-      ]
+      ],
+      "loss_methodology_notes": {
+         "ground_up_loss_capping": {
+            "gul_alloc_rule": 2,
+            "description": "Ground-up loss is capped at coverage TIV using Oasis gul-alloc-rule 2; see model documentation for the full allocation methodology."
+         },
+         "correlation_methodology": "Free-text summary of the methodology behind the hazard and damage correlation values declared in correlation_settings, e.g. which sampling stages are correlated and why."
+      }
    },
    "data_settings":{
-        "supported_oed_versions": ["1.5", "2.0"], 
+        "supported_oed_versions": ["1.5", "2.0"],
         "model_data_version": "1.0.0",
         "keys_data_version": "1.0.0",
         "worker_image": "coreoasis/model_worker",
@@ -156,6 +163,68 @@
         "uses_model_files": true,
         "countries": ["UK", "US"],
         "mandatory_fields": ["AreaName", "PostalCode", "OccupancyCode"],
+        "supported_coverages": [
+            {"oed_field": "BuildingTIV", "supported": true},
+            {"oed_field": "ContentsTIV", "supported": true},
+            {
+               "oed_field": "BITIV",
+               "supported": true,
+               "notes": "Example only: illustrates that a coverage can carry qualifying notes, e.g. how it is scaled or annualised."
+            },
+            {
+               "oed_field": "OtherTIV",
+               "supported": false,
+               "notes": "Example only: illustrates declaring a coverage as unsupported."
+            }
+        ],
+        "geographic_extent_notes": "Example only: free-text qualification of the country list above, e.g. latitude bands or partial-country exclusions not captured by 'countries'.",
+        "geographic_exclusions": ["Example Excluded Territory"],
+        "geographic_schemes_supported": [
+            {
+               "scheme": "Coordinate",
+               "oed_fields": ["Latitude", "Longitude"],
+               "notes": "Example only: assigns the relevant hazard grid cell."
+            },
+            {
+               "scheme": "PostalCode",
+               "oed_fields": ["PostalCode"]
+            },
+            {
+               "scheme": "GeogSchemeX",
+               "oed_fields": ["GeogSchemeX", "GeogNameX"],
+               "scheme_codes": ["EX1"],
+               "notes": "Example only: a model-defined geocoding scheme code."
+            }
+        ],
+        "field_behaviour": [
+            {
+               "oed_field": "OccupancyCode",
+               "role": "modifier",
+               "excluded_values": [
+                  {"value": "9998", "effect": "no_loss", "notes": "Example only: an occupancy category this model does not generate loss for"},
+                  {"value": "9000-9099", "effect": "no_loss", "notes": "Example only: a range of excluded occupancy categories"}
+               ]
+            },
+            {
+               "oed_field": "YearBuilt",
+               "role": "modifier",
+               "excluded_values": [
+                  {"value": "< 1900", "effect": "default_applied", "notes": "Example only: illustrates a value range triggering a default"}
+               ]
+            },
+            {
+               "oed_field": "BIPOI",
+               "role": "modifier",
+               "excluded_values": [
+                  {"value": "> 730", "effect": "capped", "notes": "Example only: illustrates a value being capped rather than rejected"}
+               ]
+            }
+        ],
+        "out_of_scope": [
+            {"item": "Allocated Loss Adjustment Expenses (ALAE)", "category": "loss_element"},
+            {"item": "Demand surge / Post Loss Amplification (PLA)", "category": "loss_element"},
+            {"item": "OtherTIV coverage", "category": "coverage"}
+        ],
         "additional_assets": [
             {
                "name": "catresponsedata",
