@@ -88,6 +88,27 @@ PANDAS_COMPRESSION_MAP = {
     'zstd': '.zst',
 }
 
+
+def compression_from_suffix(filepath):
+    """
+    Derive the compression/format key to use for a filepath, based on its
+    suffix (ex: 'foo.parquet' -> 'parquet', 'foo.csv.gz' -> 'gzip').
+
+    Args:
+        filepath (str or Path): path to inspect
+
+    Returns:
+        str or None: a key of PANDAS_COMPRESSION_MAP matching the filepath's
+                      suffix, or None if it doesn't match any known
+                      compression/format
+    """
+    suffix = Path(filepath).suffix.lstrip('.').lower()
+    for compression, mapped_suffix in PANDAS_COMPRESSION_MAP.items():
+        if mapped_suffix.lstrip('.') == suffix:
+            return compression
+    return None
+
+
 PANDAS_DEFAULT_NULL_VALUES = {
     '-1.#IND',
     '1.#QNAN',

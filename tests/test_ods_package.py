@@ -432,6 +432,32 @@ class OdsPackageTests(TestCase):
                     self.assertTrue(
                         os.path.isfile(pathlib.Path(tmp_run_dir, folder, f'Source{oed_name}OEDPiWind.parquet')))
 
+    def test_save_preserves_each_source_own_format(self):
+        """
+        Regression test: a freshly loaded OedSource should remember its own
+        original file format, so a plain exposure.save(path, save_config=True)
+        (no explicit compression) preserves each source's own format instead
+        of always defaulting to csv, and does not force one source's format
+        onto the others (ex: location as parquet + account as csv).
+        """
+        with tempfile.TemporaryDirectory() as tmp_run_dir:
+            exposure = OedExposure(
+                location=self.tmp_dir_path / 'SourceLocOEDPiWind.parquet',
+                account=self.tmp_dir_path / 'SourceAccOEDPiWind.csv',
+                ri_info=self.tmp_dir_path / 'SourceReinsInfoOEDPiWind.csv',
+                ri_scope=self.tmp_dir_path / 'SourceReinsScopeOEDPiWind.csv',
+            )
+
+            self.assertEqual(exposure.location.current_source.get('extension'), 'parquet')
+            self.assertEqual(exposure.account.current_source.get('extension'), 'csv')
+
+            exposure.save(tmp_run_dir, version_name='raw', save_config=True)
+
+            self.assertTrue(os.path.isfile(pathlib.Path(tmp_run_dir, 'raw_location.parquet')))
+            self.assertTrue(os.path.isfile(pathlib.Path(tmp_run_dir, 'raw_account.csv')))
+            self.assertFalse(os.path.isfile(pathlib.Path(tmp_run_dir, 'raw_location.csv')))
+            self.assertFalse(os.path.isfile(pathlib.Path(tmp_run_dir, 'raw_account.parquet')))
+
     def test_validation_raise_exception(self):
         config = {'location': self.tmp_dir_path / 'SourceLocOEDPiWind10.csv',
                   'account': self.tmp_dir_path / 'SourceAccOEDPiWind.csv',

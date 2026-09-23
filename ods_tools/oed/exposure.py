@@ -16,7 +16,7 @@ from pathlib import Path
 from .common import (PANDAS_COMPRESSION_MAP,
                      USUAL_FILE_NAME, OED_TYPE_TO_NAME,
                      UnknownColumnSaveOption, CLASS_OF_BUSINESSES, OdsException,
-                     ClassOfBusiness)
+                     ClassOfBusiness, compression_from_suffix)
 from .oed_schema import OedSchema
 from .source import OedSource, detect_stream_type, is_readable
 from .validator import Validator
@@ -348,15 +348,21 @@ class OedExposure:
     @classmethod
     def resolve_oed_info(cls, oed_info, df_engine):
         if isinstance(oed_info, (str, Path)):
+            source = {
+                "source_type": "filepath",
+                "filepath": oed_info,
+                "read_param": {},
+                "engine": df_engine
+            }
+            extension = compression_from_suffix(oed_info)
+            if extension is not None:
+                # record the original format so a later Exposure.save(compression=None)
+                # preserves it instead of silently defaulting to csv
+                source["extension"] = extension
             return {
                 "cur_version_name": "curr",
                 "sources": {
-                    "curr": {
-                        "source_type": "filepath",
-                        "filepath": oed_info,
-                        "read_param": {},
-                        "engine": df_engine
-                    }
+                    "curr": source
                 }
             }
         elif isinstance(oed_info, dict):
@@ -519,19 +525,20 @@ class OedExposure:
             else:
                 filepath = Path(path, oed_name)
 
-            if compression is None:
+            source_compression = compression
+            if source_compression is None:
                 if oed_source.sources[oed_source.cur_version_name]['source_type'] == 'filepath':
-                    compression = oed_source.sources[oed_source.cur_version_name].get('extension')
-                if compression is None:
-                    compression = 'csv'
+                    source_compression = oed_source.sources[oed_source.cur_version_name].get('extension')
+                if source_compression is None:
+                    source_compression = 'csv'
 
-            filepath = filepath.with_suffix(PANDAS_COMPRESSION_MAP[compression])
+            filepath = filepath.with_suffix(PANDAS_COMPRESSION_MAP[source_compression])
 
-            new_info = {'source_type': 'filepath', 'filepath': filepath, 'extension': compression}
+            new_info = {'source_type': 'filepath', 'filepath': filepath, 'extension': source_compression}
             if "engine" in oed_source.sources[oed_source.cur_version_name]:
                 new_info["engine"] = oed_source.sources[oed_source.cur_version_name]["engine"]
 
-            oed_source.save(saved_version_name + '_' + f'{compression}', new_info, unknown_columns=unknown_columns)
+            oed_source.save(saved_version_name + '_' + f'{source_compression}', new_info, unknown_columns=unknown_columns)
         if save_config:
             self.save_config(Path(path, self.DEFAULT_EXPOSURE_CONFIG_NAME))
 
