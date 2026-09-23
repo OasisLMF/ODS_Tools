@@ -250,6 +250,81 @@ class ReinsuranceLossPerspectiveSchemaChecks(unittest.TestCase):
         self.assertTrue(ok, f"expected valid pre-#1495 doc, got errors: {errors}")
 
 
+class EventSetValidVulnerabilityIdsSchemaChecks(unittest.TestCase):
+    """Schema checks for ``valid_vulnerability_ids`` on event set options.
+
+    ``event_set.options`` items set ``additionalProperties: false``, so the
+    property has to be declared in ``model_settings_schema.json`` to be
+    accepted at all. It follows the same shape as the pre-existing
+    ``valid_occurrence_ids`` / ``valid_footprint_ids`` /
+    ``valid_pla_loss_factors_ids`` lists. See ODS_Tools#305.
+    """
+
+    def setUp(self):
+        # Tests deep-copy this fixture before mutation so an in-place change
+        # by ``validate`` cannot leak across assertions within a single test.
+        self.model_settings = {
+            "model_settings": {
+                "event_set": {
+                    "name": "Event Set",
+                    "desc": "Event set selector",
+                    "default": "p1",
+                    "options": [
+                        {
+                            "id": "p1",
+                            "desc": "Primary event set",
+                            "valid_vulnerability_ids": ["vuln_1", "vuln_2"],
+                        }
+                    ],
+                },
+            },
+            "lookup_settings": {},
+        }
+
+    def test_valid_vulnerability_ids_accepted(self):
+        handler = ModelSettingHandler.make()
+        ok, errors = handler.validate(copy.deepcopy(self.model_settings), raise_error=False)
+        self.assertTrue(ok, f"expected valid model_settings, got errors: {errors}")
+        self.assertEqual(errors, {})
+
+    def test_valid_vulnerability_ids_is_optional(self):
+        data = copy.deepcopy(self.model_settings)
+        del data["model_settings"]["event_set"]["options"][0]["valid_vulnerability_ids"]
+        handler = ModelSettingHandler.make()
+        ok, errors = handler.validate(data, raise_error=False)
+        self.assertTrue(ok, f"expected valid model_settings, got errors: {errors}")
+
+    def test_valid_vulnerability_ids_rejects_non_array(self):
+        data = copy.deepcopy(self.model_settings)
+        data["model_settings"]["event_set"]["options"][0]["valid_vulnerability_ids"] = "vuln_1"
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        message = str(ctx.exception)
+        self.assertIn("is not of type", message)
+        self.assertIn("event_set-options", message)
+
+    def test_valid_vulnerability_ids_rejects_empty_string_item(self):
+        data = copy.deepcopy(self.model_settings)
+        data["model_settings"]["event_set"]["options"][0]["valid_vulnerability_ids"] = [""]
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        message = str(ctx.exception)
+        self.assertIn("should be non-empty", message)
+        self.assertIn("valid_vulnerability_ids", message)
+
+    def test_other_valid_resource_id_lists_still_accepted(self):
+        data = copy.deepcopy(self.model_settings)
+        option = data["model_settings"]["event_set"]["options"][0]
+        option["valid_occurrence_ids"] = ["occ_1"]
+        option["valid_footprint_ids"] = ["fp_1"]
+        option["valid_pla_loss_factors_ids"] = ["pla_1"]
+        handler = ModelSettingHandler.make()
+        ok, errors = handler.validate(data, raise_error=False)
+        self.assertTrue(ok, f"expected valid model_settings, got errors: {errors}")
+
+
 class ModelCertificationScopeSchemaChecks(unittest.TestCase):
     """Schema regression tests for the Model Certification Programme's scope metadata.
 
