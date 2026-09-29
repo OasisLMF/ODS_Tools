@@ -10,7 +10,7 @@ from pandas.api.types import is_numeric_dtype
 
 from .common import (OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, fill_empty,
                      UnknownColumnSaveOption, cached_property, is_empty, dtype_str_to_dtype, default_string_dtype, pd_default_string,
-                     pa_dict_encode)
+                     pa_dict_encode, compression_from_suffix)
 from .forex import convert_currency
 from .oed_schema import OedSchema
 
@@ -221,7 +221,13 @@ class OedSource:
         """
         if read_param is None:
             read_param = {}
-        return cls(exposure, oed_type, 'orig', {'orig': {'source_type': 'filepath', 'filepath': filepath, 'read_param': read_param}}, filters=filters)
+        source = {'source_type': 'filepath', 'filepath': filepath, 'read_param': read_param}
+        extension = compression_from_suffix(filepath)
+        if extension is not None:
+            # record the original format so a later Exposure.save(compression=None)
+            # preserves it instead of silently defaulting to csv
+            source['extension'] = extension
+        return cls(exposure, oed_type, 'orig', {'orig': source}, filters=filters)
 
     @classmethod
     def from_stream_obj(cls, exposure, oed_type, stream_obj, format=None, read_param=None, filters=None):
