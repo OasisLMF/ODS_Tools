@@ -844,6 +844,15 @@
                                  "minLength":1
                               }
                            },
+                           "valid_vulnerability_ids": {
+                              "type": "array",
+                              "title": "Supported vulnerability files",
+                              "description": "An optional list of viable vulnerability file ids to use with this event set",
+                              "items":{
+                                 "type":"string",
+                                 "minLength":1
+                              }
+                           },
                            "valid_perspectives":{
                               "type":"array",
                               "title":"Supported loss perspectives ",

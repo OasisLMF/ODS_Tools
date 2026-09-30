@@ -85,6 +85,11 @@ jobs:
             echo "PACKAGE_VER: $BUILD_VER stored in 'ods_tools/__init__.py' dosn't match RELEASE_TAG: $RELEASE_VER" && exit $ERROR_CODE
         fi
 
+    # The 'update' job above resolves '.. versionadded:: NEXT' markers to the release tag.
+    # This is the backstop: a surviving NEXT would ship docs reading "New in version NEXT".
+    - name: Check no unresolved version markers
+      run: ./scripts/resolve-version-markers.sh --check
+
     - name: Test package names
       run: |
         ERROR_CODE=0
