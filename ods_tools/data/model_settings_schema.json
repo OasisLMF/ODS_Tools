@@ -1645,17 +1645,34 @@
             },
             "supported_coverages": {
                "type": "array",
-               "title": "Supported OED coverage fields",
-               "description": "Declares which of the four canonical OED coverage TIV fields this model generates loss for. Part of the Model Certification Programme's scope metadata (see Section 4/5 of the Model Certification Plan).",
+               "title": "Supported OED coverage types",
+               "description": "Declares which OED coverage types (OED 'CoverageValues' vocabulary) this model generates loss for, spanning both property (building/other/contents/BI) and non-property (e.g. cyber) lines. Part of the Model Certification Programme's scope metadata (see Section 4/5 of the Model Certification Plan).",
                "items": {
                   "type": "object",
                   "additionalProperties": false,
                   "properties": {
                      "oed_field": {
                         "type": "string",
-                        "title": "OED coverage field",
-                        "description": "The canonical OED coverage TIV field",
-                        "enum": ["BuildingTIV", "ContentsTIV", "BITIV", "OtherTIV"]
+                        "title": "OED coverage type",
+                        "description": "An OED 'CoverageValues' code, e.g. '1Building'/'3Contents' for property coverages or 'CYB'/'LIA' for non-property (cyber) coverages. See the 'CoverageValues' vocabulary in the OED spec.",
+                        "enum": [
+                           "1Building",
+                           "2Other",
+                           "3Contents",
+                           "4BI",
+                           "5PD",
+                           "6All",
+                           "NPBI",
+                           "CBI",
+                           "DIAS",
+                           "EXT",
+                           "FIN",
+                           "INRE",
+                           "LIA",
+                           "REG",
+                           "ENO",
+                           "CYB"
+                        ]
                      },
                      "supported": {
                         "type": "boolean",

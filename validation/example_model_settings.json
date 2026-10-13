@@ -164,17 +164,22 @@
         "countries": ["UK", "US"],
         "mandatory_fields": ["AreaName", "PostalCode", "OccupancyCode"],
         "supported_coverages": [
-            {"oed_field": "BuildingTIV", "supported": true},
-            {"oed_field": "ContentsTIV", "supported": true},
+            {"oed_field": "1Building", "supported": true},
+            {"oed_field": "3Contents", "supported": true},
             {
-               "oed_field": "BITIV",
+               "oed_field": "4BI",
                "supported": true,
                "notes": "Example only: illustrates that a coverage can carry qualifying notes, e.g. how it is scaled or annualised."
             },
             {
-               "oed_field": "OtherTIV",
+               "oed_field": "2Other",
                "supported": false,
                "notes": "Example only: illustrates declaring a coverage as unsupported."
+            },
+            {
+               "oed_field": "CYB",
+               "supported": false,
+               "notes": "Example only: illustrates declaring a non-property (cyber) coverage as unsupported for a property model."
             }
         ],
         "geographic_extent_notes": "Example only: free-text qualification of the country list above, e.g. latitude bands or partial-country exclusions not captured by 'countries'.",

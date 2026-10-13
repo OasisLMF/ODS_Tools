@@ -350,8 +350,9 @@ class ModelCertificationScopeSchemaChecks(unittest.TestCase):
             "lookup_settings": {},
             "data_settings": {
                 "supported_coverages": [
-                    {"oed_field": "BuildingTIV", "supported": True},
-                    {"oed_field": "OtherTIV", "supported": False, "notes": "Not modelled"},
+                    {"oed_field": "1Building", "supported": True},
+                    {"oed_field": "2Other", "supported": False, "notes": "Not modelled"},
+                    {"oed_field": "CYB", "supported": False, "notes": "Non-property line, not modelled"},
                 ],
                 "geographic_extent_notes": "Example only: free-text qualification of the country list.",
                 "geographic_exclusions": ["Example Excluded Territory"],
@@ -387,6 +388,17 @@ class ModelCertificationScopeSchemaChecks(unittest.TestCase):
         with self.assertRaises(OdsException) as ctx:
             handler.validate(data)
         self.assertIn("'NotARealCoverage' is not one of", str(ctx.exception))
+
+    def test_supported_coverages_accepts_non_property_coverage_types(self):
+        # The oed_field enum spans the full OED 'CoverageValues' vocabulary, not just the
+        # four property TIV fields, so non-property (e.g. cyber) models can also declare scope.
+        data = copy.deepcopy(self.model_settings)
+        data["data_settings"]["supported_coverages"].append(
+            {"oed_field": "LIA", "supported": True, "notes": "3rd party cyber liability"}
+        )
+        handler = ModelSettingHandler.make()
+        ok, errors = handler.validate(data, raise_error=False)
+        self.assertTrue(ok, f"expected valid model_settings, got errors: {errors}")
 
     def test_field_behaviour_effect_enum_enforced(self):
         data = copy.deepcopy(self.model_settings)
