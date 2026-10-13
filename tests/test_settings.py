@@ -334,6 +334,13 @@ class ModelCertificationScopeSchemaChecks(unittest.TestCase):
     ``geographic_exclusions``, ``geographic_schemes_supported``, ``field_behaviour``,
     ``out_of_scope``, and ``model_settings.loss_methodology_notes``. Populated by the
     certification development team during review, not authored by vendors.
+
+    Also covers François's review feedback on PR #303: ``supported_coverages`` extended to
+    OED's full ``CoverageValues`` vocabulary (not just property TIV fields), ``geographic_
+    exclusions`` restructured from a flat string list into objects tied back to a country
+    and geocoding scheme, ``geographic_schemes_supported.scheme`` opened up (rather than a
+    closed enum, since OED itself allows model-defined GeogScheme values) plus a new
+    ``required`` flag, and a ``secondary_uncertainty`` block added to ``loss_methodology_notes``.
     """
 
     def setUp(self):
@@ -345,6 +352,13 @@ class ModelCertificationScopeSchemaChecks(unittest.TestCase):
                         "description": "Example only: ground-up loss capped at coverage TIV.",
                     },
                     "correlation_methodology": "Example only: free-text summary of the correlation methodology.",
+                    "secondary_uncertainty": {
+                        "supported": True,
+                        "enabled_by_default": True,
+                        "user_configurable": True,
+                        "distribution_type": "parametric",
+                        "notes": "Example only: Beta distribution fitted per damage bin.",
+                    },
                 },
             },
             "lookup_settings": {},
@@ -355,10 +369,22 @@ class ModelCertificationScopeSchemaChecks(unittest.TestCase):
                     {"oed_field": "CYB", "supported": False, "notes": "Non-property line, not modelled"},
                 ],
                 "geographic_extent_notes": "Example only: free-text qualification of the country list.",
-                "geographic_exclusions": ["Example Excluded Territory"],
+                "geographic_exclusions": [
+                    {
+                        "country": "US",
+                        "area": "Example Excluded Territory",
+                        "scheme": "AreaCode",
+                        "notes": "Example only",
+                    },
+                ],
                 "geographic_schemes_supported": [
-                    {"scheme": "Coordinate", "oed_fields": ["Latitude", "Longitude"]},
-                    {"scheme": "GeogSchemeX", "oed_fields": ["GeogSchemeX"], "scheme_codes": ["EX1"]},
+                    {"scheme": "Coordinate", "required": False, "oed_fields": ["Latitude", "Longitude"]},
+                    {
+                        "scheme": "X-ExampleScheme",
+                        "required": True,
+                        "oed_fields": ["GeogSchemeX"],
+                        "scheme_codes": ["EX1"],
+                    },
                 ],
                 "field_behaviour": [
                     {
@@ -424,17 +450,68 @@ class ModelCertificationScopeSchemaChecks(unittest.TestCase):
             handler.validate(data)
         self.assertIn("'not_a_category' is not one of", str(ctx.exception))
 
-    def test_geographic_schemes_scheme_enum_enforced(self):
+    def test_geographic_schemes_scheme_is_open_not_enum(self):
+        # OED allows model/vendor-defined GeogScheme values in addition to its own list, so
+        # 'scheme' is deliberately an open string rather than a closed enum - any non-empty
+        # value should be accepted, including custom scheme codes.
         data = copy.deepcopy(self.model_settings)
-        data["data_settings"]["geographic_schemes_supported"][0]["scheme"] = "CarrierPigeon"
+        data["data_settings"]["geographic_schemes_supported"][0]["scheme"] = "X-CustomVendorScheme"
+        handler = ModelSettingHandler.make()
+        ok, errors = handler.validate(data, raise_error=False)
+        self.assertTrue(ok, f"expected valid model_settings, got errors: {errors}")
+
+    def test_geographic_schemes_scheme_rejects_empty_string(self):
+        data = copy.deepcopy(self.model_settings)
+        data["data_settings"]["geographic_schemes_supported"][0]["scheme"] = ""
         handler = ModelSettingHandler.make()
         with self.assertRaises(OdsException) as ctx:
             handler.validate(data)
-        self.assertIn("'CarrierPigeon' is not one of", str(ctx.exception))
+        self.assertIn("too short", str(ctx.exception))
+
+    def test_geographic_schemes_required_flag_accepted(self):
+        data = copy.deepcopy(self.model_settings)
+        self.assertIn("required", data["data_settings"]["geographic_schemes_supported"][1])
+        handler = ModelSettingHandler.make()
+        ok, errors = handler.validate(data, raise_error=False)
+        self.assertTrue(ok, f"expected valid model_settings, got errors: {errors}")
+
+    def test_geographic_exclusions_requires_country(self):
+        data = copy.deepcopy(self.model_settings)
+        del data["data_settings"]["geographic_exclusions"][0]["country"]
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        self.assertIn("'country' is a required property", str(ctx.exception))
+
+    def test_geographic_exclusions_rejects_flat_string_list(self):
+        # Regression guard: geographic_exclusions was originally a flat list of strings;
+        # confirm the old shape is now rejected now that it's a list of objects.
+        data = copy.deepcopy(self.model_settings)
+        data["data_settings"]["geographic_exclusions"] = ["Example Excluded Territory"]
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        self.assertIn("is not of type 'object'", str(ctx.exception))
 
     def test_loss_methodology_notes_rejects_unknown_property(self):
         data = copy.deepcopy(self.model_settings)
         data["model_settings"]["loss_methodology_notes"]["unexpected_field"] = True
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        self.assertIn("'unexpected_field' was unexpected", str(ctx.exception))
+
+    def test_secondary_uncertainty_distribution_type_enum_enforced(self):
+        data = copy.deepcopy(self.model_settings)
+        data["model_settings"]["loss_methodology_notes"]["secondary_uncertainty"]["distribution_type"] = "quantum"
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        self.assertIn("'quantum' is not one of", str(ctx.exception))
+
+    def test_secondary_uncertainty_rejects_unknown_property(self):
+        data = copy.deepcopy(self.model_settings)
+        data["model_settings"]["loss_methodology_notes"]["secondary_uncertainty"]["unexpected_field"] = True
         handler = ModelSettingHandler.make()
         with self.assertRaises(OdsException) as ctx:
             handler.validate(data)

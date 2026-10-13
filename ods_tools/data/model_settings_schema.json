@@ -1378,6 +1378,40 @@
                      "type": "string",
                      "title": "Correlation methodology",
                      "description": "Free-text description of the hazard and vulnerability uncertainty correlation methodology behind correlation_settings"
+                  },
+                  "secondary_uncertainty": {
+                     "type": "object",
+                     "title": "Secondary uncertainty",
+                     "description": "Whether the model samples secondary (vulnerability) uncertainty around the mean damage ratio, and how",
+                     "additionalProperties": false,
+                     "properties": {
+                        "supported": {
+                           "type": "boolean",
+                           "title": "Is supported",
+                           "description": "Whether the model supports secondary uncertainty at all"
+                        },
+                        "enabled_by_default": {
+                           "type": "boolean",
+                           "title": "Enabled by default",
+                           "description": "Whether secondary uncertainty is sampled by default when the model is run"
+                        },
+                        "user_configurable": {
+                           "type": "boolean",
+                           "title": "User configurable",
+                           "description": "Whether a user can enable or disable secondary uncertainty themselves, e.g. via computation_settings"
+                        },
+                        "distribution_type": {
+                           "type": "string",
+                           "title": "Distribution type",
+                           "description": "Whether the sampled distribution is parametric (e.g. Beta, defined by distribution parameters) or non-parametric (e.g. an empirical/discrete damage distribution)",
+                           "enum": ["parametric", "non_parametric"]
+                        },
+                        "notes": {
+                           "type": "string",
+                           "title": "Notes",
+                           "description": "Free-text detail, e.g. which distribution family is used and why"
+                        }
+                     }
                   }
                }
             },
@@ -1696,10 +1730,36 @@
             "geographic_exclusions": {
                "type": "array",
                "title": "Named geographic exclusions",
-               "description": "Named areas explicitly excluded from model coverage even where the country as a whole is supported.",
+               "description": "Areas explicitly excluded from model coverage even where the country as a whole is supported, tied back to a country code and (where relevant) the geocoding scheme the exclusion is expressed under, so the exclusion can be processed programmatically rather than only read as free text.",
                "items": {
-                  "type": "string",
-                  "minLength": 1
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                     "country": {
+                        "type": "string",
+                        "title": "Country code",
+                        "description": "The country the exclusion applies within, matching a code from 'countries'",
+                        "minLength": 1
+                     },
+                     "area": {
+                        "type": "string",
+                        "title": "Excluded area",
+                        "description": "Name or code of the specific area excluded within the country, e.g. an AreaCode/AreaName or named region",
+                        "minLength": 1
+                     },
+                     "scheme": {
+                        "type": "string",
+                        "title": "Geocoding scheme",
+                        "description": "The geocoding scheme (matching a 'scheme' value in 'geographic_schemes_supported') that 'area' is expressed under, if applicable",
+                        "minLength": 1
+                     },
+                     "notes": {
+                        "type": "string",
+                        "title": "Notes",
+                        "description": "Free-text detail on exactly what is excluded and why"
+                     }
+                  },
+                  "required": ["country"]
                }
             },
             "geographic_schemes_supported": {
@@ -1713,8 +1773,13 @@
                      "scheme": {
                         "type": "string",
                         "title": "Geocoding scheme",
-                        "description": "The class of geocoding used to resolve hazard",
-                        "enum": ["Coordinate", "PostalCode", "GeogSchemeX"]
+                        "description": "The class of geocoding used to resolve hazard, e.g. 'Coordinate' (Latitude/Longitude), 'PostalCode', 'AreaCode', or a custom OED GeogScheme code (OED permits model/vendor-defined GeogScheme values in addition to its own list, so this is intentionally left open rather than a closed enum)",
+                        "minLength": 1
+                     },
+                     "required": {
+                        "type": "boolean",
+                        "title": "Is required",
+                        "description": "Whether this geocoding scheme is mandatory for the model to resolve hazard, as opposed to one of several alternative routes"
                      },
                      "oed_fields": {
                         "type": "array",
