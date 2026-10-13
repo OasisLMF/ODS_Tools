@@ -13,3 +13,5 @@ sqlparams
 sqlparse
 psycopg2
 tqdm
+numba
+scipy

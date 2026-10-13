@@ -20,6 +20,7 @@ ods_tools = "ods_tools.main:main"
 version = {attr = "ods_tools.__version__"}
 dependencies = {file = ["requirements.in"]}
 optional-dependencies.extra = {file = ["requirements-extra.in"]}
+optional-dependencies.combine = {file = ["requirements-combine.in"]}
 
 [tool.setuptools.packages.find]
 exclude = ["tests", "tests.*", "tests.*.*"]
