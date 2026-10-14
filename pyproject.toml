@@ -33,3 +33,5 @@ exclude = ["tests", "tests.*", "tests.*.*"]
 [tool.coverage.run]
 source_pkgs = ["ods_tools"]
 relative_files = true
+# numba jit compiled functions can't be traced by coverage
+omit = ["*/ods_tools/oed/peril_jit.py"]
