@@ -1,7 +1,5 @@
 pandas
 pyarrow>=14.0.0
-numba
-scipy
 chardet
 jsonschema>=4.0.1
 jsonref
