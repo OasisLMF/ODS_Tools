@@ -323,3 +323,196 @@ class EventSetValidVulnerabilityIdsSchemaChecks(unittest.TestCase):
         handler = ModelSettingHandler.make()
         ok, errors = handler.validate(data, raise_error=False)
         self.assertTrue(ok, f"expected valid model_settings, got errors: {errors}")
+
+
+class ModelCertificationScopeSchemaChecks(unittest.TestCase):
+    """Schema regression tests for the Model Certification Programme's scope metadata.
+
+    Adds six fields proposed by Matt Jones (CTO) so a partner platform (e.g. Moody's Risk
+    Modeler) can build a model profile from model_settings.json alone, without a separate
+    'Key Facts' document: ``data_settings.supported_coverages``, ``geographic_extent_notes``,
+    ``geographic_exclusions``, ``geographic_schemes_supported``, ``field_behaviour``,
+    ``out_of_scope``, and ``model_settings.loss_methodology_notes``. Populated by the
+    certification development team during review, not authored by vendors.
+
+    Also covers François's review feedback on PR #303: ``supported_coverages`` extended to
+    OED's full ``CoverageValues`` vocabulary (not just property TIV fields), ``geographic_
+    exclusions`` restructured from a flat string list into objects tied back to a country
+    and geocoding scheme, ``geographic_schemes_supported.scheme`` opened up (rather than a
+    closed enum, since OED itself allows model-defined GeogScheme values) plus a new
+    ``required`` flag, and a ``secondary_uncertainty`` block added to ``loss_methodology_notes``.
+    """
+
+    def setUp(self):
+        self.model_settings = {
+            "model_settings": {
+                "loss_methodology_notes": {
+                    "ground_up_loss_capping": {
+                        "gul_alloc_rule": 2,
+                        "description": "Example only: ground-up loss capped at coverage TIV.",
+                    },
+                    "correlation_methodology": "Example only: free-text summary of the correlation methodology.",
+                    "secondary_uncertainty": {
+                        "supported": True,
+                        "enabled_by_default": True,
+                        "user_configurable": True,
+                        "distribution_type": "parametric",
+                        "notes": "Example only: Beta distribution fitted per damage bin.",
+                    },
+                },
+            },
+            "lookup_settings": {},
+            "data_settings": {
+                "supported_coverages": [
+                    {"oed_field": "1Building", "supported": True},
+                    {"oed_field": "2Other", "supported": False, "notes": "Not modelled"},
+                    {"oed_field": "CYB", "supported": False, "notes": "Non-property line, not modelled"},
+                ],
+                "geographic_extent_notes": "Example only: free-text qualification of the country list.",
+                "geographic_exclusions": [
+                    {
+                        "country": "US",
+                        "area": "Example Excluded Territory",
+                        "scheme": "AreaCode",
+                        "notes": "Example only",
+                    },
+                ],
+                "geographic_schemes_supported": [
+                    {"scheme": "Coordinate", "required": False, "oed_fields": ["Latitude", "Longitude"]},
+                    {
+                        "scheme": "X-ExampleScheme",
+                        "required": True,
+                        "oed_fields": ["GeogSchemeX"],
+                        "scheme_codes": ["EX1"],
+                    },
+                ],
+                "field_behaviour": [
+                    {
+                        "oed_field": "OccupancyCode",
+                        "role": "modifier",
+                        "excluded_values": [
+                            {"value": "9998", "effect": "no_loss", "notes": "Example only"},
+                        ],
+                    },
+                ],
+                "out_of_scope": [
+                    {"item": "Demand surge / Post Loss Amplification (PLA)", "category": "loss_element"},
+                ],
+            },
+        }
+
+    def test_scope_metadata_accepted(self):
+        handler = ModelSettingHandler.make()
+        ok, errors = handler.validate(copy.deepcopy(self.model_settings), raise_error=False)
+        self.assertTrue(ok, f"expected valid model_settings, got errors: {errors}")
+        self.assertEqual(errors, {})
+
+    def test_supported_coverages_oed_field_enum_enforced(self):
+        data = copy.deepcopy(self.model_settings)
+        data["data_settings"]["supported_coverages"][0]["oed_field"] = "NotARealCoverage"
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        self.assertIn("'NotARealCoverage' is not one of", str(ctx.exception))
+
+    def test_supported_coverages_accepts_non_property_coverage_types(self):
+        # The oed_field enum spans the full OED 'CoverageValues' vocabulary, not just the
+        # four property TIV fields, so non-property (e.g. cyber) models can also declare scope.
+        data = copy.deepcopy(self.model_settings)
+        data["data_settings"]["supported_coverages"].append(
+            {"oed_field": "LIA", "supported": True, "notes": "3rd party cyber liability"}
+        )
+        handler = ModelSettingHandler.make()
+        ok, errors = handler.validate(data, raise_error=False)
+        self.assertTrue(ok, f"expected valid model_settings, got errors: {errors}")
+
+    def test_field_behaviour_effect_enum_enforced(self):
+        data = copy.deepcopy(self.model_settings)
+        data["data_settings"]["field_behaviour"][0]["excluded_values"][0]["effect"] = "explodes"
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        self.assertIn("'explodes' is not one of", str(ctx.exception))
+
+    def test_field_behaviour_requires_oed_field_and_role(self):
+        data = copy.deepcopy(self.model_settings)
+        del data["data_settings"]["field_behaviour"][0]["role"]
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        self.assertIn("'role' is a required property", str(ctx.exception))
+
+    def test_out_of_scope_category_enum_enforced(self):
+        data = copy.deepcopy(self.model_settings)
+        data["data_settings"]["out_of_scope"][0]["category"] = "not_a_category"
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        self.assertIn("'not_a_category' is not one of", str(ctx.exception))
+
+    def test_geographic_schemes_scheme_is_open_not_enum(self):
+        # OED allows model/vendor-defined GeogScheme values in addition to its own list, so
+        # 'scheme' is deliberately an open string rather than a closed enum - any non-empty
+        # value should be accepted, including custom scheme codes.
+        data = copy.deepcopy(self.model_settings)
+        data["data_settings"]["geographic_schemes_supported"][0]["scheme"] = "X-CustomVendorScheme"
+        handler = ModelSettingHandler.make()
+        ok, errors = handler.validate(data, raise_error=False)
+        self.assertTrue(ok, f"expected valid model_settings, got errors: {errors}")
+
+    def test_geographic_schemes_scheme_rejects_empty_string(self):
+        data = copy.deepcopy(self.model_settings)
+        data["data_settings"]["geographic_schemes_supported"][0]["scheme"] = ""
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        self.assertIn("too short", str(ctx.exception))
+
+    def test_geographic_schemes_required_flag_accepted(self):
+        data = copy.deepcopy(self.model_settings)
+        self.assertIn("required", data["data_settings"]["geographic_schemes_supported"][1])
+        handler = ModelSettingHandler.make()
+        ok, errors = handler.validate(data, raise_error=False)
+        self.assertTrue(ok, f"expected valid model_settings, got errors: {errors}")
+
+    def test_geographic_exclusions_requires_country(self):
+        data = copy.deepcopy(self.model_settings)
+        del data["data_settings"]["geographic_exclusions"][0]["country"]
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        self.assertIn("'country' is a required property", str(ctx.exception))
+
+    def test_geographic_exclusions_rejects_flat_string_list(self):
+        # Regression guard: geographic_exclusions was originally a flat list of strings;
+        # confirm the old shape is now rejected now that it's a list of objects.
+        data = copy.deepcopy(self.model_settings)
+        data["data_settings"]["geographic_exclusions"] = ["Example Excluded Territory"]
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        self.assertIn("is not of type 'object'", str(ctx.exception))
+
+    def test_loss_methodology_notes_rejects_unknown_property(self):
+        data = copy.deepcopy(self.model_settings)
+        data["model_settings"]["loss_methodology_notes"]["unexpected_field"] = True
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        self.assertIn("'unexpected_field' was unexpected", str(ctx.exception))
+
+    def test_secondary_uncertainty_distribution_type_enum_enforced(self):
+        data = copy.deepcopy(self.model_settings)
+        data["model_settings"]["loss_methodology_notes"]["secondary_uncertainty"]["distribution_type"] = "quantum"
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        self.assertIn("'quantum' is not one of", str(ctx.exception))
+
+    def test_secondary_uncertainty_rejects_unknown_property(self):
+        data = copy.deepcopy(self.model_settings)
+        data["model_settings"]["loss_methodology_notes"]["secondary_uncertainty"]["unexpected_field"] = True
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(data)
+        self.assertIn("'unexpected_field' was unexpected", str(ctx.exception))
