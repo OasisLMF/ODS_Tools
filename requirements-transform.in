@@ -3,4 +3,4 @@ lark
 pyodbc
 sqlparams
 sqlparse
-psycopg2
+psycopg
