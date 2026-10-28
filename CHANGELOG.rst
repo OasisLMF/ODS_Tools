@@ -1,6 +1,14 @@
 ODS_Tools Changelog
 ===================
 
+`5.0.9`_
+ ---------
+* [#300](https://github.com/OasisLMF/ODS_Tools/pull/300) - Only Track issues with the hubspot label 
+* [#301](https://github.com/OasisLMF/ODS_Tools/pull/301) - docs: author version availability as NEXT, resolve it at release
+* [#306](https://github.com/OasisLMF/ODS_Tools/pull/306) - Add valid_vulnerability_ids to event set options
+* [#309](https://github.com/OasisLMF/ODS_Tools/pull/309) - fix: record a filepath source's original format so save() preserves it
+.. _`5.0.9`:  https://github.com/OasisLMF/ODS_Tools/compare/5.0.8...5.0.9
+
 `5.0.8`_
  ---------
 * [#289](https://github.com/OasisLMF/ODS_Tools/pull/289) - docs: OED load/validate notebook + settings-schema reference

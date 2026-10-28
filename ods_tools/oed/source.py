@@ -10,7 +10,7 @@ from pandas.api.types import is_numeric_dtype
 
 from .common import (OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, fill_empty,
                      UnknownColumnSaveOption, cached_property, is_empty, dtype_str_to_dtype, default_string_dtype, pd_default_string,
-                     pa_dict_encode)
+                     pa_dict_encode, compression_from_suffix)
 from .forex import convert_currency
 from .oed_schema import OedSchema
 
@@ -221,7 +221,13 @@ class OedSource:
         """
         if read_param is None:
             read_param = {}
-        return cls(exposure, oed_type, 'orig', {'orig': {'source_type': 'filepath', 'filepath': filepath, 'read_param': read_param}}, filters=filters)
+        source = {'source_type': 'filepath', 'filepath': filepath, 'read_param': read_param}
+        extension = compression_from_suffix(filepath)
+        if extension is not None:
+            # record the original format so a later Exposure.save(compression=None)
+            # preserves it instead of silently defaulting to csv
+            source['extension'] = extension
+        return cls(exposure, oed_type, 'orig', {'orig': source}, filters=filters)
 
     @classmethod
     def from_stream_obj(cls, exposure, oed_type, stream_obj, format=None, read_param=None, filters=None):
@@ -537,13 +543,16 @@ class OedSource:
         else:
             stream_start = None
 
-        def read_or_try_encoding_read(df_engine, filepath_or_buffer, **read_kwargs):
+        def read_df(df_engine, filepath_or_buffer, read_filter, **read_kwargs):
+            reader = get_df_reader(format_filepath_engine_as_config(filepath_or_buffer, df_engine), **read_kwargs)
+            if read_filter is not None:
+                reader = reader.filter(read_filter)
+            return reader.as_pandas()
+
+        def read_or_try_encoding_read(df_engine, filepath_or_buffer, read_filter=None, **read_kwargs):
             #  try to read, if it fails, try to detect the encoding and update the top function kwargs for future read
             try:
-                return get_df_reader(
-                    format_filepath_engine_as_config(filepath_or_buffer, df_engine),
-                    **read_kwargs,
-                ).as_pandas()
+                return read_df(df_engine, filepath_or_buffer, read_filter, **read_kwargs)
             except UnicodeDecodeError:
                 if stream_start is None:
                     with open(filepath_or_buffer, 'rb') as buffer:
@@ -554,11 +563,7 @@ class OedSource:
                 if not read_kwargs.get('encoding') and detected_encoding:
                     kwargs['encoding'] = detected_encoding
                     read_kwargs.pop('encoding', None)
-                    return get_df_reader(
-                        format_filepath_engine_as_config(filepath_or_buffer, df_engine),
-                        encoding=detected_encoding,
-                        **read_kwargs
-                    ).as_pandas()
+                    return read_df(df_engine, filepath_or_buffer, read_filter, encoding=detected_encoding, **read_kwargs)
                 else:
                     raise
             finally:
@@ -594,6 +599,12 @@ class OedSource:
             else:
                 _dtype[col] = default_string_dtype[backend_dtype]
 
+        # From pandas 3.1, dtype='category' infers numeric categories (pandas GH#56044), turning
+        # e.g. PostalCode '01234' into 1234. Read these columns as text and categorise after.
+        category_columns = [col for col, col_dtype in _dtype.items() if col_dtype == 'category']
+        for col in category_columns:
+            _dtype[col] = pd_default_string
+
         # read the oed file
         if kwargs.get('compression') == 'gzip':
             with open(filepath_or_buffer, 'rb') as f:
@@ -603,11 +614,13 @@ class OedSource:
                     **kwargs
                 ).filter(filter).as_pandas()
         else:
-            df = get_df_reader(
-                format_filepath_engine_as_config(filepath_or_buffer, df_engine),
-                dtype=_dtype,
-                **kwargs
-            ).filter(filter).as_pandas()
+            # From pandas 3.1 the header read no longer decodes the data rows, so the encoding
+            # retry has to cover this read too.
+            df = read_or_try_encoding_read(df_engine, filepath_or_buffer, read_filter=filter, dtype=_dtype, **kwargs)
+
+        for col in category_columns:
+            if col in df.columns:
+                df[col] = df[col].astype('category')
 
         return cls.prepare_df(df, column_to_field, ods_fields, backend_dtype)
 
