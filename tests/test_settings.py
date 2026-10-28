@@ -466,7 +466,9 @@ class ModelCertificationScopeSchemaChecks(unittest.TestCase):
         handler = ModelSettingHandler.make()
         with self.assertRaises(OdsException) as ctx:
             handler.validate(data)
-        self.assertIn("too short", str(ctx.exception))
+        message = str(ctx.exception)
+        self.assertIn("should be non-empty", message)
+        self.assertIn("geographic_schemes_supported-0-scheme", message)
 
     def test_geographic_schemes_required_flag_accepted(self):
         data = copy.deepcopy(self.model_settings)
