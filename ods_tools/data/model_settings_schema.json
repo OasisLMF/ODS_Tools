@@ -799,6 +799,12 @@
                      "title":"Is editable",
                      "description":"tell if parameter should be editable in UI"
                   },
+                  "fallback_number_of_events":{
+                     "type":"integer",
+                     "title":"The number of events (no event set selected)",
+                     "description":"The total number of events in the unsuffixed 'events.bin' file. ONLY applies when no event set option is selected, i.e. 'model_settings.event_set' is not set in the analysis settings and 'default' is empty, so the run reads 'events.bin'. When an option is selected, the 'number_of_events' on that entry in 'options' is used and this value is ignored. (optional)",
+                     "minimum":0
+                  },
                   "options":{
                      "type":"array",
                      "title":"Selection options for events",
