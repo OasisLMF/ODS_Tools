@@ -789,6 +789,16 @@
                      "title":"Default Event set",
                      "description":"Initial setting for event set"
                   },
+                  "visible":{
+                     "type":"boolean",
+                     "title":"Is visible",
+                     "description":"tell if parameter should be visible in UI"
+                  },
+                  "editable":{
+                     "type":"boolean",
+                     "title":"Is editable",
+                     "description":"tell if parameter should be editable in UI"
+                  },
                   "options":{
                      "type":"array",
                      "title":"Selection options for events",
@@ -971,6 +981,16 @@
                      "title":"Default occurrence file",
                      "description":"Initial setting for occurrence"
                   },
+                  "visible":{
+                     "type":"boolean",
+                     "title":"Is visible",
+                     "description":"tell if parameter should be visible in UI"
+                  },
+                  "editable":{
+                     "type":"boolean",
+                     "title":"Is editable",
+                     "description":"tell if parameter should be editable in UI"
+                  },
                   "options":{
                      "type":"array",
                      "title":"Selection options for occurrence",
@@ -1057,6 +1077,16 @@
                        "title":"Default footprint set",
                        "description":"Initial setting for footprint set"
                     },
+                    "visible":{
+                       "type":"boolean",
+                       "title":"Is visible",
+                       "description":"tell if parameter should be visible in UI"
+                    },
+                    "editable":{
+                       "type":"boolean",
+                       "title":"Is editable",
+                       "description":"tell if parameter should be editable in UI"
+                    },
                     "options":{
                        "type":"array",
                        "title":"Selection options for footprint",
@@ -1137,6 +1167,16 @@
                       "title":"Default vulnerability set",
                       "description":"Initial setting for vulnerability set"
                    },
+                   "visible":{
+                      "type":"boolean",
+                      "title":"Is visible",
+                      "description":"tell if parameter should be visible in UI"
+                   },
+                   "editable":{
+                      "type":"boolean",
+                      "title":"Is editable",
+                      "description":"tell if parameter should be editable in UI"
+                   },
                    "options":{
                       "type":"array",
                       "title":"Selection options for vulnerability files",
@@ -1216,6 +1256,16 @@
                       "type":"string",
                       "title":"Default lossfactors set",
                       "description":"Initial setting for lossfactors set"
+                   },
+                   "visible":{
+                      "type":"boolean",
+                      "title":"Is visible",
+                      "description":"tell if parameter should be visible in UI"
+                   },
+                   "editable":{
+                      "type":"boolean",
+                      "title":"Is editable",
+                      "description":"tell if parameter should be editable in UI"
                    },
                    "options":{
                       "type":"array",
