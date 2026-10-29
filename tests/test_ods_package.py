@@ -212,6 +212,48 @@ class OdsPackageTests(TestCase):
             ri_scope = exposure.ri_info.dataframe
             self.assertTrue(isinstance(ri_scope, pd.DataFrame))
 
+    def test_load_oed_csv_keeps_numeric_looking_strings_as_text(self):
+        """String fields that look numeric are read as text categories, exactly as written in the file.
+
+        From pandas 3.1 ``read_csv(dtype='category')`` infers numeric categories, which turned
+        PostalCode '01234' into 1234 and made the parquet save fail on the mixed [1, ''] categories.
+        """
+        with tempfile.TemporaryDirectory() as tmp_run_dir:
+            loc_fp = os.path.join(tmp_run_dir, 'location.csv')
+            pd.DataFrame({
+                'PortNumber': ['1', '1', '2'],
+                'AccNumber': ['1', '2', '3'],
+                'LocNumber': ['1', '2', '3'],
+                'PostalCode': ['01234', '00007', '01234'],
+                'CondTag': ['1', '', '2'],
+                'CountryCode': ['GB', 'GB', 'FR'],
+                'LocPerilsCovered': ['WTC', 'WTC', 'WTC'],
+                'BuildingTIV': [1000, 2000, 3000],
+                'ContentsTIV': [0, 0, 0],
+                'BITIV': [0, 0, 0],
+                'LocCurrency': ['GBP', 'GBP', 'EUR'],
+            }).to_csv(loc_fp, index=False)
+            expected = {
+                'PortNumber': ['1', '1', '2'],
+                'PostalCode': ['01234', '00007', '01234'],
+                'CondTag': ['1', '', '2'],
+            }
+
+            exposure = OedExposure(location=loc_fp, use_field=True, backend_dtype='pd_dtype')
+            location = exposure.location.dataframe
+            for col, values in expected.items():
+                self.assertEqual(location[col].tolist(), values, col)
+            for col in ['PortNumber', 'AccNumber', 'LocNumber', 'PostalCode', 'CondTag']:
+                self.assertEqual(location[col].dtype.name, 'category', col)
+                self.assertTrue(all(isinstance(cat, str) for cat in location[col].cat.categories), col)
+
+            save_dir = os.path.join(tmp_run_dir, 'saved')
+            exposure.save(save_dir, compression='parquet', save_config=True)
+            reloaded = OedExposure.from_config(os.path.join(save_dir, OedExposure.DEFAULT_EXPOSURE_CONFIG_NAME),
+                                               backend_dtype='pd_dtype').location.dataframe
+            for col, values in expected.items():
+                self.assertEqual(reloaded[col].tolist(), values, col)
+
     def test_load_oed_from_df(self):
         location_df = pd.DataFrame({
             'PortNumber': [1, 1],
