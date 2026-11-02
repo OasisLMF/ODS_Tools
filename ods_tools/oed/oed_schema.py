@@ -4,7 +4,6 @@ import logging
 import os
 from pathlib import Path
 import re
-import numba as nb
 import numpy as np
 from packaging.version import parse
 
@@ -17,40 +16,23 @@ logger = logging.getLogger(__name__)
 ENV_ODS_SCHEMA_PATH = os.getenv('ODS_SCHEMA_PATH')
 
 
-# function to check if a subperil is part of a peril
-@nb.jit(cache=True, nopython=True)
-def __single_peril_filtering(peril_id, peril_filter, perils_dict):
-    if peril_filter:
-        for peril_filter in peril_filter.split(';'):
-            for p in perils_dict[peril_filter]:
-                if p == peril_id:
-                    return True
-    return False
+# jit helpers that used to live in this module, kept importable from here for backwards compatibility
+_PERIL_JIT_NAMES = ('jit_peril_filtering', 'make_peril_groups_dict',
+                    'peril_groups_dict_key_type', 'peril_groups_dict_value_type')
 
 
-@nb.jit(cache=True, nopython=True)
-def jit_peril_filtering(peril_ids, peril_filters, perils_dict):
-    result = np.empty_like(peril_ids, dtype=np.bool_)
-    for i in range(peril_ids.shape[0]):
-        result[i] = __single_peril_filtering(peril_ids[i], peril_filters[i], perils_dict)
-
-    return result
-
-
-peril_groups_dict_key_type = nb.types.UnicodeCharSeq(3)
-peril_groups_dict_value_type = nb.types.UnicodeCharSeq(3)[:]
+def _import_peril_jit():
+    try:
+        from . import peril_jit
+    except ImportError as e:
+        raise OdsException("numba is required for peril filtering, install it with 'pip install ods-tools[combine]'") from e
+    return peril_jit
 
 
-@nb.jit(cache=True, nopython=True)
-def make_peril_groups_dict(peril_group_keys, peril_group_index, peril_lists):
-    nb_peril_groups_dict = nb.typed.Dict.empty(
-        key_type=peril_groups_dict_key_type,
-        value_type=peril_groups_dict_value_type,
-    )
-    for i in range(peril_group_keys.shape[0]):
-        nb_peril_groups_dict[peril_group_keys[i]] = peril_lists[peril_group_index[i]: peril_group_index[i + 1]]
-
-    return nb_peril_groups_dict
+def __getattr__(name):
+    if name in _PERIL_JIT_NAMES:
+        return getattr(_import_peril_jit(), name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
 
 class OedSchema:
@@ -149,14 +131,7 @@ class OedSchema:
     @cached_property
     def nb_perils_dict(self):
         """dict peril group to sub_peril"""
-        nb_perils_dict = nb.typed.Dict.empty(
-            key_type=nb.types.UnicodeCharSeq(3),
-            value_type=nb.types.UnicodeCharSeq(3)[:],
-        )
-        for peril_group, perils in self.schema['perils']['covered'].items():
-            nb_perils_dict[peril_group] = np.array(perils, dtype='U3')
-
-        return nb_perils_dict
+        return _import_peril_jit().make_perils_dict(self.schema['perils']['covered'])
 
     @cached_property
     def nb_peril_groups_dict(self):
@@ -175,7 +150,8 @@ class OedSchema:
             peril_lists.extend(peril_groups)
             index += len(peril_groups)
         peril_group_index.append(index)
-        return make_peril_groups_dict(np.array(peril_group_keys, dtype='U3'), np.array(peril_group_index), np.array(peril_lists, dtype='U3'))
+        return _import_peril_jit().make_peril_groups_dict(np.array(peril_group_keys, dtype='U3'), np.array(peril_group_index),
+                                                          np.array(peril_lists, dtype='U3'))
 
     def peril_filtering(self, peril_ids, peril_filters, include_sub_group=True):
         """
@@ -187,8 +163,8 @@ class OedSchema:
         :return:
             np.array of True and False
         """
-        return jit_peril_filtering(peril_ids.to_numpy().astype('str'), peril_filters.to_numpy().astype('str'),
-                                   self.nb_peril_groups_dict if include_sub_group else self.nb_perils_dict)
+        return _import_peril_jit().jit_peril_filtering(peril_ids.to_numpy().astype('str'), peril_filters.to_numpy().astype('str'),
+                                                       self.nb_peril_groups_dict if include_sub_group else self.nb_perils_dict)
 
     def get_available_backend_dtype(self):
         return self.schema.get('backend_dtype', ['pd_dtype'])

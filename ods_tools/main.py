@@ -25,13 +25,6 @@ try:
 except ImportError as e:
     pass
 
-try:
-    from ods_tools.combine.combine import combine as combine_ord
-    from ods_tools.combine.combine import read_config as read_combine_config
-except ImportError as e:
-    logger.error("Combine ORD package requirements not installed.")
-    logger.error(e)
-
 
 def get_oed_exposure(config_json=None, oed_dir=None, **kwargs):
     if config_json:
@@ -132,15 +125,20 @@ def combine(**kwargs):
     Combines multiple ORD analyses.
     """
     try:
+        from ods_tools.combine.combine import combine as combine_ord
+        from ods_tools.combine.combine import read_config as read_combine_config
+    except ImportError as e:
+        logger.error("Combine ORD package requirements not installed, install with 'pip install ods-tools[combine]'")
+        logger.error(e)
+        return
+
+    try:
         config = read_combine_config(kwargs.get('config_file'))
         combine_result = combine_ord(analysis_dirs=kwargs.get('analysis_dirs'),
                                      output_dir=kwargs.get('output_dir'),
                                      **config)
     except OdsException as e:
         logger.error('Combine failed')
-        logger.error(e)
-    except NameError as e:
-        logger.error("Combine ORD package requirements not installed.")
         logger.error(e)
 
 

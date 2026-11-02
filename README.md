@@ -19,13 +19,13 @@ ODS_Tools can be installed via pip by running the following command:
 pip install ods-tools
 ```
 
-If using the `transform` command, use instead
+Some features need extra packages, which are split into optional dependency groups. Each group is linked to a feature:
 
-```
-pip install ods-tools[extra]
-```
-
-which will install some optional packages needed for it.
+| Group | Feature | Install |
+|-------|---------|---------|
+| `transform` | The `transform` command (format conversions, e.g. AIR to OED) | `pip install ods-tools[transform]` |
+| `combine` | The `combine` command (ORD results combining) and peril filtering (uses `numba`) | `pip install ods-tools[combine]` |
+| `extra` | All of the above: installs every optional dependency | `pip install ods-tools[extra]` |
 
 ## Command Line Interface
 
@@ -96,10 +96,10 @@ See `ods_tools check --help` for all options.
 
 ### transform
 
-Transform data between OED and other formats (e.g. AIR to OED). Requires extra dependencies:
+Transform data between OED and other formats (e.g. AIR to OED). Requires the `transform` optional dependencies:
 
 ```
-pip install ods-tools[extra]
+pip install ods-tools[transform]
 ```
 
 See the [Format Conversions](#format-conversions) section below for detailed usage.
@@ -108,7 +108,11 @@ See the [Format Conversions](#format-conversions) section below for detailed usa
 
 ### combine
 
-Combine multiple ORD (Oasis Results Data) analysis outputs into a single result set. Requires a configuration file specifying how to combine the analyses.
+Combine multiple ORD (Oasis Results Data) analysis outputs into a single result set. Requires a configuration file specifying how to combine the analyses, and the `combine` optional dependencies:
+
+```
+pip install ods-tools[combine]
+```
 
 ```
 ods_tools combine --analysis-dirs ./analysis_1 ./analysis_2 --config-file combine_config.json --output-dir ./combined_output
@@ -373,7 +377,7 @@ oed_exposure.reporting_currency = 'EUR' # this line will trigger currency conver
 ### Format Conversions
 
 The `transform` command can be used to convert between OED and other formats.
-To run transformations, and extra set of packages must be installed. This can be done using `pip install ods-tools[extra]` (or `pip install --upgrade ods-tools[extra]` if already installed).
+To run transformations, an extra set of packages must be installed. This can be done using `pip install ods-tools[transform]` (or `pip install --upgrade ods-tools[transform]` if already installed). `pip install ods-tools[extra]` also works, as it installs all optional dependencies.
 
 **Basic csv conversion**
 

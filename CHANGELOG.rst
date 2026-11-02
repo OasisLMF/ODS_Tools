@@ -1,6 +1,15 @@
 ODS_Tools Changelog
 ===================
 
+`5.0.10`_
+ ---------
+* [#303](https://github.com/OasisLMF/ODS_Tools/pull/303) - Add Model Certification scope metadata to model_settings schema
+* [#310](https://github.com/OasisLMF/ODS_Tools/pull/310) - Make numba / scipy optional dependencies
+* [#313](https://github.com/OasisLMF/ODS_Tools/pull/313) - Fix CI: use Python 3.12 in build/publish workflows (3.9 unavailable on Ubuntu 26.04)
+* [#316](https://github.com/OasisLMF/ODS_Tools/pull/316) - Read OED string fields as text and retry encoding on the data read for pandas 3.1
+* [#317](https://github.com/OasisLMF/ODS_Tools/pull/317) - Switch the Postgres transform connector from psycopg2 to psycopg 3
+.. _`5.0.10`:  https://github.com/OasisLMF/ODS_Tools/compare/5.0.9...5.0.10
+
 `5.0.9`_
  ---------
 * [#300](https://github.com/OasisLMF/ODS_Tools/pull/300) - Only Track issues with the hubspot label 

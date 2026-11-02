@@ -73,7 +73,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
-        python-version: 3.9
+        python-version: '3.12'
     - run: pip install build pandas pyarrow openpyxl==3.0.10 click tox wheel
 
     - name: Build package (from OED release)

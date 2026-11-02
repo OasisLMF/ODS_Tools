@@ -1,5 +1,4 @@
 from pathlib import Path
-import jsonschema
 import json
 import logging
 
@@ -8,48 +7,10 @@ from ods_tools.combine.io import get_default_output_dir, save_output, save_summa
 from ods_tools.combine.output_generation import generate_alt, generate_ept
 from ods_tools.combine.result import load_analysis_dirs
 from ods_tools.combine.sampling import do_loss_sampling, generate_group_periods, generate_gpqt
+from ods_tools.combine.settings import CombineSettingsSchema, SCHEMA_PATH  # noqa: F401
 from ods_tools.combine.common import DEFAULT_CONFIG, GALT_schema, GEPT_schema, GPLT_headers, GPLT_schema
-from ods_tools.oed.common import OdsException
 
 logger = logging.getLogger(__name__)
-SCHEMA_PATH = Path(Path(__file__).parent.parent / 'data' / 'combine_settings_schema.json')
-
-
-class CombineSettingsSchema:
-    def __init__(self, schema_path=None):
-        if schema_path is None:
-            schema_path = SCHEMA_PATH
-
-        with open(schema_path, 'r') as f:
-            self.schema = json.load(f)
-
-    def validate(self, config, raise_error=True):
-        validator = jsonschema.Draft4Validator(self.schema)
-        validation_errors = [e for e in validator.iter_errors(config)]
-
-        is_valid = validator.is_valid(config)
-
-        exception_msgs = {}
-        if validation_errors:
-            for err in validation_errors:
-                if err.path:
-                    field = '-'.join([str(e) for e in err.path])
-                elif err.schema_path:
-                    field = '-'.join([str(e) for e in err.schema_path])
-                else:
-                    field = 'error'
-
-                if field in exception_msgs:
-                    exception_msgs[field].append(err.message)
-                else:
-                    exception_msgs[field] = [err.message]
-
-        if not is_valid and raise_error:
-            raise OdsException("\nCombine config validation error: {}".format(
-                json.dumps(exception_msgs, indent=4)
-            ))
-
-        return is_valid, exception_msgs
 
 
 def read_config(config_path):
