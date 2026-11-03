@@ -518,3 +518,121 @@ class ModelCertificationScopeSchemaChecks(unittest.TestCase):
         with self.assertRaises(OdsException) as ctx:
             handler.validate(data)
         self.assertIn("'unexpected_field' was unexpected", str(ctx.exception))
+
+
+class SelectorVisibleEditableSchemaChecks(unittest.TestCase):
+    """Schema checks for ``visible`` / ``editable`` on the pre-baked selectors.
+
+    The five file-suffix selectors set ``additionalProperties: false`` and,
+    unlike ``dropdown_parameters``, did not declare ``visible`` / ``editable``,
+    so there was no way to hide a one-option selector in the UI. See
+    ODS_Tools#304.
+    """
+
+    SELECTORS = [
+        "event_set",
+        "event_occurrence_id",
+        "footprint_set",
+        "vulnerability_set",
+        "pla_loss_factors_set",
+    ]
+
+    def make_model_settings(self, **selector_fields):
+        return {
+            "model_settings": {
+                key: {
+                    "name": key,
+                    "desc": f"{key} selector",
+                    "default": "p1",
+                    "options": [{"id": "p1", "desc": "Only option"}],
+                    **selector_fields,
+                }
+                for key in self.SELECTORS
+            },
+            "lookup_settings": {},
+        }
+
+    def test_visible_and_editable_accepted_on_all_selectors(self):
+        data = self.make_model_settings(visible=False, editable=False)
+        handler = ModelSettingHandler.make()
+        ok, errors = handler.validate(data, raise_error=False)
+        self.assertTrue(ok, f"expected valid model_settings, got errors: {errors}")
+
+    def test_selectors_without_visible_or_editable_still_accepted(self):
+        handler = ModelSettingHandler.make()
+        ok, errors = handler.validate(self.make_model_settings(), raise_error=False)
+        self.assertTrue(ok, f"expected valid model_settings, got errors: {errors}")
+
+    def test_non_boolean_visible_rejected(self):
+        for key in self.SELECTORS:
+            with self.subTest(selector=key):
+                data = self.make_model_settings()
+                data["model_settings"][key]["visible"] = "no"
+                handler = ModelSettingHandler.make()
+                with self.assertRaises(OdsException) as ctx:
+                    handler.validate(data)
+                self.assertIn("'no' is not of type 'boolean'", str(ctx.exception))
+
+    def test_non_boolean_editable_rejected(self):
+        for key in self.SELECTORS:
+            with self.subTest(selector=key):
+                data = self.make_model_settings()
+                data["model_settings"][key]["editable"] = 1
+                handler = ModelSettingHandler.make()
+                with self.assertRaises(OdsException) as ctx:
+                    handler.validate(data)
+                self.assertIn("1 is not of type 'boolean'", str(ctx.exception))
+
+    def test_hidden_selector_still_resolves_to_default(self):
+        # oasislmf reads the merged selector value as the file suffix, so
+        # adding UI flags must not change what Settings resolves it to.
+        settings = Settings()
+        settings.add_settings(self.make_model_settings(visible=False, editable=False), 'modeler')
+        model_settings = settings.get_settings()["model_settings"]
+        for key in self.SELECTORS:
+            self.assertEqual(model_settings[key], "p1")
+
+
+class EventSetNumberOfEventsSchemaChecks(unittest.TestCase):
+    """Schema checks for the top-level ``event_set.fallback_number_of_events``.
+
+    It describes the unsuffixed ``events.bin`` used when no event set option
+    is selected, so a single-set model can declare its event count without
+    inventing a suffix. See ODS_Tools#304.
+    """
+
+    def make_model_settings(self, **event_set_fields):
+        return {
+            "model_settings": {
+                "event_set": {
+                    "name": "Event Set",
+                    "desc": "Event set used for loss calculations",
+                    "default": "",
+                    "options": [{"id": "p", "desc": "Probabilistic", "number_of_events": 1200}],
+                    **event_set_fields,
+                },
+            },
+            "lookup_settings": {},
+        }
+
+    def test_fallback_number_of_events_accepted(self):
+        handler = ModelSettingHandler.make()
+        ok, errors = handler.validate(self.make_model_settings(fallback_number_of_events=500000), raise_error=False)
+        self.assertTrue(ok, f"expected valid model_settings, got errors: {errors}")
+
+    def test_negative_fallback_number_of_events_rejected(self):
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(self.make_model_settings(fallback_number_of_events=-1))
+        self.assertIn("-1 is less than the minimum of 0", str(ctx.exception))
+
+    def test_non_integer_fallback_number_of_events_rejected(self):
+        handler = ModelSettingHandler.make()
+        with self.assertRaises(OdsException) as ctx:
+            handler.validate(self.make_model_settings(fallback_number_of_events="500000"))
+        self.assertIn("'500000' is not of type 'integer'", str(ctx.exception))
+
+    def test_fallback_number_of_events_does_not_change_resolved_event_set(self):
+        settings = Settings()
+        settings.add_settings(self.make_model_settings(fallback_number_of_events=500000), 'modeler')
+        self.assertEqual(settings.get_settings()["model_settings"]["event_set"], "")
