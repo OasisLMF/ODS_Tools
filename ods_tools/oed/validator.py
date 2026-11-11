@@ -103,7 +103,7 @@ class Validator:
                         invalid_data.append(
                             {'name': coherence_rule['name'], 'source': None,
                              'msg': f"Exposure needs all {coherence_rule['c_sources']} for {coherence_rule['name']}"
-                                    f" got {c_sources}"})
+                             f" got {c_sources}"})
                     r_sources = [getattr(self.exposure, source) for source in coherence_rule.get("r_sources", [])]
             elif coherence_rule["type"] == "R":
                 r_sources = [getattr(self.exposure, source) for source in coherence_rule["r_sources"]]
@@ -152,7 +152,7 @@ class Validator:
                         if not missing_value_df.empty:
                             invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                                  'msg': f"column '{column}' has missing values in \n"
-                                                        f"{missing_value_df[identifier_field + [column]]}"})
+                                                 f"{missing_value_df[identifier_field + [column]]}"})
         return invalid_data
 
     def check_unknown_column(self):
@@ -196,7 +196,7 @@ class Validator:
                     if not invalid_range_data.empty:
                         invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                              'msg': f"column '{column}' has values outside range.\n"
-                                                    f"{invalid_range_data[identifier_field + [column]]}"})
+                                             f"{invalid_range_data[identifier_field + [column]]}"})
         return invalid_data
 
     def check_perils(self):
@@ -226,7 +226,7 @@ class Validator:
                 if not invalid_perils.empty:
                     invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                          'msg': f"{column} has invalid perils.\n"
-                                                f"{invalid_perils[identifier_field + [column]]}"})
+                                         f"{invalid_perils[identifier_field + [column]]}"})
         return invalid_data
 
     def check_occupancy_code(self):
@@ -247,7 +247,7 @@ class Validator:
             if not invalid_occupancy_code.empty:
                 invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                      'msg': f"invalid OccupancyCode.\n"
-                                            f"{invalid_occupancy_code[identifier_field + [occupancy_code_column]]}"})
+                                     f"{invalid_occupancy_code[identifier_field + [occupancy_code_column]]}"})
         return invalid_data
 
     def check_construction_code(self):
@@ -268,7 +268,7 @@ class Validator:
             if not invalid_construction_code.empty:
                 invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                      'msg': f"invalid ConstructionCode.\n"
-                                            f"{invalid_construction_code[identifier_field + [construction_code_column]]}"})
+                                     f"{invalid_construction_code[identifier_field + [construction_code_column]]}"})
         return invalid_data
 
     def check_country_and_area_code(self):
@@ -298,7 +298,7 @@ class Validator:
                 if not invalid_country_area.empty:
                     invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                          'msg': f"invalid CountryCode AreaCode pair.\n"
-                                                f"{invalid_country_area[identifier_field + [country_code_column, area_code_column]]}"})
+                                         f"{invalid_country_area[identifier_field + [country_code_column, area_code_column]]}"})
             else:
                 country_only_df = oed_source.dataframe
             invalid_country = (country_only_df[~(np.isin(country_only_df[country_code_column],
@@ -307,7 +307,7 @@ class Validator:
             if not invalid_country.empty:
                 invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                      'msg': f"invalid CountryCode.\n"
-                                            f"{invalid_country[identifier_field + [country_code_column]]}"})
+                                     f"{invalid_country[identifier_field + [country_code_column]]}"})
         return invalid_data
 
     def check_conditional_requirement(self):
@@ -350,6 +350,6 @@ class Validator:
                 missing_data_df['missing value'] = cr_msg
                 invalid_data.append({'name': oed_source.oed_name, 'source': oed_source.current_source,
                                      'msg': f"Conditionally required column missing .\n"
-                                            f"{missing_data_df[identifier_field + ['missing value']]}"})
+                                     f"{missing_data_df[identifier_field + ['missing value']]}"})
 
         return invalid_data
