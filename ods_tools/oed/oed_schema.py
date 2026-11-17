@@ -96,7 +96,7 @@ class OedSchema:
                 return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(max_version))
             try:
                 return cls.from_json(cls.DEFAULT_ODS_SCHEMA_PATH.format(oed_schema_info.lstrip('v')))
-            except FileNotFoundError:
+            except OSError:  # FileNotFoundError, or EINVAL on Windows when oed_schema_info is a path
                 try:
                     return cls.from_json(oed_schema_info)
                 except Exception:
