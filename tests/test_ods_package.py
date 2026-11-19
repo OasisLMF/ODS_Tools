@@ -1622,3 +1622,25 @@ class OdsSettingsTests(TestCase):
 
         self.assertEqual(expected_list, global__valid_output_metrics)
         self.assertEqual(expected_list, event_set__valid_metrics)
+
+
+def test_schema_path_info_reloads_when_the_version_lookup_raises_oserror(monkeypatch, tmp_path):
+    """A schema given by its path (as ``exposure_info.json`` saves it) loads when the version lookup raises OSError.
+
+    The path is first formatted into the default schema path as a version; on Windows the ``C:`` this puts in the
+    middle of a file name raises ``OSError`` (EINVAL) rather than ``FileNotFoundError``.
+    """
+    schema_path = str(tmp_path / OedSchema.DEFAULT_ODS_SCHEMA_FILE.format(OED_VERSION))
+    with open(schema_path, 'w') as schema_file:
+        json.dump({'area': {}}, schema_file)
+    as_version_path = OedSchema.DEFAULT_ODS_SCHEMA_PATH.format(schema_path)
+    from_json = OedSchema.from_json.__func__
+
+    def windows_from_json(cls, oed_json):
+        if oed_json == as_version_path:
+            raise OSError(22, 'Invalid argument', oed_json)
+        return from_json(cls, oed_json)
+
+    monkeypatch.setattr(OedSchema, 'from_json', classmethod(windows_from_json))
+
+    assert OedSchema.from_oed_schema_info(schema_path).json_path == schema_path
