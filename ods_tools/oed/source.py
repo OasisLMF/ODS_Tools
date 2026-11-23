@@ -10,7 +10,7 @@ from pandas.api.types import is_numeric_dtype
 
 from .common import (OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, fill_empty,
                      UnknownColumnSaveOption, cached_property, is_empty, dtype_str_to_dtype, default_string_dtype, pd_default_string,
-                     pa_dict_encode, compression_from_suffix)
+                     pa_dict_encode, demote_high_cardinality_category, compression_from_suffix)
 from .forex import convert_currency
 from .oed_schema import OedSchema
 
@@ -355,6 +355,14 @@ class OedSource:
                 encoded = pa_dict_encode(df[col])
                 if encoded is not None:
                     df[col] = encoded
+
+        # In the pd_dtype backend every string column is a category; keep high-cardinality
+        # columns (e.g. a unique LocNumber) as plain strings, where a category saves nothing.
+        elif backend_dtype == 'pd_dtype':
+            for col in column_to_field:
+                demoted = demote_high_cardinality_category(df[col])
+                if demoted is not None:
+                    df[col] = demoted
         return df
 
     @cached_property

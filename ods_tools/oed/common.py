@@ -282,6 +282,25 @@ def pa_dict_encode(series):
         return None
 
 
+def demote_high_cardinality_category(series):
+    """pd_dtype counterpart of pa_dict_encode: return a category series as a plain string series
+    when more than half its values are distinct, otherwise None (caller keeps the category).
+
+    A category only saves memory when values repeat. For a column with close to one value per row
+    (e.g. a unique LocNumber) it stores every value as a category plus an index per row, and every
+    slice of it (iloc, boolean mask) keeps the full category list, which is then copied into every
+    pickle or parquet file written from that slice.
+
+    Series with 2000 rows or fewer (the pa_dict_encode sample size) are left unchanged, so small
+    exposures keep their historic category dtypes.
+    """
+    if not isinstance(series.dtype, pd.CategoricalDtype) or len(series) <= 2000:
+        return None
+    if len(series.cat.categories) <= len(series) * 0.5:
+        return None
+    return series.astype(pd_default_string)
+
+
 def is_empty(df, columns):
     return (df[columns].isnull()) | (df[columns] == '')
 
