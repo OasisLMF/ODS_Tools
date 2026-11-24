@@ -1488,6 +1488,36 @@ class DemoteHighCardinalityCategoryTests(TestCase):
         s = pd.Series([str(i) for i in range(3000)])
         self.assertIsNone(self.demote(s))
 
+    def test_head_check(self):
+        from ods_tools.oed.common import head_is_mostly_distinct
+        unique_head = pd.Series([str(i) for i in range(2000)] + ['x'] * 1000)
+        self.assertTrue(head_is_mostly_distinct(unique_head))
+        repeated_head = pd.Series(['x'] * 2000 + [str(i) for i in range(1000)])
+        self.assertFalse(head_is_mostly_distinct(repeated_head))
+        self.assertFalse(head_is_mostly_distinct(pd.Series([str(i) for i in range(2000)])))
+
+    def test_repeated_head_then_unique_still_demoted(self):
+        """The head check is fooled by sorted data; the exact check after the load still catches it"""
+        n = 6000
+        loc_df = self._location_df(n)
+        loc_df['LocNumber'] = ['0'] * 2000 + [str(i) for i in range(1, n - 1999)]
+        location = OedExposure(location=loc_df, use_field=True, backend_dtype='pd_dtype').location.dataframe
+        self.assertNotIsInstance(location['LocNumber'].dtype, pd.CategoricalDtype)
+        self.assertEqual(location['LocNumber'].tolist(), loc_df['LocNumber'].tolist())
+
+    def test_load_parquet_with_integer_loc_number(self):
+        """OasisPlatform#1508: a hook writes LocNumber as int64 parquet; reloading it must not build a category"""
+        n = 3000
+        loc_df = self._location_df(n)
+        loc_df['LocNumber'] = np.arange(n, dtype='int64')
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            loc_fp = os.path.join(tmp_dir, 'location.parquet')
+            loc_df.to_parquet(loc_fp, index=False)
+            location = OedExposure(location=loc_fp, use_field=True, backend_dtype='pd_dtype').location.dataframe
+        self.assertNotIsInstance(location['LocNumber'].dtype, pd.CategoricalDtype)
+        self.assertEqual(location['LocNumber'].tolist(), [str(i) for i in range(n)])
+        self.assertEqual(location['PostalCode'].dtype.name, 'category')
+
     def test_load_csv_and_dataframe(self):
         n = 3000
         loc_df = self._location_df(n)

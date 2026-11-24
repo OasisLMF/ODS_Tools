@@ -10,7 +10,7 @@ from pandas.api.types import is_numeric_dtype
 
 from .common import (OED_TYPE_TO_NAME, OdsException, PANDAS_COMPRESSION_MAP, PANDAS_DEFAULT_NULL_VALUES, is_relative, fill_empty,
                      UnknownColumnSaveOption, cached_property, is_empty, dtype_str_to_dtype, default_string_dtype, pd_default_string,
-                     pa_dict_encode, demote_high_cardinality_category, compression_from_suffix)
+                     pa_dict_encode, demote_high_cardinality_category, head_is_mostly_distinct, compression_from_suffix)
 from .forex import convert_currency
 from .oed_schema import OedSchema
 
@@ -301,6 +301,8 @@ class OedSource:
                     oed_df.loc[is_empty(oed_df, column), column] = ''
                 if _dtype == 'category':  # we will need to convert to str first
                     oed_df[column] = oed_df[column].astype('str')
+                    if head_is_mostly_distinct(oed_df[column]):  # e.g. a unique LocNumber: keep as text
+                        continue
                 if dtype_str_to_dtype[_dtype].name != oed_df[column].dtype.name:
                     oed_df[column] = oed_df[column].astype(_dtype)
             elif pd.api.types.is_numeric_dtype(_dtype):  # make sure empty string are converted to nan
@@ -356,8 +358,8 @@ class OedSource:
                 if encoded is not None:
                     df[col] = encoded
 
-        # In the pd_dtype backend every string column is a category; keep high-cardinality
-        # columns (e.g. a unique LocNumber) as plain strings, where a category saves nothing.
+        # pd_dtype: the loaders only skip the category when a column's first rows are mostly distinct;
+        # catch the high-cardinality columns that check missed (e.g. sorted data).
         elif backend_dtype == 'pd_dtype':
             for col in column_to_field:
                 demoted = demote_high_cardinality_category(df[col])
@@ -627,7 +629,8 @@ class OedSource:
             df = read_or_try_encoding_read(df_engine, filepath_or_buffer, read_filter=filter, dtype=_dtype, **kwargs)
 
         for col in category_columns:
-            if col in df.columns:
+            # a mostly distinct column (e.g. a unique LocNumber) stays as text: its category would save nothing
+            if col in df.columns and not head_is_mostly_distinct(df[col]):
                 df[col] = df[col].astype('category')
 
         return cls.prepare_df(df, column_to_field, ods_fields, backend_dtype)
