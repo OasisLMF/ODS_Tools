@@ -255,6 +255,22 @@ default_string_dtype = {
 pd_default_string = object if pd.__version__ < "3" else "str"
 
 
+CARDINALITY_SAMPLE_SIZE = 2000
+
+
+def head_is_mostly_distinct(series):
+    """Whether more than half of the first CARDINALITY_SAMPLE_SIZE values are distinct.
+
+    A cheap check made before encoding a string column, so a column with close to one value per
+    row (e.g. a unique LocNumber) never has its category or dictionary built. Only the head is
+    read, so it can be wrong on sorted data; both callers re-check the exact count afterwards.
+    Series of CARDINALITY_SAMPLE_SIZE rows or fewer always return False.
+    """
+    if len(series) <= CARDINALITY_SAMPLE_SIZE:
+        return False
+    return series.iloc[:CARDINALITY_SAMPLE_SIZE].nunique() > CARDINALITY_SAMPLE_SIZE * 0.5
+
+
 def pa_dict_encode(series):
     """Dictionary-encode a string[pyarrow] series using the smallest fitting index type.
 
@@ -264,10 +280,8 @@ def pa_dict_encode(series):
     category: int8 for ≤128 unique values, int16 for ≤32767, int32 otherwise.
     Returns None if encoding is skipped (high cardinality) or fails (caller keeps original).
     """
-    sample_size = min(2000, len(series))
-    if len(series) > sample_size:
-        if series.iloc[:sample_size].nunique() > sample_size * 0.5:
-            return None
+    if head_is_mostly_distinct(series):
+        return None
     try:
         arr = series.array.__arrow_array__().combine_chunks()
         encoded = pc.dictionary_encode(arr)
@@ -280,6 +294,28 @@ def pa_dict_encode(series):
     except Exception as e:
         logger.debug("pa_dict_encode failed, keeping original dtype: %s", e)
         return None
+
+
+def demote_high_cardinality_category(series):
+    """pd_dtype counterpart of pa_dict_encode: return a category series as a plain string series
+    when more than half its values are distinct, otherwise None (caller keeps the category).
+
+    A category only saves memory when values repeat. For a column with close to one value per row
+    (e.g. a unique LocNumber) it stores every value as a category plus an index per row, and every
+    slice of it (iloc, boolean mask) keeps the full category list, which is then copied into every
+    pickle or parquet file written from that slice.
+
+    The loaders already skip building the category when head_is_mostly_distinct; this is the exact
+    check behind it, for a column whose first rows are not representative (e.g. sorted data).
+
+    Series with CARDINALITY_SAMPLE_SIZE rows or fewer are left unchanged, so small exposures keep
+    their historic category dtypes.
+    """
+    if not isinstance(series.dtype, pd.CategoricalDtype) or len(series) <= CARDINALITY_SAMPLE_SIZE:
+        return None
+    if len(series.cat.categories) <= len(series) * 0.5:
+        return None
+    return series.astype(pd_default_string)
 
 
 def is_empty(df, columns):
