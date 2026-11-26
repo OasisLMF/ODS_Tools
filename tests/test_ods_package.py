@@ -1447,6 +1447,119 @@ class PaDictEncodeTests(TestCase):
             self.assertEqual(len(result), 0)
 
 
+class DemoteHighCardinalityCategoryTests(TestCase):
+    """pd_dtype: string columns with more than half their values distinct are kept as plain strings"""
+
+    def setUp(self):
+        from ods_tools.oed.common import demote_high_cardinality_category
+        self.demote = demote_high_cardinality_category
+
+    @staticmethod
+    def _location_df(n):
+        return pd.DataFrame({
+            'PortNumber': ['1'] * n,
+            'AccNumber': ['1'] * n,
+            'LocNumber': [str(i) for i in range(n)],             # unique per row
+            'PostalCode': [f'{i // 4:05d}' for i in range(n)],   # 25% distinct, stays a category
+            'CountryCode': ['GB', 'FR'] * (n // 2),
+            'LocPerilsCovered': ['WTC'] * n,
+            'BuildingTIV': [1000.0] * n,
+            'ContentsTIV': [0.0] * n,
+            'BITIV': [0.0] * n,
+            'LocCurrency': ['GBP'] * n,
+        })
+
+    def test_high_cardinality_category_demoted(self):
+        s = pd.Series([str(i) for i in range(3000)], dtype='category')
+        result = self.demote(s)
+        self.assertIsNotNone(result)
+        self.assertNotIsInstance(result.dtype, pd.CategoricalDtype)
+        self.assertEqual(result.tolist(), s.astype(str).tolist())
+
+    def test_half_distinct_kept(self):
+        s = pd.Series([str(i // 2) for i in range(3000)], dtype='category')
+        self.assertIsNone(self.demote(s))
+
+    def test_small_series_kept(self):
+        s = pd.Series([str(i) for i in range(2000)], dtype='category')
+        self.assertIsNone(self.demote(s))
+
+    def test_non_category_ignored(self):
+        s = pd.Series([str(i) for i in range(3000)])
+        self.assertIsNone(self.demote(s))
+
+    def test_head_check(self):
+        from ods_tools.oed.common import head_is_mostly_distinct
+        unique_head = pd.Series([str(i) for i in range(2000)] + ['x'] * 1000)
+        self.assertTrue(head_is_mostly_distinct(unique_head))
+        repeated_head = pd.Series(['x'] * 2000 + [str(i) for i in range(1000)])
+        self.assertFalse(head_is_mostly_distinct(repeated_head))
+        self.assertFalse(head_is_mostly_distinct(pd.Series([str(i) for i in range(2000)])))
+
+    def test_repeated_head_then_unique_still_demoted(self):
+        """The head check is fooled by sorted data; the exact check after the load still catches it"""
+        n = 6000
+        loc_df = self._location_df(n)
+        loc_df['LocNumber'] = ['0'] * 2000 + [str(i) for i in range(1, n - 1999)]
+        location = OedExposure(location=loc_df, use_field=True, backend_dtype='pd_dtype').location.dataframe
+        self.assertNotIsInstance(location['LocNumber'].dtype, pd.CategoricalDtype)
+        self.assertEqual(location['LocNumber'].tolist(), loc_df['LocNumber'].tolist())
+
+    def test_load_parquet_with_integer_loc_number(self):
+        """OasisPlatform#1508: a hook writes LocNumber as int64 parquet; reloading it must not build a category"""
+        n = 3000
+        loc_df = self._location_df(n)
+        loc_df['LocNumber'] = np.arange(n, dtype='int64')
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            loc_fp = os.path.join(tmp_dir, 'location.parquet')
+            loc_df.to_parquet(loc_fp, index=False)
+            location = OedExposure(location=loc_fp, use_field=True, backend_dtype='pd_dtype').location.dataframe
+        self.assertNotIsInstance(location['LocNumber'].dtype, pd.CategoricalDtype)
+        self.assertEqual(location['LocNumber'].tolist(), [str(i) for i in range(n)])
+        self.assertEqual(location['PostalCode'].dtype.name, 'category')
+
+    def test_load_csv_and_dataframe(self):
+        n = 3000
+        loc_df = self._location_df(n)
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            loc_fp = os.path.join(tmp_dir, 'location.csv')
+            loc_df.to_csv(loc_fp, index=False)
+            for source in (loc_fp, loc_df):
+                location = OedExposure(location=source, use_field=True, backend_dtype='pd_dtype').location.dataframe
+                self.assertNotIsInstance(location['LocNumber'].dtype, pd.CategoricalDtype)
+                self.assertEqual(location['LocNumber'].tolist(), loc_df['LocNumber'].tolist())
+                for col in ['PortNumber', 'AccNumber', 'PostalCode', 'CountryCode']:
+                    self.assertEqual(location[col].dtype.name, 'category', col)
+                self.assertEqual(location['PostalCode'].tolist(), loc_df['PostalCode'].tolist())
+
+    def test_slice_does_not_carry_all_values(self):
+        """A slice written to parquet holds only its own LocNumber values, not the whole portfolio's"""
+        import pyarrow as pa
+        import pyarrow.parquet as pq
+        n = 3000
+        location = OedExposure(location=self._location_df(n), use_field=True, backend_dtype='pd_dtype').location.dataframe
+        buf = io.BytesIO()
+        location.iloc[:n // 10].to_parquet(buf, index=False)
+        buf.seek(0)
+        loc_number = pq.read_table(buf, columns=['LocNumber']).column('LocNumber')
+        self.assertEqual(len(loc_number), n // 10)
+        self.assertFalse(pa.types.is_dictionary(loc_number.type))
+
+    def test_save_and_reload(self):
+        n = 3000
+        loc_df = self._location_df(n)
+        exposure = OedExposure(location=loc_df, use_field=True, backend_dtype='pd_dtype')
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            for compression in ('csv', 'parquet'):
+                save_dir = os.path.join(tmp_dir, compression)
+                exposure.save(save_dir, compression=compression, save_config=True)
+                reloaded = OedExposure.from_config(os.path.join(save_dir, OedExposure.DEFAULT_EXPOSURE_CONFIG_NAME),
+                                                   backend_dtype='pd_dtype').location.dataframe
+                self.assertNotIsInstance(reloaded['LocNumber'].dtype, pd.CategoricalDtype, compression)
+                self.assertEqual(reloaded['LocNumber'].tolist(), loc_df['LocNumber'].tolist(), compression)
+                self.assertEqual(reloaded['PostalCode'].dtype.name, 'category', compression)
+
+
 class OdsSettingsTests(TestCase):
     @pytest.fixture(autouse=True)
     def logging_fixtures(self, caplog):
@@ -1622,3 +1735,25 @@ class OdsSettingsTests(TestCase):
 
         self.assertEqual(expected_list, global__valid_output_metrics)
         self.assertEqual(expected_list, event_set__valid_metrics)
+
+
+def test_schema_path_info_reloads_when_the_version_lookup_raises_oserror(monkeypatch, tmp_path):
+    """A schema given by its path (as ``exposure_info.json`` saves it) loads when the version lookup raises OSError.
+
+    The path is first formatted into the default schema path as a version; on Windows the ``C:`` this puts in the
+    middle of a file name raises ``OSError`` (EINVAL) rather than ``FileNotFoundError``.
+    """
+    schema_path = str(tmp_path / OedSchema.DEFAULT_ODS_SCHEMA_FILE.format(OED_VERSION))
+    with open(schema_path, 'w') as schema_file:
+        json.dump({'area': {}}, schema_file)
+    as_version_path = OedSchema.DEFAULT_ODS_SCHEMA_PATH.format(schema_path)
+    from_json = OedSchema.from_json.__func__
+
+    def windows_from_json(cls, oed_json):
+        if oed_json == as_version_path:
+            raise OSError(22, 'Invalid argument', oed_json)
+        return from_json(cls, oed_json)
+
+    monkeypatch.setattr(OedSchema, 'from_json', classmethod(windows_from_json))
+
+    assert OedSchema.from_oed_schema_info(schema_path).json_path == schema_path

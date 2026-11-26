@@ -1,6 +1,13 @@
 ODS_Tools Changelog
 ===================
 
+`5.0.11`_
+ ---------
+* [#319](https://github.com/OasisLMF/ODS_Tools/pull/319) - Update Model Settings selector fields
+* [#322](https://github.com/OasisLMF/ODS_Tools/pull/322) - Windows: reload exposure_info.json saved with the default OED schema
+* [#323](https://github.com/OasisLMF/ODS_Tools/pull/323) - pd_dtype: keep high-cardinality string columns as plain strings
+.. _`5.0.11`:  https://github.com/OasisLMF/ODS_Tools/compare/5.0.10...5.0.11
+
 `5.0.10`_
  ---------
 * [#303](https://github.com/OasisLMF/ODS_Tools/pull/303) - Add Model Certification scope metadata to model_settings schema
