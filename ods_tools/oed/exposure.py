@@ -112,9 +112,9 @@ class OedExposure:
                 backend_dtype = "pd_dtype"
         else:
             if backend_dtype not in self.oed_schema.get_available_backend_dtype():
-                backend_dtype = "pd_dtype"
                 logger.warning(f"backend_dtype {backend_dtype} is not available for "
-                               f"the selected schema fallback to {backend_dtype}")
+                               f"the selected schema, falling back to pd_dtype")
+                backend_dtype = "pd_dtype"
         self.backend_dtype = backend_dtype
 
         if additional_fields is None:
