@@ -1135,6 +1135,96 @@
                   "options"
                ]
             },
+            "hazard_case_set":{
+                "title":"Hazard case set selector",
+                "description":"For dynamic footprint models. The 'id' field from options is used as a file suffix for both the hazard case and event definition files, e.g. hazard_case_<id>.parquet and event_definition_<id>.parquet",
+                "type":"object",
+                "uniqueItems":false,
+                "additionalProperties": false,
+                "properties":{
+                    "name":{
+                        "type":"string",
+                        "title":"UI Option",
+                        "description":"UI name for selection",
+                        "minLength":1
+                    },
+                    "desc":{
+                        "type":"string",
+                        "title":"Short description",
+                        "description":"UI description for selection"
+                    },
+                    "used_for":{
+                       "type":"string",
+                       "title":"Where the setting is applied",
+                       "description":"Set if this parameter is ONLY used at input 'generation' or for output 'losses'",
+                       "enum":[
+                          "all",
+                          "generation",
+                          "losses"
+                       ]
+                    },
+                    "tooltip":{
+                       "type":"string",
+                       "title":"UI tooltip",
+                       "description":"Long description (optional)"
+                    },
+                    "default":{
+                       "type":"string",
+                       "title":"Default hazard case set",
+                       "description":"Initial setting for hazard case set"
+                    },
+                    "visible":{
+                       "type":"boolean",
+                       "title":"Is visible",
+                       "description":"tell if parameter should be visible in UI"
+                    },
+                    "editable":{
+                       "type":"boolean",
+                       "title":"Is editable",
+                       "description":"tell if parameter should be editable in UI"
+                    },
+                    "options":{
+                       "type":"array",
+                       "title":"Selection options for hazard case set",
+                       "description":"Array of possible hazard case sets",
+                       "items":{
+                          "type":"object",
+                          "title":"Selection option element",
+                          "description":"Hazard case set options",
+                          "additionalProperties":false,
+                          "properties":{
+                              "id":{
+                                  "type":"string",
+                                  "title":"hazard case set suffix",
+                                  "description":"String value used to select a hazard case set",
+                                  "minLength":1
+                              },
+                              "desc":{
+                                  "type":"string",
+                                  "title":"Hazard case set description",
+                                  "description":"UI description for selection",
+                                  "minLength":1
+                              },
+                              "tooltip":{
+                                  "type":"string",
+                                  "title":"UI tooltip",
+                                  "description":"Long description (optional)"
+                              }
+                          },
+                          "required":[
+                              "id",
+                              "desc"
+                          ]
+                     }
+                  }
+               },
+               "required":[
+                  "name",
+                  "desc",
+                  "default",
+                  "options"
+               ]
+            },
             "vulnerability_set":{
                "title":"Vulnerability set selector",
                "description":"The 'id' field from options is used as a file suffix, e.g. vulnerability_<id>.bin, vulnerability_<id>.csv, vulnerability_<id>.parquet",
