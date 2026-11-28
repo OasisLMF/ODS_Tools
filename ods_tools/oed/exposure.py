@@ -16,13 +16,17 @@ from pathlib import Path
 from .common import (PANDAS_COMPRESSION_MAP,
                      USUAL_FILE_NAME, OED_TYPE_TO_NAME,
                      UnknownColumnSaveOption, CLASS_OF_BUSINESSES, OdsException,
-                     ClassOfBusiness, compression_from_suffix)
+                     ClassOfBusiness, compression_from_suffix, DEFAULT_VALIDATION_CONFIG)
 from .oed_schema import OedSchema
 from .source import OedSource, detect_stream_type, is_readable
 from .validator import Validator
 from .forex import create_currency_rates
 
 logger = logging.getLogger(__name__)
+
+
+class ClassOfBusinessNotDetected(OdsException):
+    """No class of business fits the exposure: each one has a required field missing or an n/a field present."""
 
 
 class OedExposure:
@@ -332,7 +336,7 @@ class OedExposure:
                                   + ("\n    " + ", ".join(messages['missing']) + " missing" if messages.get('missing') else "")
                                   + ("\n    " + ", ".join(messages['present']) + " present" if messages.get('present') else "")
                                   for class_of_business, messages in exclusion_messages.items())
-            raise OdsException(error_msg)
+            raise ClassOfBusinessNotDetected(error_msg)
         elif len(final_cobs) == 2 and len(final_cobs.difference({ClassOfBusiness.prop, ClassOfBusiness.mar})) == 0:
             # Marine and Property have mostly the same column, default to Property if undetermined
             return ClassOfBusiness.prop
@@ -558,13 +562,41 @@ class OedExposure:
         """
         if self.location is None and self.account is None:
             raise OdsException("OedExposure requires at least one of location or account file. Are they missing from your config?")
-        if self.class_of_business is None:
-            self.class_of_business = self.get_class_of_business()
-
         if validation_config is None:
             validation_config = self.validation_config
-        validator = Validator(self)
-        return validator(validation_config)
+
+        if self.class_of_business is not None:
+            return Validator(self)(validation_config)
+
+        try:
+            self.class_of_business = self.get_class_of_business()
+        except ClassOfBusinessNotDetected as e:
+            # No class of business fits because of missing or n/a fields: that is a required_fields error, so
+            # follow that check's on_error instead of always raising (#174)
+            on_error = self._check_action(validation_config, 'required_fields')
+            if on_error == 'raise':
+                raise
+            if on_error != 'ignore':
+                logger.warning(f"Could not detect the class of business, validating as {ClassOfBusiness.prop}:\n{e}")
+            # validate as property, the default when undetermined, but don't keep it as the detected class of business
+            self.class_of_business = ClassOfBusiness.prop
+            try:
+                return Validator(self)(validation_config)
+            finally:
+                self.class_of_business = None
+        return Validator(self)(validation_config)
+
+    @staticmethod
+    def _check_action(validation_config, check_name):
+        """on_error action of check_name in validation_config: 'ignore' if it isn't listed, 'raise' if the config can't be read here"""
+        if validation_config is None:
+            validation_config = DEFAULT_VALIDATION_CONFIG
+        if not isinstance(validation_config, (list, tuple)):
+            return 'raise'
+        for check in validation_config:
+            if isinstance(check, dict) and check.get('name') == check_name:
+                return check.get('on_error')
+        return 'ignore'
 
     def to_version(self, to_version):
         """
