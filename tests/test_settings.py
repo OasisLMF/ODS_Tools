@@ -523,7 +523,7 @@ class ModelCertificationScopeSchemaChecks(unittest.TestCase):
 class SelectorVisibleEditableSchemaChecks(unittest.TestCase):
     """Schema checks for ``visible`` / ``editable`` on the pre-baked selectors.
 
-    The five file-suffix selectors set ``additionalProperties: false`` and,
+    The file-suffix selectors set ``additionalProperties: false`` and,
     unlike ``dropdown_parameters``, did not declare ``visible`` / ``editable``,
     so there was no way to hide a one-option selector in the UI. See
     ODS_Tools#304.
@@ -535,6 +535,7 @@ class SelectorVisibleEditableSchemaChecks(unittest.TestCase):
         "footprint_set",
         "vulnerability_set",
         "pla_loss_factors_set",
+        "hazard_case_set",
     ]
 
     def make_model_settings(self, **selector_fields):
@@ -636,3 +637,57 @@ class EventSetNumberOfEventsSchemaChecks(unittest.TestCase):
         settings = Settings()
         settings.add_settings(self.make_model_settings(fallback_number_of_events=500000), 'modeler')
         self.assertEqual(settings.get_settings()["model_settings"]["event_set"], "")
+
+
+class HazardCaseSetAndMeltOptionSchemaChecks(unittest.TestCase):
+    """Analysis settings schema checks for ``model_settings.hazard_case_set`` (ODS_Tools#296)
+    and the ``melt_exclude_zero_loss`` ORD output option (OasisLMF#2168)."""
+
+    def make_analysis_settings(self, model_settings=None, ord_output=None):
+        return {
+            "version": "3",
+            "source_tag": "test",
+            "analysis_tag": "test",
+            "number_of_samples": 10,
+            "model_supplier_id": "supplier",
+            "model_name_id": "model",
+            "model_settings": model_settings or {},
+            "gul_output": True,
+            "gul_summaries": [{"id": 1, "ord_output": {"elt_moment": True, **(ord_output or {})}}],
+        }
+
+    def validate(self, data):
+        return AnalysisSettingHandler.make().validate(data, raise_error=False)
+
+    def test_hazard_case_set_accepted(self):
+        ok, errors = self.validate(self.make_analysis_settings(model_settings={"hazard_case_set": "high"}))
+        self.assertTrue(ok, f"expected valid analysis_settings, got errors: {errors}")
+
+    def test_hazard_case_set_must_be_a_string(self):
+        ok, errors = self.validate(self.make_analysis_settings(model_settings={"hazard_case_set": 2}))
+        self.assertFalse(ok)
+        self.assertIn("2 is not of type 'string'", str(errors))
+
+    def test_hazard_case_set_selector_resolves_to_default(self):
+        settings = Settings()
+        settings.add_settings({
+            "model_settings": {
+                "hazard_case_set": {
+                    "name": "Hazard case set",
+                    "desc": "Dynamic footprint hazard case set",
+                    "default": "low",
+                    "options": [{"id": "low", "desc": "Low"}, {"id": "high", "desc": "High"}],
+                }
+            },
+            "lookup_settings": {},
+        }, 'modeler')
+        self.assertEqual(settings.get_settings()["model_settings"]["hazard_case_set"], "low")
+
+    def test_melt_exclude_zero_loss_accepted(self):
+        ok, errors = self.validate(self.make_analysis_settings(ord_output={"melt_exclude_zero_loss": True}))
+        self.assertTrue(ok, f"expected valid analysis_settings, got errors: {errors}")
+
+    def test_melt_exclude_zero_loss_must_be_boolean(self):
+        ok, errors = self.validate(self.make_analysis_settings(ord_output={"melt_exclude_zero_loss": "yes"}))
+        self.assertFalse(ok)
+        self.assertIn("'yes' is not of type 'boolean'", str(errors))

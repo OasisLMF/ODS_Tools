@@ -163,6 +163,12 @@
                                 "description": "Moment Event Loss Table (ORD Output flag)",
                                 "default": false
                             },
+                            "melt_exclude_zero_loss": {
+                                "type": "boolean",
+                                "title": "MELT - exclude zero loss rows",
+                                "description": "Leave rows with zero mean loss out of MELT, as is already done for MPLT (ORD Output option, needs elt_moment)",
+                                "default": false
+                            },
                             "plt_sample": {
                                 "type": "boolean",
                                 "title": "SPLT",
@@ -438,6 +444,12 @@
                     "type": "string",
                     "title": "Lossfactor set file ID.",
                     "description": "Identifier for the Lossfactor file used for PLA (Post Loss amplification).",
+                    "default": 1
+                },
+                "hazard_case_set": {
+                    "type": "string",
+                    "title": "Hazard case set file ID.",
+                    "description": "Identifier used as a common suffix to select the dynamic footprint hazard case and event definition files used for output calculations.",
                     "default": 1
                 },
                 "correlation_settings": {
